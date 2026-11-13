@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import PrintableCard from "@/components/PrintableCard";
+import { useToast } from "@/components/Toast";
 
 interface Branch {
   id: string;
@@ -86,6 +87,7 @@ interface CartItem {
 }
 
 export default function StorefrontPage() {
+  const { showToast } = useToast();
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState<string>("all");
   const [categories, setCategories] = useState<Category[]>([]);
@@ -370,7 +372,7 @@ export default function StorefrontPage() {
         setShowAuthModal(false);
         setAuthStep("DETAILS");
         setOtpInput("");
-        alert(`أهلاً بك يا ${customerProfile.name} في بزار كاجوال وير 👑! تم تفعيل حسابك بنجاح.`);
+        showToast(`أهلاً بك يا ${customerProfile.name} في بزار كاجوال وير 👑! تم تفعيل حسابك بنجاح.`, "success");
       } else {
         setAuthError(data.error || "كود التفعيل غير صحيح");
       }

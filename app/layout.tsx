@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ToastProvider } from "@/components/Toast";
 
 export const metadata: Metadata = {
   title: "بزار كاجوال وير | BAZAAR Casual Wear",
@@ -27,7 +28,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-[#0a0a0f] text-gray-100 font-['Cairo',sans-serif] selection:bg-amber-500 selection:text-black">
-        {children}
+        <ToastProvider>{children}</ToastProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `

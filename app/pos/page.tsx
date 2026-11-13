@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import PrintThermalReceipt from "@/components/PrintThermalReceipt";
 import PrintBarcodeTag from "@/components/PrintBarcodeTag";
+import { useToast } from "@/components/Toast";
 
 interface UserSession {
   id: string;
@@ -47,8 +48,12 @@ interface CartLine {
 }
 
 export default function POSPage() {
+  const { showToast } = useToast();
+
   // Session & Branch state
   const [session, setSession] = useState<UserSession | null>(null);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [activeBranchId, setActiveBranchId] = useState<string>("");
   const [shift, setShift] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -104,30 +109,36 @@ export default function POSPage() {
     }
   };
 
-  // Check login & shift
+  // Check login, branches & shift
   useEffect(() => {
-    const rawUser = localStorage.getItem("bazaar_user");
-    if (rawUser) {
+    async function initPOS() {
       try {
-        const u = JSON.parse(rawUser);
-        setSession(u);
-        loadCurrentShift(u.id, u.branchId);
+        const bRes = await fetch("/api/branches");
+        const bData = await bRes.json();
+        const branchList = bData.branches || [];
+        setBranches(branchList);
+
+        const rawUser = localStorage.getItem("bazaar_user");
+        if (rawUser) {
+          try {
+            const u = JSON.parse(rawUser);
+            setSession(u);
+            const initialBranchId = u.branchId || branchList[0]?.id || "";
+            setActiveBranchId(initialBranchId);
+            loadCurrentShift(u.id, initialBranchId);
+          } catch (e) {
+            setSession(null);
+          }
+        } else if (branchList.length > 0) {
+          setActiveBranchId(branchList[0].id);
+        }
       } catch (e) {
-        setSession(null);
+        console.error("POS init error:", e);
+      } finally {
+        setLoading(false);
       }
-    } else {
-      // Auto login as default cashier if running locally
-      setSession({
-        id: "cmwec7x1z00048cn7l1m4y847",
-        name: "كاشير فرع عباس",
-        username: "cashier_abbas",
-        role: "cashier",
-        branchId: "cmwec7w6d00008cn7rh9l97qo",
-        branch: { id: "cmwec7w6d00008cn7rh9l97qo", name: "فرع عباس العقاد الرئيسي" },
-      });
-      loadCurrentShift("cmwec7x1z00048cn7l1m4y847", "cmwec7w6d00008cn7rh9l97qo");
     }
-    setLoading(false);
+    initPOS();
   }, []);
 
   const loadCurrentShift = async (userId: string, branchId?: string) => {
@@ -199,7 +210,7 @@ export default function POSPage() {
         });
       } else {
         playBeep(320, 0.25);
-        alert(`لم يتم العثور على أي قطعة بباركود: ${code}`);
+        showToast(`لم يتم العثور على أي قطعة بباركود: ${code}`, "error");
       }
     } catch (e) {
       console.error(e);
@@ -283,15 +294,16 @@ export default function POSPage() {
   // Complete POS Sale
   const handleCheckout = async () => {
     if (cart.length === 0) return;
-    if (!session?.branchId) {
-      alert("يرجى التأكد من تحديد الفرع الخاص بالحساب");
+    const targetBranchId = activeBranchId || session?.branchId;
+    if (!targetBranchId) {
+      showToast("يرجى التأكد من تحديد الفرع الخاص بالحساب", "error");
       return;
     }
 
     try {
       const payload = {
-        branchId: session.branchId,
-        userId: session.id,
+        branchId: targetBranchId,
+        userId: session?.id,
         shiftId: shift?.id || null,
         customerPhone,
         customerName,
@@ -326,20 +338,22 @@ export default function POSPage() {
         setCustomerName("");
         setCustomerPoints(null);
         setShowPaymentModal(false);
+        showToast("تم إتمام الفاتورة بنجاح!", "success");
         // Refresh shift
-        if (session) loadCurrentShift(session.id, session.branchId);
+        if (session) loadCurrentShift(session.id, targetBranchId);
       } else {
-        alert(data.error || "فشل إتمام البيع");
+        showToast(data.error || "فشل إتمام البيع", "error");
       }
     } catch (e) {
       console.error(e);
-      alert("حدث خطأ أثناء الاتصال بالخادم");
+      showToast("حدث خطأ أثناء الاتصال بالخادم", "error");
     }
   };
 
   // Open Shift handler
   const handleShiftSubmit = async () => {
     if (!session) return;
+    const targetBranchId = activeBranchId || session.branchId;
     try {
       const res = await fetch("/api/shifts", {
         method: "POST",
@@ -347,7 +361,7 @@ export default function POSPage() {
         body: JSON.stringify({
           action: shiftAction,
           shiftId: shift?.id,
-          branchId: session.branchId,
+          branchId: targetBranchId,
           userId: session.id,
           startCash: shiftOpeningCash,
           actualCash: shiftActualCash,
@@ -357,10 +371,10 @@ export default function POSPage() {
       const data = await res.json();
       if (data.success) {
         setShowShiftModal(false);
-        loadCurrentShift(session.id, session.branchId);
-        alert(shiftAction === "OPEN" ? "تم فتح الوردية بنجاح" : "تم إغلاق الوردية وحساب العهدة بنجاح");
+        loadCurrentShift(session.id, targetBranchId);
+        showToast(shiftAction === "OPEN" ? "تم فتح الوردية بنجاح" : "تم إغلاق الوردية وحساب العهدة بنجاح", "success");
       } else {
-        alert(data.error || "فشل معالجة الوردية");
+        showToast(data.error || "فشل معالجة الوردية", "error");
       }
     } catch (e) {
       console.error(e);
@@ -386,11 +400,43 @@ export default function POSPage() {
             </div>
           </a>
 
-          {/* Active Branch Badge */}
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-[#ffb703]">
-            <span>🏬</span>
-            <span>{session?.branch?.name || "فرع عباس العقاد الرئيسي"}</span>
-          </div>
+          {/* Active Branch Selector or Badge */}
+          {(!session?.branchId || session?.role === "owner" || session?.role === "general_manager") && branches.length > 0 ? (
+            <div className="flex items-center gap-2 bg-[#12121a] border border-[#ffb703]/50 px-3 py-1 rounded-xl shadow-inner">
+              <span className="text-[#ffb703] text-xs font-bold flex items-center gap-1">
+                <span>🏬</span>
+                <span className="hidden sm:inline">الفرع:</span>
+              </span>
+              <select
+                value={activeBranchId}
+                onChange={(e) => {
+                  const newBId = e.target.value;
+                  setActiveBranchId(newBId);
+                  if (session) {
+                    loadCurrentShift(session.id, newBId);
+                  }
+                  const bName = branches.find((b) => b.id === newBId)?.name || "";
+                  showToast(`تم التبديل إلى: ${bName}`, "info");
+                }}
+                className="bg-transparent text-xs font-black text-amber-300 focus:outline-none cursor-pointer"
+              >
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id} className="bg-[#12121a] text-white">
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-[#ffb703]">
+              <span>🏬</span>
+              <span>
+                {branches.find((b) => b.id === activeBranchId)?.name ||
+                  session?.branch?.name ||
+                  "فرع عباس العقاد الرئيسي"}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Shift status & Cashier info */}

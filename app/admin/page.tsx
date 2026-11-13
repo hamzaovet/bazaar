@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import PrintBarcodeTag from "@/components/PrintBarcodeTag";
+import { useToast } from "@/components/Toast";
 
 interface User {
   id: string;
@@ -48,6 +49,8 @@ interface User {
 }
 
 export default function AdminDashboardPage() {
+  const { showToast } = useToast();
+
   // Auth state - STRICTLY EMPTY NO DEFAULTS OR HINTS!
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loginUsername, setLoginUsername] = useState<string>("");
@@ -70,7 +73,23 @@ export default function AdminDashboardPage() {
   const [transfers, setTransfers] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>(null);
+  const [usersList, setUsersList] = useState<any[]>([]);
   const [dataLoading, setDataLoading] = useState<boolean>(false);
+
+  // Users Management State
+  const [showAddUserModal, setShowAddUserModal] = useState<boolean>(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [userFormData, setUserFormData] = useState({
+    id: "",
+    username: "",
+    password: "",
+    pin: "",
+    name: "",
+    role: "cashier",
+    branchId: "",
+    phone: "",
+    isActive: true,
+  });
 
   // Barcode Printing state
   const [selectedTagItem, setSelectedTagItem] = useState<any>(null);
@@ -85,12 +104,22 @@ export default function AdminDashboardPage() {
   const [newProdImage, setNewProdImage] = useState<string>("");
   const [uploadingImage, setUploadingImage] = useState<boolean>(false);
   const [newProdVariants, setNewProdVariants] = useState<any[]>([
-    { size: "L", color: "أسود ملكي", barcode: "", image: "", central: 30, b1: 10, b2: 10 },
-    { size: "XL", color: "أسود ملكي", barcode: "", image: "", central: 30, b1: 10, b2: 10 },
+    { size: "L", color: "أسود ملكي", colorHex: "#111111", barcode: "", image: "", central: 30, b1: 10, b2: 10 },
+    { size: "XL", color: "أسود ملكي", colorHex: "#111111", barcode: "", image: "", central: 30, b1: 10, b2: 10 },
   ]);
 
   // Edit Product Modal
   const [editingProduct, setEditingProduct] = useState<any>(null);
+
+  // Add Variant to existing product modal
+  const [showAddVariantModal, setShowAddVariantModal] = useState<boolean>(false);
+  const [newVarColor, setNewVarColor] = useState<string>("أبيض ملكي");
+  const [newVarColorHex, setNewVarColorHex] = useState<string>("#ffffff");
+  const [newVarSize, setNewVarSize] = useState<string>("L");
+  const [newVarImage, setNewVarImage] = useState<string>("");
+  const [newVarCentralStock, setNewVarCentralStock] = useState<number>(20);
+  const [newVarB1Stock, setNewVarB1Stock] = useState<number>(10);
+  const [newVarB2Stock, setNewVarB2Stock] = useState<number>(10);
 
   // Variant Image Dedicated Modal (تغيير صورة أي لون أو استايل)
   const [variantImgModalData, setVariantImgModalData] = useState<{
@@ -147,7 +176,7 @@ export default function AdminDashboardPage() {
   const fetchAllData = async () => {
     try {
       setDataLoading(true);
-      const [bRes, pRes, cRes, iRes, tRes, sRes, custRes, setRes] = await Promise.all([
+      const [bRes, pRes, cRes, iRes, tRes, sRes, custRes, setRes, uRes] = await Promise.all([
         fetch("/api/branches"),
         fetch("/api/products"),
         fetch("/api/categories"),
@@ -156,9 +185,10 @@ export default function AdminDashboardPage() {
         fetch("/api/shifts?status=ALL"),
         fetch("/api/customers"),
         fetch("/api/settings"),
+        fetch("/api/users"),
       ]);
 
-      const [b, p, c, i, t, s, cust, st] = await Promise.all([
+      const [b, p, c, i, t, s, cust, st, u] = await Promise.all([
         bRes.json(),
         pRes.json(),
         cRes.json(),
@@ -167,6 +197,7 @@ export default function AdminDashboardPage() {
         sRes.json(),
         custRes.json(),
         setRes.json(),
+        uRes.json(),
       ]);
 
       if (b.branches) setBranches(b.branches);
@@ -176,6 +207,7 @@ export default function AdminDashboardPage() {
       if (t.transfers) setTransfers(t.transfers);
       if (s.shifts) setShifts(s.shifts);
       if (cust.customers) setCustomers(cust.customers);
+      if (u.users) setUsersList(u.users);
       if (st.settings) {
         setSettings(st.settings);
         setHeroBannerUrl(st.settings.heroBannerImage || "");
@@ -204,13 +236,198 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (data.success && data.url) {
         onSuccess(data.url);
+        showToast("تم رفع الصورة بنجاح على سيرفر الصور! 📷", "success");
       } else {
-        alert(data.error || "فشل رفع الصورة على ImgBB");
+        showToast(data.error || "فشل رفع الصورة على ImgBB", "error");
       }
     } catch (e) {
-      alert("حدث خطأ أثناء رفع الصورة");
+      showToast("حدث خطأ أثناء رفع الصورة", "error");
     } finally {
       setUploadingImage(false);
+    }
+  };
+
+  // User Management Actions
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch("/api/users");
+      const data = await res.json();
+      if (data.users) setUsersList(data.users);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleOpenAddUser = () => {
+    setEditingUser(null);
+    setUserFormData({
+      id: "",
+      username: "",
+      password: "",
+      pin: "",
+      name: "",
+      role: "cashier",
+      branchId: branches[0]?.id || "",
+      phone: "",
+      isActive: true,
+    });
+    setShowAddUserModal(true);
+  };
+
+  const handleOpenEditUser = (u: any) => {
+    setEditingUser(u);
+    setUserFormData({
+      id: u.id,
+      username: u.username,
+      password: u.password || "",
+      pin: u.pin || "",
+      name: u.name,
+      role: u.role,
+      branchId: u.branchId || "",
+      phone: u.phone || "",
+      isActive: u.isActive,
+    });
+    setShowAddUserModal(true);
+  };
+
+  const handleSaveUser = async () => {
+    if (!userFormData.name || !userFormData.username) {
+      showToast("يرجى ملء الاسم واسم المستخدم", "error");
+      return;
+    }
+    if (!editingUser && !userFormData.password) {
+      showToast("يرجى إدخال كلمة المرور", "error");
+      return;
+    }
+
+    try {
+      if (editingUser) {
+        const res = await fetch("/api/users", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userFormData),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`تم تحديث بيانات المستخدم (${userFormData.name}) بنجاح!`, "success");
+          setShowAddUserModal(false);
+          fetchUsers();
+        } else {
+          showToast(data.error || "فشل تحديث بيانات المستخدم", "error");
+        }
+      } else {
+        const res = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userFormData),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`تم إنشاء حساب (${userFormData.name}) بنجاح!`, "success");
+          setShowAddUserModal(false);
+          fetchUsers();
+        } else {
+          showToast(data.error || "فشل إنشاء الحساب", "error");
+        }
+      }
+    } catch (e) {
+      showToast("حدث خطأ أثناء حفظ بيانات المستخدم", "error");
+    }
+  };
+
+  const handleToggleUserActive = async (u: any) => {
+    if (u.role === "owner") {
+      showToast("لا يمكن تعطيل حساب المالك الرئيسي Maestro", "error");
+      return;
+    }
+    try {
+      const res = await fetch("/api/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: u.id, isActive: !u.isActive }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(
+          u.isActive
+            ? `تم تعطيل حساب (${u.name}) مؤقتاً`
+            : `تم تفعيل حساب (${u.name}) بنجاح`,
+          "success"
+        );
+        fetchUsers();
+      } else {
+        showToast(data.error || "فشل تعديل حالة الحساب", "error");
+      }
+    } catch (e) {
+      showToast("حدث خطأ أثناء تعديل الحساب", "error");
+    }
+  };
+
+  const handleDeleteUser = async (u: any) => {
+    if (u.role === "owner") {
+      showToast("غير مسموح بحذف حساب المالك Maestro", "error");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/users?id=${u.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`تم حذف حساب (${u.name}) بنجاح`, "success");
+        fetchUsers();
+      } else {
+        showToast(data.error || "فشل حذف الحساب", "error");
+      }
+    } catch (e) {
+      showToast("حدث خطأ أثناء الحذف", "error");
+    }
+  };
+
+  // Add Variant directly to currently editing product
+  const handleAddVariantToProduct = async () => {
+    if (!editingProduct) return;
+    if (!newVarColor || !newVarSize) {
+      showToast("يرجى إدخال اسم اللون والمقاس", "error");
+      return;
+    }
+
+    try {
+      const payload = {
+        action: "ADD_VARIANT",
+        productId: editingProduct.id,
+        color: newVarColor,
+        colorHex: newVarColorHex,
+        size: newVarSize,
+        image: newVarImage || editingProduct.featuredImage || null,
+        barcode: `200${Date.now().toString().slice(-8)}`,
+        stockCentral: newVarCentralStock,
+        branchStocks: {
+          [branches[0]?.id]: newVarB1Stock,
+          [branches[1]?.id]: newVarB2Stock,
+        },
+      };
+
+      const res = await fetch("/api/products", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (data.success && data.variant) {
+        showToast(`تمت إضافة لون (${newVarColor}) بنجاح لهذا الموديل!`, "success");
+        setShowAddVariantModal(false);
+        setEditingProduct((prev: any) => ({
+          ...prev,
+          variants: [...(prev.variants || []), data.variant],
+        }));
+        setNewVarColor("أبيض ملكي");
+        setNewVarImage("");
+        fetchAllData();
+      } else {
+        showToast(data.error || "فشل إضافة اللون", "error");
+      }
+    } catch (e) {
+      showToast("حدث خطأ أثناء إضافة اللون", "error");
     }
   };
 
@@ -235,6 +452,7 @@ export default function AdminDashboardPage() {
       if (data.success && data.user) {
         setCurrentUser(data.user);
         localStorage.setItem("bazaar_user", JSON.stringify(data.user));
+        showToast(`مرحباً بك يا ${data.user.name} 👑!`, "success");
       } else {
         setLoginError(data.error || "بيانات الدخول غير صحيحة");
       }
@@ -256,7 +474,7 @@ export default function AdminDashboardPage() {
     if (input === null) return;
     const qty = parseInt(input, 10);
     if (isNaN(qty) || qty < 0) {
-      alert("يرجى إدخال رقم صحيح");
+      showToast("يرجى إدخال رقم صحيح", "error");
       return;
     }
 
@@ -274,12 +492,13 @@ export default function AdminDashboardPage() {
 
       const data = await res.json();
       if (data.success) {
+        showToast("تم تحديث رصيد القطعة بنجاح!", "success");
         fetchAllData();
       } else {
-        alert(data.error || "فشل تحديث الرصيد");
+        showToast(data.error || "فشل تحديث الرصيد", "error");
       }
     } catch (e) {
-      alert("حدث خطأ في الاتصال");
+      showToast("حدث خطأ في الاتصال", "error");
     }
   };
 
@@ -304,12 +523,12 @@ export default function AdminDashboardPage() {
       if (data.success) {
         setEditingProduct(null);
         fetchAllData();
-        alert("تم تحديث بيانات الموديل بنجاح في قاعدة البيانات!");
+        showToast("تم تحديث بيانات الموديل بنجاح في قاعدة البيانات!", "success");
       } else {
-        alert(data.error || "فشل التحديث");
+        showToast(data.error || "فشل التحديث", "error");
       }
     } catch (e) {
-      alert("حدث خطأ أثناء الحفظ");
+      showToast("حدث خطأ أثناء الحفظ", "error");
     }
   };
 
@@ -329,12 +548,12 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (data.success) {
         setSettings(data.settings);
-        alert("✅ تم حفظ وتحديث صورة وبيانات الهيدر بنجاح! تظهر الآن في المتجر فورياً.");
+        showToast("✅ تم حفظ وتحديث صورة وبيانات الهيدر بنجاح! تظهر الآن في المتجر فورياً.", "success");
       } else {
-        alert(data.error || "فشل الحفظ");
+        showToast(data.error || "فشل الحفظ", "error");
       }
     } catch (e) {
-      alert("حدث خطأ في الاتصال");
+      showToast("حدث خطأ في الاتصال", "error");
     } finally {
       setSavingHero(false);
     }
@@ -357,35 +576,35 @@ export default function AdminDashboardPage() {
       if (data.success) {
         setVariantImgModalData(null);
         fetchAllData();
-        alert(`✅ تم تحديث صورة لون (${variantImgModalData.variant.color}) بنجاح!`);
+        showToast(`✅ تم تحديث صورة لون (${variantImgModalData.variant.color}) بنجاح!`, "success");
       } else {
-        alert(data.error || "فشل التحديث");
+        showToast(data.error || "فشل التحديث", "error");
       }
     } catch (e) {
-      alert("خطأ أثناء الحفظ");
+      showToast("خطأ أثناء الحفظ", "error");
     }
   };
 
   // Delete Product
   const handleDeleteProduct = async (id: string, name: string) => {
-    if (!confirm(`هل أنت متأكد من حذف الموديل (${name}) نهائياً من السيستم؟`)) return;
     try {
       const res = await fetch(`/api/products?id=${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
+        showToast(`تم حذف الموديل (${name}) بنجاح`, "success");
         fetchAllData();
       } else {
-        alert(data.error || "فشل الحذف");
+        showToast(data.error || "فشل الحذف", "error");
       }
     } catch (e) {
-      alert("خطأ أثناء الحذف");
+      showToast("خطأ أثناء الحذف", "error");
     }
   };
 
   // Toggle Master Lockout
   const handleToggleMasterLock = async (enableLock: boolean) => {
     if (!lockPinInput) {
-      alert("يرجى إدخال الرمز السري للمايسترو (PIN)");
+      showToast("يرجى إدخال الرمز السري للمايسترو (PIN)", "error");
       return;
     }
 
@@ -405,23 +624,24 @@ export default function AdminDashboardPage() {
         setSettings(data.settings);
         setShowLockConfirmModal(false);
         setLockPinInput("");
-        alert(
+        showToast(
           enableLock
             ? "⚠️ تم تفعيل وضع الطوارئ! جميع حسابات الموظفين مقفلة حالياً لضمان الملكية."
-            : "✅ تم إلغاء وضع الطوارئ وفتح النظام لجميع الفروع."
+            : "✅ تم إلغاء وضع الطوارئ وفتح النظام لجميع الفروع.",
+          "success"
         );
       } else {
-        alert(data.error || "فشل تعديل حالة الطوارئ");
+        showToast(data.error || "فشل تعديل حالة الطوارئ", "error");
       }
     } catch (e) {
-      alert("حدث خطأ في الاتصال");
+      showToast("حدث خطأ في الاتصال", "error");
     }
   };
 
   // Create Product
   const handleCreateProduct = async () => {
     if (!newProdName) {
-      alert("يرجى إدخال اسم الموديل");
+      showToast("يرجى إدخال اسم الموديل", "error");
       return;
     }
 
@@ -436,6 +656,7 @@ export default function AdminDashboardPage() {
         variants: newProdVariants.map((v, idx) => ({
           size: v.size,
           color: v.color,
+          colorHex: v.colorHex || "#111111",
           image: v.image || newProdImage || undefined,
           barcode: v.barcode || `200${Date.now().toString().slice(-8)}${idx}`,
           stockCentral: parseInt(v.central, 10) || 0,
@@ -458,19 +679,19 @@ export default function AdminDashboardPage() {
         setNewProdName("");
         setNewProdImage("");
         fetchAllData();
-        alert("تمت إضافة المنتج بنجاح وتوليد الباركود ورفع الصور");
+        showToast("تمت إضافة المنتج بنجاح وتوليد الباركود ورفع الصور بنجاح! 👑", "success");
       } else {
-        alert(data.error || "فشل حفظ المنتج");
+        showToast(data.error || "فشل حفظ المنتج", "error");
       }
     } catch (e) {
-      alert("حدث خطأ");
+      showToast("حدث خطأ أثناء حفظ المنتج", "error");
     }
   };
 
   // Stock Transfer Execute
   const handleExecuteTransfer = async () => {
     if (!transferFrom || !transferTo || !transferVariantId) {
-      alert("يرجى تحديد جهة الإرسال والاستلام والقطعة");
+      showToast("يرجى تحديد جهة الإرسال والاستلام والقطعة", "error");
       return;
     }
 
@@ -489,19 +710,19 @@ export default function AdminDashboardPage() {
       if (data.success) {
         setShowTransferModal(false);
         fetchAllData();
-        alert("تم تسجيل وتنفيذ إذن تحويل البضاعة ونقل الأرصدة فورياً");
+        showToast("تم تسجيل وتنفيذ إذن تحويل البضاعة ونقل الأرصدة فورياً!", "success");
       } else {
-        alert(data.error || "فشل التحويل");
+        showToast(data.error || "فشل التحويل", "error");
       }
     } catch (e) {
-      alert("خطأ أثناء الاتصال");
+      showToast("خطأ أثناء الاتصال بالخادم", "error");
     }
   };
 
   // Gemini Vision AI Ingestion
   const handleAiIngest = async () => {
     if (!aiImageFile) {
-      alert("يرجى اختيار صورة الفاتورة أو كشف الجرد أولاً");
+      showToast("يرجى اختيار صورة الفاتورة أو كشف الجرد أولاً", "error");
       return;
     }
 
@@ -518,11 +739,12 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (data.success && data.extracted) {
         setAiExtractedData(data.extracted);
+        showToast("تم تحليل الفاتورة واستخراج الأصناف بالذكاء الاصطناعي بنجاح! 🤖", "success");
       } else {
-        alert(data.error || "فشل استخراج البيانات بالذكاء الاصطناعي");
+        showToast(data.error || "فشل استخراج البيانات بالذكاء الاصطناعي", "error");
       }
     } catch (e) {
-      alert("خطأ في معالجة الذكاء الاصطناعي");
+      showToast("خطأ في معالجة الذكاء الاصطناعي", "error");
     } finally {
       setAiLoading(false);
     }
@@ -1424,6 +1646,172 @@ export default function AdminDashboardPage() {
                 )}
               </div>
             </div>
+
+            {/* Complete Staff and Permissions Table */}
+            <div className="bg-[#12121a]/80 backdrop-blur-md border border-white/10 rounded-3xl p-6 space-y-4 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#00ff66]/10 border border-[#00ff66]/30 flex items-center justify-center text-[#00ff66]">
+                    <Users size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-white flex items-center gap-2">
+                      <span>طاقم العمل والصلاحيات وحسابات الفروع</span>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-white/10 text-amber-400 border border-amber-500/30">
+                        {usersList.length} مستخدمين
+                      </span>
+                    </h3>
+                    <p className="text-xs text-white/50 mt-0.5">
+                      التحكم الكامل ببيانات الدخول، وتعديل كلمات المرور، والرمز السري PIN، وتعيين الفروع
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleOpenAddUser}
+                  className="bg-gradient-to-r from-[#ffb703] to-[#fb8500] hover:brightness-110 text-black px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 shadow-lg shadow-[#ffb703]/20 active:scale-95 transition-all self-start sm:self-auto"
+                >
+                  <Plus size={16} />
+                  <span>إضافة حساب موظف جديد</span>
+                </button>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-right text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-white/50">
+                      <th className="py-3 px-3">الموظف</th>
+                      <th className="py-3 px-3">اسم الدخول (Username)</th>
+                      <th className="py-3 px-3">الدور / الصلاحية</th>
+                      <th className="py-3 px-3">الفرع التابع</th>
+                      <th className="py-3 px-3">الهاتف</th>
+                      <th className="py-3 px-3">الرمز السري (PIN)</th>
+                      <th className="py-3 px-3 text-center">الحالة</th>
+                      <th className="py-3 px-3 text-left">إجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {usersList.map((u) => {
+                      const roleConfig: Record<string, { label: string; color: string; badgeBg: string }> = {
+                        owner: {
+                          label: "المالك (Maestro)",
+                          color: "text-amber-400",
+                          badgeBg: "bg-amber-500/10 border-amber-500/30",
+                        },
+                        general_manager: {
+                          label: "المدير العام",
+                          color: "text-purple-400",
+                          badgeBg: "bg-purple-500/10 border-purple-500/30",
+                        },
+                        branch_manager: {
+                          label: "مدير فرع",
+                          color: "text-blue-400",
+                          badgeBg: "bg-blue-500/10 border-blue-500/30",
+                        },
+                        cashier: {
+                          label: "كاشير مبيعات",
+                          color: "text-[#00ff66]",
+                          badgeBg: "bg-emerald-500/10 border-emerald-500/30",
+                        },
+                        storekeeper: {
+                          label: "أمين مخزن مركزي",
+                          color: "text-orange-400",
+                          badgeBg: "bg-orange-500/10 border-orange-500/30",
+                        },
+                      };
+                      const rConf = roleConfig[u.role] || {
+                        label: u.role,
+                        color: "text-gray-300",
+                        badgeBg: "bg-white/5 border-white/10",
+                      };
+
+                      return (
+                        <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-2">
+                              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center font-bold text-white text-[11px]">
+                                {u.name ? u.name.charAt(0) : "U"}
+                              </span>
+                              <div>
+                                <div className="font-bold text-white">{u.name}</div>
+                                {u.role === "owner" && (
+                                  <span className="text-[10px] text-amber-400 font-bold flex items-center gap-0.5">
+                                    👑 مالك النظام
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 font-mono text-white/80">{u.username}</td>
+                          <td className="py-3 px-3">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${rConf.badgeBg} ${rConf.color}`}
+                            >
+                              {rConf.label}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-white/80">
+                            {u.branch?.name ? (
+                              <span className="flex items-center gap-1 text-white/90">
+                                <span>🏬</span>
+                                <span>{u.branch.name}</span>
+                              </span>
+                            ) : (
+                              <span className="text-white/40">🏛️ الإدارة المركزية (جميع الفروع)</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 font-mono text-white/70">{u.phone || "—"}</td>
+                          <td className="py-3 px-3">
+                            <span className="font-mono bg-black/60 border border-amber-500/20 px-2 py-0.5 rounded text-amber-300 font-bold tracking-widest text-[11px]">
+                              {u.pin || "••••"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            {u.role === "owner" ? (
+                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/40">
+                                نشط دائماً 🔒
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => handleToggleUserActive(u)}
+                                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all border ${
+                                  u.isActive
+                                    ? "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                                    : "bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30"
+                                }`}
+                              >
+                                {u.isActive ? "🟢 نشط" : "🔴 معطل"}
+                              </button>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-left">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => handleOpenEditUser(u)}
+                                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 hover:text-white"
+                                title="تعديل الحساب وكلمة المرور"
+                              >
+                                <Edit size={14} />
+                              </button>
+                              {u.role !== "owner" && (
+                                <button
+                                  onClick={() => handleDeleteUser(u)}
+                                  className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400"
+                                  title="حذف الحساب"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
       </main>
@@ -1581,6 +1969,16 @@ export default function AdminDashboardPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Add new color to existing product button */}
+                <button
+                  type="button"
+                  onClick={() => setShowAddVariantModal(true)}
+                  className="w-full mt-2 py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-[#00ff66]/10 to-amber-500/15 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 hover:opacity-90 transition-all shadow-md"
+                >
+                  <Plus size={14} />
+                  <span>+ إضافة لون / استايل ومقاس جديد لهذا الموديل</span>
+                </button>
               </div>
             </div>
 
@@ -1797,6 +2195,188 @@ export default function AdminDashboardPage() {
                   />
                 </div>
               </div>
+
+              {/* Product Color Variants Builder */}
+              <div className="pt-3 border-t border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-white/90 font-bold text-xs flex items-center gap-1.5">
+                    <span>🎨 ألوان ومقاسات ومخزون هذا الموديل:</span>
+                    <span className="text-[11px] text-[#00ff66] font-mono">({newProdVariants.length} ألوان/مقاسات)</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewProdVariants([
+                        ...newProdVariants,
+                        {
+                          size: "L",
+                          color: "رمادي ميلتون",
+                          colorHex: "#6c757d",
+                          barcode: "",
+                          image: newProdImage || "",
+                          central: 20,
+                          b1: 10,
+                          b2: 10,
+                        },
+                      ]);
+                    }}
+                    className="text-[11px] bg-[#00ff66]/10 hover:bg-[#00ff66]/20 border border-[#00ff66]/40 text-[#00ff66] px-2.5 py-1 rounded-lg font-bold flex items-center gap-1"
+                  >
+                    <Plus size={12} />
+                    <span>+ إضافة لون آخر</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {newProdVariants.map((v, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-2xl bg-black/60 border border-white/10 space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-1">
+                          <input
+                            type="color"
+                            value={v.colorHex || "#111111"}
+                            onChange={(e) => {
+                              const updated = [...newProdVariants];
+                              updated[idx].colorHex = e.target.value;
+                              setNewProdVariants(updated);
+                            }}
+                            className="w-7 h-7 rounded-lg border border-white/20 bg-transparent cursor-pointer p-0"
+                            title="اختر درجة اللون"
+                          />
+                          <input
+                            type="text"
+                            placeholder="اسم اللون (مثلاً: كحلي، زيتي)"
+                            value={v.color}
+                            onChange={(e) => {
+                              const updated = [...newProdVariants];
+                              updated[idx].color = e.target.value;
+                              setNewProdVariants(updated);
+                            }}
+                            className="flex-1 bg-black/40 border border-white/15 rounded-lg px-2.5 py-1 text-white text-xs"
+                          />
+                          <select
+                            value={v.size}
+                            onChange={(e) => {
+                              const updated = [...newProdVariants];
+                              updated[idx].size = e.target.value;
+                              setNewProdVariants(updated);
+                            }}
+                            className="bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-white text-xs w-20"
+                          >
+                            <option value="S">S</option>
+                            <option value="M">M</option>
+                            <option value="L">L</option>
+                            <option value="XL">XL</option>
+                            <option value="2XL">2XL</option>
+                            <option value="3XL">3XL</option>
+                            <option value="FREE">FREE</option>
+                          </select>
+                        </div>
+
+                        {newProdVariants.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNewProdVariants(newProdVariants.filter((_, i) => i !== idx));
+                            }}
+                            className="p-1 rounded-lg text-red-400 hover:bg-red-500/20"
+                            title="حذف هذا اللون"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Variant Image & Upload */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="رابط صورة هذا اللون تحديداً أو ارفع من جهازك..."
+                          value={v.image || ""}
+                          onChange={(e) => {
+                            const updated = [...newProdVariants];
+                            updated[idx].image = e.target.value;
+                            setNewProdVariants(updated);
+                          }}
+                          className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-white text-[11px] font-mono"
+                        />
+                        <label className="bg-white/10 hover:bg-white/20 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer flex items-center gap-1">
+                          <Upload size={12} />
+                          <span>رفع</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleImageUpload(file, (url) => {
+                                  const updated = [...newProdVariants];
+                                  updated[idx].image = url;
+                                  setNewProdVariants(updated);
+                                });
+                              }
+                            }}
+                          />
+                        </label>
+                        {v.image && (
+                          <img
+                            src={v.image}
+                            alt="preview"
+                            className="w-7 h-7 rounded-md object-cover border border-white/20"
+                          />
+                        )}
+                      </div>
+
+                      {/* Stocks per branch */}
+                      <div className="grid grid-cols-3 gap-2 pt-1">
+                        <div>
+                          <label className="text-[10px] text-white/50 block">المخزن المركزي:</label>
+                          <input
+                            type="number"
+                            value={v.central}
+                            onChange={(e) => {
+                              const updated = [...newProdVariants];
+                              updated[idx].central = parseInt(e.target.value, 10) || 0;
+                              setNewProdVariants(updated);
+                            }}
+                            className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-amber-300 font-mono text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-white/50 block">فرع عباس:</label>
+                          <input
+                            type="number"
+                            value={v.b1}
+                            onChange={(e) => {
+                              const updated = [...newProdVariants];
+                              updated[idx].b1 = parseInt(e.target.value, 10) || 0;
+                              setNewProdVariants(updated);
+                            }}
+                            className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-emerald-300 font-mono text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-white/50 block">فرع التحرير:</label>
+                          <input
+                            type="number"
+                            value={v.b2}
+                            onChange={(e) => {
+                              const updated = [...newProdVariants];
+                              updated[idx].b2 = parseInt(e.target.value, 10) || 0;
+                              setNewProdVariants(updated);
+                            }}
+                            className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-emerald-300 font-mono text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-2 mt-6">
@@ -1950,6 +2530,306 @@ export default function AdminDashboardPage() {
                   setShowLockConfirmModal(false);
                   setLockPinInput("");
                 }}
+                className="bg-white/10 text-white font-bold py-3 px-4 rounded-xl text-xs"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add / Edit Staff User Modal */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-[#101018] border border-[#ffb703]/40 rounded-3xl p-6 w-full max-w-md shadow-2xl text-white my-8">
+            <div className="flex justify-between items-center pb-3 border-b border-white/10 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-[#ffb703]/10 text-[#ffb703] rounded-xl text-lg">👤</span>
+                <div>
+                  <h3 className="font-bold text-base text-[#ffb703]">
+                    {editingUser ? "تعديل بيانات وصلاحيات الحساب" : "إضافة موظف / حساب جديد"}
+                  </h3>
+                  <p className="text-[10px] text-white/50">
+                    {editingUser ? `تعديل الحساب: ${editingUser.name}` : "تسجيل حساب بصلاحيات وكلمة مرور فريدة"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddUserModal(false)}
+                className="p-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/70"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block mb-1 text-white/70 font-bold">الاسم بالكامل:</label>
+                <input
+                  type="text"
+                  placeholder="مثال: أحمد محمد (كاشير أول)"
+                  value={userFormData.name}
+                  onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 text-white/70 font-bold">اسم المستخدم (Username):</label>
+                <input
+                  type="text"
+                  disabled={!!editingUser}
+                  placeholder="مثال: cashier_abbas"
+                  value={userFormData.username}
+                  onChange={(e) =>
+                    setUserFormData({
+                      ...userFormData,
+                      username: e.target.value.toLowerCase().replace(/\s+/g, "_"),
+                    })
+                  }
+                  className={`w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white font-mono ${
+                    editingUser ? "opacity-60 cursor-not-allowed" : ""
+                  }`}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block mb-1 text-white/70 font-bold">
+                    كلمة المرور:
+                    {editingUser && (
+                      <span className="text-[10px] text-amber-400 font-normal mr-1">
+                        (اختياري)
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="كلمة مرور الدخول"
+                    value={userFormData.password}
+                    onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 text-white/70 font-bold">الرمز السري (PIN):</label>
+                  <input
+                    type="text"
+                    placeholder="رمز PIN (مثال: 4455)"
+                    value={userFormData.pin}
+                    onChange={(e) => setUserFormData({ ...userFormData, pin: e.target.value })}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-amber-300 font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block mb-1 text-white/70 font-bold">الدور / الصلاحية:</label>
+                  <select
+                    disabled={editingUser?.role === "owner"}
+                    value={userFormData.role}
+                    onChange={(e) => setUserFormData({ ...userFormData, role: e.target.value })}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white"
+                  >
+                    <option value="owner">المالك (Maestro)</option>
+                    <option value="general_manager">المدير العام</option>
+                    <option value="branch_manager">مدير فرع</option>
+                    <option value="cashier">كاشير</option>
+                    <option value="storekeeper">أمين مخزن مركزي</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-1 text-white/70 font-bold">الفرع التابع:</label>
+                  <select
+                    value={userFormData.branchId}
+                    onChange={(e) => setUserFormData({ ...userFormData, branchId: e.target.value })}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white"
+                  >
+                    <option value="">الإدارة المركزية (جميع الفروع)</option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block mb-1 text-white/70 font-bold">رقم الهاتف:</label>
+                <input
+                  type="text"
+                  placeholder="010xxxxxxxx"
+                  value={userFormData.phone}
+                  onChange={(e) => setUserFormData({ ...userFormData, phone: e.target.value })}
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={handleSaveUser}
+                className="flex-1 bg-gradient-to-r from-[#ffb703] to-[#fb8500] hover:brightness-110 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-[#ffb703]/20 active:scale-95 transition-all"
+              >
+                {editingUser ? "حفظ تحديثات الحساب" : "إنشاء وتفعيل الحساب الآن"}
+              </button>
+              <button
+                onClick={() => setShowAddUserModal(false)}
+                className="bg-white/10 text-white font-bold py-3 px-4 rounded-xl text-xs"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Variant to Existing Product Modal */}
+      {showAddVariantModal && editingProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-[#101018] border border-[#00ff66]/40 rounded-3xl p-6 w-full max-w-md shadow-2xl text-white my-8">
+            <div className="flex justify-between items-center pb-3 border-b border-white/10 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-[#00ff66]/10 text-[#00ff66] rounded-xl text-lg">🎨</span>
+                <div>
+                  <h3 className="font-bold text-base text-[#00ff66]">
+                    إضافة لون واستأيل جديد للموديل
+                  </h3>
+                  <p className="text-[10px] text-white/50">{editingProduct.nameAr}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddVariantModal(false)}
+                className="p-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/70"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-10">
+                  <label className="block mb-1 text-white/70 font-bold">اللون:</label>
+                  <input
+                    type="color"
+                    value={newVarColorHex}
+                    onChange={(e) => setNewVarColorHex(e.target.value)}
+                    className="w-10 h-10 rounded-xl border border-white/20 bg-transparent cursor-pointer p-0"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block mb-1 text-white/70 font-bold">اسم اللون:</label>
+                  <input
+                    type="text"
+                    placeholder="مثال: زيتي عسكري، بيج هافان"
+                    value={newVarColor}
+                    onChange={(e) => setNewVarColor(e.target.value)}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white"
+                  />
+                </div>
+                <div className="w-24">
+                  <label className="block mb-1 text-white/70 font-bold">المقاس:</label>
+                  <select
+                    value={newVarSize}
+                    onChange={(e) => setNewVarSize(e.target.value)}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white"
+                  >
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                    <option value="2XL">2XL</option>
+                    <option value="3XL">3XL</option>
+                    <option value="FREE">FREE</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Photo Upload for this color */}
+              <div>
+                <label className="block mb-1 text-white/70 font-bold">صورة هذا اللون (ImgBB):</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newVarImage}
+                    onChange={(e) => setNewVarImage(e.target.value)}
+                    placeholder="رابط الصورة أو ارفع من جهازك..."
+                    className="flex-1 bg-black/50 border border-white/15 rounded-xl p-2.5 text-white font-mono text-xs"
+                  />
+                  <label className="bg-[#00ff66] hover:bg-emerald-400 text-black px-3 py-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1 font-mono">
+                    <Upload size={14} />
+                    <span>{uploadingImage ? "رفع..." : "رفع صورة"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleImageUpload(file, (url) => setNewVarImage(url));
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+                {newVarImage && (
+                  <img
+                    src={newVarImage}
+                    alt="Preview"
+                    className="w-16 h-16 rounded-xl object-cover mt-2 border border-white/10"
+                  />
+                )}
+              </div>
+
+              {/* Initial Stocks */}
+              <div className="pt-2 border-t border-white/10">
+                <label className="block mb-2 text-white/70 font-bold">
+                  الأرصدة الافتتاحية لهذا اللون:
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[10px] text-white/50 block">المخزن المركزي:</label>
+                    <input
+                      type="number"
+                      value={newVarCentralStock}
+                      onChange={(e) => setNewVarCentralStock(parseInt(e.target.value, 10) || 0)}
+                      className="w-full bg-black/50 border border-white/15 rounded-xl p-2 text-amber-300 font-mono font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-white/50 block">فرع عباس:</label>
+                    <input
+                      type="number"
+                      value={newVarB1Stock}
+                      onChange={(e) => setNewVarB1Stock(parseInt(e.target.value, 10) || 0)}
+                      className="w-full bg-black/50 border border-white/15 rounded-xl p-2 text-emerald-300 font-mono font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-white/50 block">فرع التحرير:</label>
+                    <input
+                      type="number"
+                      value={newVarB2Stock}
+                      onChange={(e) => setNewVarB2Stock(parseInt(e.target.value, 10) || 0)}
+                      className="w-full bg-black/50 border border-white/15 rounded-xl p-2 text-emerald-300 font-mono font-bold"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={handleAddVariantToProduct}
+                className="flex-1 bg-[#00ff66] hover:bg-emerald-400 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-[#00ff66]/20 active:scale-95 transition-all"
+              >
+                إضافة اللون للموديل وحفظ
+              </button>
+              <button
+                onClick={() => setShowAddVariantModal(false)}
                 className="bg-white/10 text-white font-bold py-3 px-4 rounded-xl text-xs"
               >
                 إلغاء

@@ -213,6 +213,37 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: true, message: "تم تحديث ألوان وصور الموديل بنجاح" });
     }
 
+    // 1.7 Add new color/size variant to existing product
+    if (action === "ADD_VARIANT") {
+      const { productId, size, color, colorHex, image, barcode, stockCentral, branchStocks } = body;
+      const newVar = await prisma.productVariant.create({
+        data: {
+          productId,
+          size: size || "FREE",
+          color: color || "أسود",
+          colorHex: colorHex || "#111111",
+          image: image || null,
+          barcode: barcode || `200${Date.now().toString().slice(-8)}`,
+          stockCentral: parseInt(stockCentral, 10) || 0,
+        },
+      });
+
+      if (branchStocks && typeof branchStocks === "object") {
+        for (const [bId, qty] of Object.entries(branchStocks)) {
+          await prisma.branchStock.create({
+            data: {
+              variantId: newVar.id,
+              branchId: bId,
+              quantity: parseInt(String(qty), 10) || 0,
+              alertLowQuantity: 2,
+            },
+          });
+        }
+      }
+
+      return NextResponse.json({ success: true, variant: newVar });
+    }
+
     // 2. Full product update
     const { id, nameAr, basePrice, costPrice, material, featuredImage, categoryId } = body;
     const updated = await prisma.product.update({

@@ -91,7 +91,100 @@ async function main() {
   });
   console.log("✅ Branches seeded.");
 
-  // 3. Categories
+  // 3. System Users & RBAC (بيانات اعتماد فريدة ومميزة لكل مستخدم)
+  const usersList = [
+    {
+      username: "maestro",
+      password: "Maestro@Bazaar2026",
+      pin: "157230",
+      name: "المايسترو (Maestro - المالك)",
+      role: "owner",
+      branchId: null,
+      phone: "01008038041",
+    },
+    {
+      username: "mohamed_ashraf",
+      password: "Ashraf@Bazaar2026",
+      pin: "112233",
+      name: "م / محمد أشرف (المدير العام)",
+      role: "general_manager",
+      branchId: null,
+      phone: "01008038041",
+    },
+    {
+      username: "mgr_abbas",
+      password: "Abbas#Mgr2026",
+      pin: "4455",
+      name: "مدير فرع عباس الرئيسي",
+      role: "branch_manager",
+      branchId: b1.id,
+      phone: "01210520500",
+    },
+    {
+      username: "mgr_tahrir",
+      password: "Tahrir#Mgr2026",
+      pin: "6677",
+      name: "مدير فرع كشري التحرير",
+      role: "branch_manager",
+      branchId: b2.id,
+      phone: "01008183647",
+    },
+    {
+      username: "cashier_abbas",
+      password: "Cashier#Abbas26",
+      pin: "8811",
+      name: "كاشير فرع عباس العقاد",
+      role: "cashier",
+      branchId: b1.id,
+      phone: "01001582583",
+    },
+    {
+      username: "cashier_tahrir",
+      password: "Cashier#Tahrir26",
+      pin: "9922",
+      name: "كاشير فرع كشري التحرير",
+      role: "cashier",
+      branchId: b2.id,
+      phone: "01001582583",
+    },
+    {
+      username: "storekeeper",
+      password: "Central#Store26",
+      pin: "3344",
+      name: "أمين المخزن المركزي",
+      role: "storekeeper",
+      branchId: null,
+      phone: "01008038041",
+    },
+  ];
+
+  for (const u of usersList) {
+    await prisma.user.upsert({
+      where: { username: u.username },
+      update: {
+        password: u.password,
+        pin: u.pin,
+        name: u.name,
+        role: u.role,
+        branchId: u.branchId,
+        phone: u.phone,
+        isActive: true,
+      },
+      create: {
+        username: u.username,
+        password: u.password,
+        pin: u.pin,
+        name: u.name,
+        role: u.role,
+        branchId: u.branchId,
+        phone: u.phone,
+        isActive: true,
+      },
+    });
+  }
+  console.log("✅ All 7 System Users seeded with unique credentials.");
+
+  // 4. Categories
   const categories = [
     { slug: "oversized-tees", nameAr: "تيشرتات أوفر سايز", nameEn: "Oversized Tees", icon: "Shirt", sortOrder: 1 },
     { slug: "casual-shirts", nameAr: "قمصان كاجوال وكتان", nameEn: "Casual & Linen Shirts", icon: "Shirt", sortOrder: 2 },
