@@ -25,6 +25,7 @@ import {
   ArrowRight,
   LogOut,
   ExternalLink,
+  Menu,
 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import PrintableCard from "@/components/PrintableCard";
@@ -90,8 +91,11 @@ export default function StorefrontPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [products, setProducts] = useState<Product[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("" );
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Mobile navigation drawer toggle
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   // Modals
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
@@ -115,6 +119,19 @@ export default function StorefrontPage() {
   const [otpLoading, setOtpLoading] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string>("");
   const [authSuccessMsg, setAuthSuccessMsg] = useState<string>("");
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedProduct(null);
+        setShowAuthModal(false);
+        setShowCart(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Fetch initial data
   useEffect(() => {
@@ -171,13 +188,16 @@ export default function StorefrontPage() {
   });
 
   // Open Product Variant Selection Modal
-  const openProductModal = (product: Product) => {
+  const openProductModal = (product: Product, initialColor?: string) => {
     setSelectedProduct(product);
     if (product.variants && product.variants.length > 0) {
-      const first = product.variants[0];
-      setChosenColor(first.color);
-      setChosenSize(first.size);
-      setActiveImage(first.image || product.featuredImage || "");
+      const targetVariant = initialColor
+        ? product.variants.find((v) => v.color === initialColor) || product.variants[0]
+        : product.variants[0];
+
+      setChosenColor(targetVariant.color);
+      setChosenSize(targetVariant.size);
+      setActiveImage(targetVariant.image || product.featuredImage || "");
     } else {
       setActiveImage(product.featuredImage || "");
     }
@@ -187,7 +207,7 @@ export default function StorefrontPage() {
   const handleColorChange = (color: string) => {
     setChosenColor(color);
     if (selectedProduct) {
-      const match = selectedProduct.variants.find((v) => v.color === color);
+      const match = selectedProduct.variants.find((v) => v.color === color && v.image);
       if (match?.image) {
         setActiveImage(match.image);
       }
@@ -258,7 +278,7 @@ export default function StorefrontPage() {
   // WhatsApp checkout
   const handleWhatsAppCheckout = () => {
     const selectedBranch = branches.find((b) => b.id === selectedBranchId);
-    const branchName = selectedBranch ? selectedBranch.name : "الفرع الأقرب لي";
+    const branchName = selectedBranch ? selectedBranch.name : "الفرع الأقرب لي (عباس العقاد)";
 
     let text = `مرحباً بزار كاجوال وير، أود طلب الأصناف التالية من (${branchName}):\n\n`;
     cart.forEach((item, idx) => {
@@ -331,7 +351,6 @@ export default function StorefrontPage() {
 
       const data = await res.json();
       if (data.success) {
-        // Register or lookup customer in DB
         const cRes = await fetch(`/api/customers?phone=${authPhone}`);
         const cData = await cRes.json();
         const customerProfile = cData.customer || {
@@ -371,81 +390,49 @@ export default function StorefrontPage() {
         <span>كولكشن الشارع المصري الجديد • قطن تركي وأوفر سايز عصري بجميع الفروع | خدمة التوصيل متاحة 🚀</span>
       </div>
 
-      {/* Main Navbar */}
+      {/* Main Navbar - Fully Responsive Mobile & Desktop */}
       <header className="sticky top-0 z-40 bg-[#0a0a10]/95 backdrop-blur-md border-b border-white/10 px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-          {/* Brand Logo matching Image 1 */}
+          {/* Brand Logo matching Store Signage */}
           <div className="flex items-center gap-3">
             <a href="/" className="hover:opacity-95 transition-opacity">
               <BrandLogo size="md" />
             </a>
           </div>
 
-          {/* Branch Picker (عباس العقاد / كشري التحرير / الكل) */}
-          <div className="hidden lg:flex items-center gap-1 bg-black/60 p-1 rounded-2xl border border-white/10 text-xs font-bold">
-            <button
-              onClick={() => setSelectedBranchId("all")}
-              className={`px-3 py-1.5 rounded-xl transition-all ${
-                selectedBranchId === "all"
-                  ? "bg-[#ffb703] text-black shadow-lg shadow-[#ffb703]/30"
-                  : "text-white/70 hover:text-white"
-              }`}
-            >
-              جميع الفروع
-            </button>
-            {branches.map((b) => (
-              <button
-                key={b.id}
-                onClick={() => setSelectedBranchId(b.id)}
-                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 ${
-                  selectedBranchId === b.id
-                    ? "bg-[#00ff66] text-black shadow-lg shadow-[#00ff66]/30 font-black"
-                    : "text-white/70 hover:text-white"
-                }`}
-              >
-                <MapPin size={12} />
-                <span>{b.name}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Nav Actions */}
-          <div className="flex items-center gap-2">
-            {/* Direct Admin Access Button - PROMINENT IN HEADER */}
+          {/* Desktop Nav Actions */}
+          <div className="hidden md:flex items-center gap-2.5">
+            {/* Direct Admin Access Button */}
             <a
               href="/admin"
-              className="bg-white/5 hover:bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:text-amber-300 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+              className="bg-white/5 hover:bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:text-amber-300 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
               title="دخول الإدارة ونقاط البيع POS"
             >
               <ShieldCheck size={16} />
-              <span className="hidden sm:inline">لوحة الإدارة</span>
-              <span>POS</span>
+              <span>لوحة الإدارة POS</span>
             </a>
 
             {/* The Royal 1-QR Card Button */}
             <a
               href="/card"
-              className="bg-[#00ff66]/10 hover:bg-[#00ff66]/20 border border-[#00ff66]/40 text-[#00ff66] px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+              className="bg-[#00ff66]/10 hover:bg-[#00ff66]/20 border border-[#00ff66]/40 text-[#00ff66] px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
             >
               <QrCode size={16} />
-              <span className="hidden sm:inline">كارت العلامة</span>
-              <span>1-QR</span>
+              <span>كارت العلامة 1-QR</span>
             </a>
 
             {/* Customer Login / Loyalty Account */}
             {customer ? (
-              <div className="relative group">
-                <button
-                  onClick={() => setShowAuthModal(true)}
-                  className="bg-white/10 border border-[#ffb703]/40 text-[#ffb703] px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
-                >
-                  <User size={15} />
-                  <span className="max-w-[80px] truncate">{customer.name}</span>
-                  <span className="text-[10px] bg-black/40 px-1.5 py-0.2 rounded-full text-[#00ff66]">
-                    {customer.points || 0}🌟
-                  </span>
-                </button>
-              </div>
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="bg-white/10 border border-[#ffb703]/40 text-[#ffb703] px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+              >
+                <User size={15} />
+                <span className="max-w-[80px] truncate">{customer.name}</span>
+                <span className="text-[10px] bg-black/40 px-1.5 py-0.2 rounded-full text-[#00ff66]">
+                  {customer.points || 0}🌟
+                </span>
+              </button>
             ) : (
               <button
                 onClick={() => {
@@ -455,98 +442,214 @@ export default function StorefrontPage() {
                 className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
               >
                 <User size={15} className="text-[#00ff66]" />
-                <span className="hidden sm:inline">تسجيل العميل</span>
-                <span>(OTP)</span>
+                <span>حساب العميل (OTP)</span>
               </button>
             )}
 
-            {/* Cart Button */}
+            {/* Desktop Cart Button */}
             <button
               onClick={() => setShowCart(true)}
-              className="relative bg-gradient-to-r from-[#ffb703] to-[#fb8500] hover:brightness-110 text-black px-3.5 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-lg shadow-[#ffb703]/20 active:scale-95 transition-all"
+              className="relative bg-gradient-to-r from-[#ffb703] to-[#fb8500] hover:brightness-110 text-black px-4 py-2 rounded-xl font-black text-xs flex items-center gap-2 shadow-lg shadow-[#ffb703]/20 active:scale-95 transition-all"
             >
               <ShoppingBag size={16} />
               <span>السلة</span>
               {cart.length > 0 && (
-                <span className="w-5 h-5 bg-black text-[#00ff66] rounded-full flex items-center justify-center text-[10px] font-black -mr-1">
+                <span className="w-5 h-5 bg-black text-[#00ff66] rounded-full flex items-center justify-center text-[10px] font-black">
                   {cart.reduce((a, b) => a + b.quantity, 0)}
                 </span>
               )}
             </button>
           </div>
+
+          {/* Mobile Right Actions: Cart & Quick Menu Drawer Button */}
+          <div className="flex md:hidden items-center gap-2">
+            <button
+              onClick={() => setShowCart(true)}
+              className="relative bg-gradient-to-r from-[#ffb703] to-[#fb8500] text-black px-3 py-1.5 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-md shadow-[#ffb703]/20 active:scale-95"
+            >
+              <ShoppingBag size={15} />
+              <span>السلة</span>
+              {cart.length > 0 && (
+                <span className="w-4 h-4 bg-black text-[#00ff66] rounded-full flex items-center justify-center text-[9px] font-black">
+                  {cart.reduce((a, b) => a + b.quantity, 0)}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-xl bg-white/10 border border-white/10 text-white active:scale-95 transition-all"
+              aria-label="القائمة السريعة"
+            >
+              {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+          </div>
         </div>
 
-        {/* Mobile Branch Selector */}
-        <div className="flex lg:hidden gap-1 mt-2.5 overflow-x-auto no-scrollbar pt-1 border-t border-white/5">
+        {/* Mobile Dropdown Menu Sheet */}
+        {mobileMenuOpen && (
+          <div className="md:hidden mt-3 pt-3 border-t border-white/10 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="grid grid-cols-3 gap-2">
+              <a
+                href="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold flex flex-col items-center justify-center gap-1 text-center"
+              >
+                <ShieldCheck size={18} />
+                <span>لوحة الإدارة POS</span>
+              </a>
+
+              <a
+                href="/card"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2.5 rounded-xl bg-[#00ff66]/10 border border-[#00ff66]/30 text-[#00ff66] text-[11px] font-bold flex flex-col items-center justify-center gap-1 text-center"
+              >
+                <QrCode size={18} />
+                <span>كارت 1-QR</span>
+              </a>
+
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setAuthStep("DETAILS");
+                  setShowAuthModal(true);
+                }}
+                className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-[11px] font-bold flex flex-col items-center justify-center gap-1 text-center"
+              >
+                <User size={18} className="text-[#00ff66]" />
+                <span>{customer ? customer.name.slice(0, 8) : "دخول OTP"}</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* Branch Selector Bar (عباس العقاد / كشري التحرير / الكل) */}
+      <div className="bg-[#0b0b14] border-b border-white/5 px-4 py-2.5">
+        <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <span className="text-[11px] text-white/50 font-bold whitespace-nowrap hidden sm:inline">
+            📍 اختر الفرع:
+          </span>
           <button
             onClick={() => setSelectedBranchId("all")}
-            className={`whitespace-nowrap px-3 py-1 text-xs font-bold rounded-lg border ${
+            className={`whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
               selectedBranchId === "all"
-                ? "bg-[#ffb703] text-black border-[#ffb703]"
-                : "bg-white/5 text-white/70 border-white/10"
+                ? "bg-[#ffb703] text-black border-[#ffb703] shadow-md shadow-[#ffb703]/20 font-black"
+                : "bg-white/5 text-white/70 border-white/10 hover:border-white/20"
             }`}
           >
-            جميع الفروع
+            🔥 جميع الفروع
           </button>
           {branches.map((b) => (
             <button
               key={b.id}
               onClick={() => setSelectedBranchId(b.id)}
-              className={`whitespace-nowrap px-3 py-1 text-xs font-bold rounded-lg border ${
+              className={`whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
                 selectedBranchId === b.id
-                  ? "bg-[#00ff66] text-black border-[#00ff66] font-black"
-                  : "bg-white/5 text-white/70 border-white/10"
+                  ? "bg-[#00ff66] text-black border-[#00ff66] shadow-md shadow-[#00ff66]/20 font-black"
+                  : "bg-white/5 text-white/70 border-white/10 hover:border-white/20"
               }`}
             >
-              {b.name}
+              <MapPin size={12} />
+              <span>{b.name}</span>
             </button>
           ))}
         </div>
-      </header>
+      </div>
 
-      {/* Hero Section with Vibrant Neon Glow */}
-      <section className="relative px-4 py-8 md:py-12 max-w-7xl mx-auto w-full">
-        <div className="bg-gradient-to-r from-[#12121c] via-[#161626] to-[#12121c] border border-[#00ff66]/20 rounded-3xl p-6 md:p-10 relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#ffb703]/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#00ff66]/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Hero Section: Minimalist & Stylish Streetwear Visual */}
+      <section className="relative px-4 py-6 md:py-10 max-w-7xl mx-auto w-full">
+        <div className="bg-gradient-to-br from-[#101018] via-[#141422] to-[#0d0d16] border border-[#00ff66]/25 rounded-3xl p-5 md:p-8 relative overflow-hidden shadow-2xl">
+          {/* Subtle Ambient Glow */}
+          <div className="absolute top-0 right-0 w-72 h-72 bg-[#ffb703]/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-72 h-72 bg-[#00ff66]/10 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="max-w-2xl relative z-10 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#00ff66]/10 border border-[#00ff66]/30 text-[#00ff66] text-xs font-black">
-              <Flame size={14} />
-              <span>THE ROYAL STREETWEAR COLLECTION • 2026</span>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-center relative z-10">
+            {/* Right Column: Clean Brand Identity & Fast Search */}
+            <div className="lg:col-span-7 space-y-4 text-right">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#00ff66]/10 border border-[#00ff66]/30 text-[#00ff66] text-xs font-black">
+                <Flame size={14} />
+                <span>THE ROYAL STREETWEAR COLLECTION • 2026</span>
+              </div>
+
+              {/* Glowing Store Signage Brand Logo */}
+              <div className="pt-1">
+                <BrandLogo size="xl" />
+              </div>
+
+              {/* Short & Punchy Subtitle - No Wall of Text */}
+              <p className="text-white/80 text-sm md:text-base font-semibold leading-relaxed">
+                أرقى خامات الأوفر سايز، الكارجو، الهوديز، والكاجوال بفرعي عباس العقاد وأول عباس بالقاهرة.
+              </p>
+
+              {/* Search Input with Neon Accent */}
+              <div className="relative pt-2 max-w-xl">
+                <Search className="absolute right-3.5 top-5 text-[#00ff66]" size={18} />
+                <input
+                  type="text"
+                  placeholder="ابحث بالاسم، الموديل، اللون (أسود، زيتي...) أو المقاس (XL, 34)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-black/70 border border-white/20 focus:border-[#00ff66] rounded-2xl py-3 pr-11 pl-4 text-xs md:text-sm text-white placeholder-white/40 outline-none transition-all shadow-inner"
+                />
+              </div>
+
+              {/* Quick Filter Tags */}
+              <div className="flex flex-wrap gap-2 pt-1">
+                {["تيشرتات أوفر سايز", "بناطيل كارجو", "جينز تركي", "هوديز", "سنيكرز"].map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setSearchQuery(tag.split(" ")[0])}
+                    className="text-[11px] font-bold text-white/60 hover:text-[#00ff66] bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg border border-white/5 transition-all"
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="text-right">
-              <BrandLogo size="xl" />
-            </div>
+            {/* Left Column ("الفدان الواسع"): Editorial Streetwear Outfit Card */}
+            <div className="lg:col-span-5">
+              <div className="relative rounded-2xl overflow-hidden border border-[#00ff66]/30 shadow-2xl group bg-black/40">
+                <div className="aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] w-full overflow-hidden">
+                  <img
+                    src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1000&q=80"
+                    alt="Bazaar Casual Wear Streetwear Style"
+                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
 
-            <p className="text-white/80 text-sm md:text-base leading-relaxed font-medium">
-              تيشرتات أوفر سايز هيفي ويت، بناطيل كارجو وجينز تركي، هوديز ميلتون مبطن، وبليزرات سليم فيت. خامات قطنية معالجة لا تنكمش وتدوم طويلاً بفرعي عباس العقاد وأول عباس.
-            </p>
-
-            {/* Search Input */}
-            <div className="relative pt-2 max-w-lg">
-              <Search className="absolute right-3.5 top-5 text-[#00ff66]" size={18} />
-              <input
-                type="text"
-                placeholder="ابحث بالاسم، الموديل، اللون (أسود، زيتي...) أو المقاس (XL, 34)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-black/60 border border-white/15 focus:border-[#00ff66] rounded-2xl py-3 pr-11 pl-4 text-xs md:text-sm text-white placeholder-white/40 outline-none transition-all shadow-inner"
-              />
+                {/* Ambient Overlay Badges */}
+                <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-1 text-right">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black bg-[#00ff66] text-black px-2.5 py-0.5 rounded-full shadow-md">
+                      الأكثر مبيعاً ⚡
+                    </span>
+                    <span className="text-xs font-mono font-bold text-[#ffb703]">
+                      COLLECTION 2026
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-black text-white mt-1">
+                    طقم الأوفر سايز والكارجو التكتيكال
+                  </h4>
+                  <p className="text-[11px] text-white/70">
+                    قطن مصري 100% هيفي ويت معالج ضد الانكماش مع نسيج كارجو ووتر بروف
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Categories Horizontal Scroller */}
-      <section className="px-4 max-w-7xl mx-auto w-full mb-6">
+      <section className="px-4 max-w-7xl mx-auto w-full mb-4">
         <div className="flex gap-2 overflow-x-auto no-scrollbar py-2">
           <button
             onClick={() => setSelectedCategory("all")}
-            className={`whitespace-nowrap px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border ${
+            className={`whitespace-nowrap px-4 py-2 rounded-2xl text-xs font-bold transition-all border ${
               selectedCategory === "all"
-                ? "bg-gradient-to-r from-[#ffb703] to-[#fb8500] text-black border-[#ffb703] shadow-lg shadow-[#ffb703]/20 font-black"
+                ? "bg-gradient-to-r from-[#ffb703] to-[#fb8500] text-black border-[#ffb703] shadow-md shadow-[#ffb703]/20 font-black"
                 : "bg-white/5 text-white/70 border-white/10 hover:border-white/20"
             }`}
           >
@@ -556,9 +659,9 @@ export default function StorefrontPage() {
             <button
               key={c.id}
               onClick={() => setSelectedCategory(c.slug)}
-              className={`whitespace-nowrap px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border ${
+              className={`whitespace-nowrap px-4 py-2 rounded-2xl text-xs font-bold transition-all border ${
                 selectedCategory === c.slug
-                  ? "bg-[#00ff66] text-black border-[#00ff66] shadow-lg shadow-[#00ff66]/20 font-black"
+                  ? "bg-[#00ff66] text-black border-[#00ff66] shadow-md shadow-[#00ff66]/20 font-black"
                   : "bg-white/5 text-white/70 border-white/10 hover:border-white/20"
               }`}
             >
@@ -568,7 +671,7 @@ export default function StorefrontPage() {
         </div>
       </section>
 
-      {/* Products Grid with Real Images & Color Preview */}
+      {/* Products Grid with Color Previews */}
       <section className="px-4 max-w-7xl mx-auto w-full flex-1 mb-12">
         {loading ? (
           <div className="text-center py-20 text-white/60">
@@ -576,9 +679,9 @@ export default function StorefrontPage() {
             <p className="font-bold text-sm">جاري تحميل تشكيلة بزار كاجوال وير...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10 p-8">
-            <p className="text-lg font-bold text-white mb-2">لم يتم العثور على قطع تطابق بحثك</p>
-            <p className="text-xs text-white/50">جرب البحث بكلمات أخرى أو اختر قسماً آخر من الأعلى</p>
+          <div className="text-center py-16 bg-white/5 rounded-3xl border border-white/10 p-8">
+            <p className="text-base font-bold text-white mb-2">لم يتم العثور على قطع تطابق بحثك</p>
+            <p className="text-xs text-white/50">جرب البحث بكلمات أخرى أو تصفح الأقسام من الأعلى</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
@@ -601,7 +704,7 @@ export default function StorefrontPage() {
                       {p.sku && <span className="font-mono text-[#ffb703]">{p.sku}</span>}
                     </div>
 
-                    {/* Product Image with Hover Zoom */}
+                    {/* Product Image */}
                     <div
                       onClick={() => openProductModal(p)}
                       className="w-full aspect-[4/3] rounded-xl bg-black/60 border border-white/5 overflow-hidden cursor-pointer relative group-hover:scale-[1.02] transition-transform"
@@ -635,24 +738,31 @@ export default function StorefrontPage() {
                       <p className="text-[11px] text-white/50 line-clamp-1 mt-1">{p.material}</p>
                     )}
 
-                    {/* Color Dots Preview */}
-                    <div className="flex items-center gap-1.5 mt-2">
+                    {/* Interactive Color Dots Preview */}
+                    <div className="flex items-center gap-1.5 mt-2.5">
                       <span className="text-[10px] text-white/40">الألوان:</span>
-                      <div className="flex gap-1">
-                        {p.variants.slice(0, 4).map((v, idx) => (
-                          <span
-                            key={idx}
-                            className="w-3 h-3 rounded-full border border-black/40 shadow-sm"
-                            style={{ backgroundColor: v.colorHex || "#444" }}
-                            title={v.color}
-                          />
-                        ))}
+                      <div className="flex gap-1.5 flex-wrap">
+                        {p.variants
+                          .filter((v, idx, arr) => arr.findIndex((x) => x.color === v.color) === idx)
+                          .slice(0, 5)
+                          .map((v, idx) => (
+                            <button
+                              key={idx}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openProductModal(p, v.color);
+                              }}
+                              className="w-3.5 h-3.5 rounded-full border border-black/40 shadow-sm hover:scale-125 transition-transform"
+                              style={{ backgroundColor: v.colorHex || "#444" }}
+                              title={`اختر لون ${v.color}`}
+                            />
+                          ))}
                       </div>
                     </div>
 
                     {/* Available Sizes preview */}
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {sizes.slice(0, 4).map((s) => (
+                      {sizes.slice(0, 5).map((s) => (
                         <span
                           key={s}
                           className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-white/70"
@@ -686,14 +796,32 @@ export default function StorefrontPage() {
 
       {/* Dynamic Product Variant Selection Modal (الصورة والمقاسات تتغير مع اللون!) */}
       {selectedProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="bg-[#101018] border border-[#00ff66]/30 rounded-3xl p-6 w-full max-w-lg shadow-2xl text-white my-8 relative">
-            <button
-              onClick={() => setSelectedProduct(null)}
-              className="absolute top-5 left-5 p-2 rounded-2xl bg-white/5 hover:bg-white/10 text-white/70"
-            >
-              <X size={20} />
-            </button>
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/90 backdrop-blur-md p-3 sm:p-6 flex justify-center items-start pt-6 pb-20"
+          onClick={() => setSelectedProduct(null)}
+        >
+          <div
+            className="bg-[#101018] border border-[#00ff66]/30 rounded-3xl p-5 sm:p-6 w-full max-w-lg shadow-2xl text-white relative animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Sticky Modal Top Bar - Never cut off on mobile! */}
+            <div className="sticky top-0 z-30 bg-[#101018]/95 backdrop-blur-md -mx-5 sm:-mx-6 -mt-5 sm:-mt-6 p-4 border-b border-white/10 flex items-center justify-between rounded-t-3xl mb-4">
+              <button
+                onClick={() => setSelectedProduct(null)}
+                className="bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 border border-white/10 transition-all"
+              >
+                <ArrowRight size={16} />
+                <span>الرجوع للمتجر</span>
+              </button>
+
+              <button
+                onClick={() => setSelectedProduct(null)}
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 active:scale-95 transition-all"
+                title="إغلاق"
+              >
+                <X size={18} />
+              </button>
+            </div>
 
             {/* Product Image switches when color changes! */}
             <div className="w-full aspect-video rounded-2xl bg-black/60 overflow-hidden mb-4 border border-white/10 relative">
@@ -708,7 +836,7 @@ export default function StorefrontPage() {
                   👕
                 </div>
               )}
-              <div className="absolute top-3 right-3 bg-black/75 px-3 py-1 rounded-full text-xs font-bold text-[#00ff66] border border-[#00ff66]/30">
+              <div className="absolute top-3 right-3 bg-black/80 px-3 py-1 rounded-full text-xs font-bold text-[#00ff66] border border-[#00ff66]/40 shadow-lg">
                 اللون الحالي: {chosenColor}
               </div>
             </div>
@@ -743,7 +871,7 @@ export default function StorefrontPage() {
                       onClick={() => handleColorChange(c)}
                       className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
                         isSelected
-                          ? "bg-[#00ff66] text-black border-[#00ff66] shadow-lg shadow-[#00ff66]/30 font-black"
+                          ? "bg-[#00ff66] text-black border-[#00ff66] shadow-lg shadow-[#00ff66]/30 font-black scale-105"
                           : "bg-white/5 text-white/80 border-white/10 hover:border-white/20"
                       }`}
                     >
@@ -1071,9 +1199,9 @@ export default function StorefrontPage() {
       {/* Printable VIP Card Modal */}
       {showPrintModal && <PrintableCard onClose={() => setShowPrintModal(false)} />}
 
-      {/* Footer */}
-      <footer className="bg-[#050508] border-t border-white/10 py-8 px-4 text-center text-xs text-white/50">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      {/* Footer with Orca Tech Signature */}
+      <footer className="bg-[#050508] border-t border-white/10 pt-8 pb-4 px-4 text-xs text-white/50">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 pb-6">
           <BrandLogo size="sm" showTagline={false} />
           <p>© {new Date().getFullYear()} بزار كاجوال وير - BAZAAR Casual Wear. جميع الحقوق محفوظة.</p>
           <div className="flex items-center gap-4">
@@ -1085,6 +1213,23 @@ export default function StorefrontPage() {
               <span>لوحة الإدارة ونقاط البيع POS</span>
             </a>
           </div>
+        </div>
+
+        {/* Orca Tech Signature Bottom Bar (Direct from Saddam system) */}
+        <div className="border-t border-amber-500/20 bg-black/60 py-5 px-4 sm:px-8 text-center space-y-2 rounded-2xl max-w-7xl mx-auto">
+          <p className="text-xs text-slate-400 font-bold">
+            جميع الحقوق محفوظة © {new Date().getFullYear()} لـ <span className="text-[#ffb703]">بزار كاجوال وير • BAZAAR Casual Wear</span>
+          </p>
+
+          <p className="text-[11px] text-amber-300/90 font-medium">
+            تصميم وتطوير المنظومة الذكية:{" "}
+            <strong className="text-white font-black">م / حمزة عباس</strong> — شركة{" "}
+            <strong className="text-amber-400 font-black">أوركا للحلول البرمجية والذكاء الاصطناعي (Orca Tech) 🐬</strong>
+          </p>
+
+          <p className="text-[10px] text-slate-500 font-mono">
+            خدمة الدعم الفني المباشر وتطوير الأنظمة: 01018671000
+          </p>
         </div>
       </footer>
     </div>

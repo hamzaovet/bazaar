@@ -10,24 +10,24 @@ interface BrandLogoProps {
 export default function BrandLogo({ size = "md", showTagline = true }: BrandLogoProps) {
   const sizeClasses = {
     sm: {
-      text: "text-lg",
-      sub: "text-[9px] tracking-wider",
-      line: "h-[2px]",
+      text: "text-base sm:text-lg",
+      sub: "text-[8px] sm:text-[9px] tracking-wider",
+      line: "h-[2px] max-w-[30px]",
     },
     md: {
-      text: "text-2xl",
-      sub: "text-[11px] tracking-widest",
-      line: "h-[3px]",
+      text: "text-xl sm:text-2xl",
+      sub: "text-[9px] sm:text-[11px] tracking-widest",
+      line: "h-[2.5px] max-w-[40px] sm:max-w-[70px]",
     },
     lg: {
-      text: "text-4xl",
-      sub: "text-sm tracking-[3px]",
-      line: "h-[4px]",
+      text: "text-3xl sm:text-4xl",
+      sub: "text-xs sm:text-sm tracking-[2px] sm:tracking-[3px]",
+      line: "h-[3px] max-w-[60px] sm:max-w-[100px]",
     },
     xl: {
-      text: "text-5xl md:text-6xl",
-      sub: "text-base md:text-lg tracking-[4px]",
-      line: "h-[5px]",
+      text: "text-4xl sm:text-5xl md:text-6xl",
+      sub: "text-sm sm:text-base md:text-lg tracking-[3px] sm:tracking-[4px]",
+      line: "h-[4px] max-w-[80px] sm:max-w-[140px]",
     },
   }[size];
 
@@ -44,7 +44,7 @@ export default function BrandLogo({ size = "md", showTagline = true }: BrandLogo
           <span className={`font-black uppercase font-mono ${sizeClasses.sub} neon-casual-text`}>
             CASUAL WEAR
           </span>
-          <div className={`flex-1 max-w-[80px] rounded-full neon-green-line ${sizeClasses.line}`} />
+          <div className={`flex-1 rounded-full neon-green-line ${sizeClasses.line}`} />
         </div>
       )}
     </div>

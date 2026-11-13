@@ -314,6 +314,17 @@ export default function SmartCardLandingPage() {
             <span>لوحة الإدارة ونقاط البيع POS</span>
           </a>
         </div>
+
+        {/* Orca Tech Signature */}
+        <div className="border-t border-amber-500/20 bg-black/60 py-4 px-3 text-center space-y-1.5 rounded-2xl">
+          <p className="text-[11px] text-amber-300/90 font-medium">
+            تصميم وتطوير: <strong className="text-white font-black">م / حمزة عباس</strong> — شركة{" "}
+            <strong className="text-amber-400 font-black">أوركا للحلول البرمجية (Orca Tech) 🐬</strong>
+          </p>
+          <p className="text-[10px] text-slate-500 font-mono">
+            الدعم الفني المباشر وتطوير الأنظمة: 01018671000
+          </p>
+        </div>
       </div>
 
       {/* Printable Card Modal */}

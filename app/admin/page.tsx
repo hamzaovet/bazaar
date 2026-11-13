@@ -609,9 +609,9 @@ export default function AdminDashboardPage() {
         </div>
       </header>
 
-      {/* Responsive Horizontal Tabs Bar - NO MORE OVERFLOW OR CUTTING OFF! */}
-      <nav className="bg-[#0a0a12] border-b border-white/5 px-4 overflow-x-auto no-scrollbar">
-        <div className="flex flex-nowrap md:flex-wrap gap-2 max-w-7xl mx-auto py-2.5">
+      {/* Responsive Horizontal Tabs Bar - Perfectly Scaled for Laptops & Mobile */}
+      <nav className="bg-[#0a0a12] border-b border-white/5 px-3 sm:px-4 overflow-x-auto no-scrollbar">
+        <div className="flex flex-wrap items-center gap-1.5 max-w-7xl mx-auto py-2">
           {[
             { id: "overview", label: "نظرة عامة والتحليلات", icon: BarChart3 },
             { id: "inventory", label: "المخزون والمخزن المركزي", icon: Package },
@@ -628,13 +628,13 @@ export default function AdminDashboardPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex-shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border ${
+                className={`whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border ${
                   isSelected
                     ? "bg-[#00ff66] text-black border-[#00ff66] shadow-md shadow-[#00ff66]/30 font-black"
                     : "bg-white/5 text-white/70 border-white/5 hover:border-white/15 hover:text-white"
                 }`}
               >
-                <Icon size={14} />
+                <Icon size={13} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -1623,6 +1623,25 @@ export default function AdminDashboardPage() {
           onClose={() => setSelectedTagItem(null)}
         />
       )}
+
+      {/* Orca Tech Signature Footer */}
+      <footer className="mt-auto border-t border-white/10 bg-[#050508] py-5 px-4 text-center">
+        <div className="max-w-7xl mx-auto space-y-2">
+          <p className="text-xs text-slate-400 font-bold">
+            جميع الحقوق محفوظة © {new Date().getFullYear()} لـ <span className="text-[#ffb703]">بزار كاجوال وير • BAZAAR Casual Wear</span>
+          </p>
+
+          <p className="text-[11px] text-amber-300/90 font-medium">
+            تصميم وتطوير المنظومة الذكية:{" "}
+            <strong className="text-white font-black">م / حمزة عباس</strong> — شركة{" "}
+            <strong className="text-amber-400 font-black">أوركا للحلول البرمجية والذكاء الاصطناعي (Orca Tech) 🐬</strong>
+          </p>
+
+          <p className="text-[10px] text-slate-500 font-mono">
+            خدمة الدعم الفني المباشر وتطوير الأنظمة: 01018671000
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
