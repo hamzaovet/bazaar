@@ -13,98 +13,170 @@ import {
   Eye,
   Tag,
   Barcode as BarcodeIcon,
-  Maximize2,
-  Columns,
   Layers,
+  MapPin,
+  Type,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 
 export type StickerPresetSize = "38x25" | "50x25" | "2-up";
 
+export interface BarcodeItemData {
+  productName: string;
+  size: string;
+  color: string;
+  barcode: string;
+  price: number;
+  sku?: string;
+  storeName?: string;
+  subtitle?: string;
+  branchName?: string;
+  quantity?: number;
+}
+
 interface BarcodeTagProps {
-  item: {
-    productName: string;
-    size: string;
-    color: string;
-    barcode: string;
-    price: number;
-    sku?: string;
-    storeName?: string;
-    subtitle?: string;
-  };
+  item?: BarcodeItemData;
+  batchItems?: BarcodeItemData[];
+  branches?: Array<{ id: string; name: string }>;
   quantity?: number;
   onClose?: () => void;
 }
 
 export default function PrintBarcodeTag({
   item,
+  batchItems,
+  branches = [
+    { id: "b1", name: "فرع عباس العقاد الرئيسي" },
+    { id: "b2", name: "فرع أول عباس العقاد" },
+  ],
   quantity: initialQuantity = 1,
   onClose,
 }: BarcodeTagProps) {
-  // --- Label Dimension & Layout Settings ---
-  // Default to 38x25 mm (Standard in Egypt, safe for 40x25 and 38x25 rolls)
+  // Mode: Single item vs Batch Collection
+  const isBatchMode = Boolean(batchItems && batchItems.length > 0);
+  const [currentBatchIndex, setCurrentBatchIndex] = useState<number>(0);
+
+  // Active editable item
+  const activeItem: BarcodeItemData = useMemo(() => {
+    if (isBatchMode && batchItems && batchItems[currentBatchIndex]) {
+      return batchItems[currentBatchIndex];
+    }
+    return (
+      item || {
+        productName: "تيشرت أوفر سايز هيفي ويت",
+        size: "XL",
+        color: "أسود",
+        barcode: "2001001001",
+        price: 450,
+        branchName: "فرع عباس العقاد",
+      }
+    );
+  }, [isBatchMode, batchItems, currentBatchIndex, item]);
+
+  // Dimension & Preset Size (Default: 38x25mm Standard for Egypt)
   const [sizePreset, setSizePreset] = useState<StickerPresetSize>("38x25");
-  const [quantity, setQuantity] = useState<number>(initialQuantity || 1);
+  const [quantity, setQuantity] = useState<number>(initialQuantity || activeItem.quantity || 1);
 
-  // --- Dynamic Editable Content ---
-  const [storeName, setStoreName] = useState<string>(item.storeName || "BAZAAR");
-  const [subtitle, setSubtitle] = useState<string>(item.subtitle || "كاجوال وير • شبابي");
-  const [productName, setProductName] = useState<string>(item.productName || "قطعة كاجوال");
-  const [color, setColor] = useState<string>(item.color || "أسود");
-  const [size, setSize] = useState<string>(item.size || "XL");
-  const [price, setPrice] = useState<number>(item.price || 0);
+  // Editable fields for current preview
+  const [storeName, setStoreName] = useState<string>(activeItem.storeName || "BAZAAR");
+  const [branchName, setBranchName] = useState<string>(activeItem.branchName || "فرع عباس العقاد");
+  const [subtitle, setSubtitle] = useState<string>(activeItem.subtitle || "كاجوال وير • شبابي");
+  const [productName, setProductName] = useState<string>(activeItem.productName || "قطعة كاجوال");
+  const [color, setColor] = useState<string>(activeItem.color || "أسود");
+  const [size, setSize] = useState<string>(activeItem.size || "XL");
+  const [price, setPrice] = useState<number>(activeItem.price || 0);
   const [currency, setCurrency] = useState<string>("ج.م");
-  const [barcodeText, setBarcodeText] = useState<string>(item.barcode || "2001001001");
+  const [barcodeText, setBarcodeText] = useState<string>(activeItem.barcode || "2001001001");
 
-  // --- Visibility Toggles ---
+  // Visibility Toggles
   const [showStoreName, setShowStoreName] = useState<boolean>(true);
-  const [showSubtitle, setShowSubtitle] = useState<boolean>(false); // off by default for 38x25 to keep it ultra clean
+  const [showBranchName, setShowBranchName] = useState<boolean>(true);
+  const [showSubtitle, setShowSubtitle] = useState<boolean>(false);
   const [showProductName, setShowProductName] = useState<boolean>(true);
   const [showBadges, setShowBadges] = useState<boolean>(true);
   const [showBarcodeSvg, setShowBarcodeSvg] = useState<boolean>(true);
   const [showBarcodeText, setShowBarcodeText] = useState<boolean>(true);
   const [showPrice, setShowPrice] = useState<boolean>(true);
 
-  // --- Barcode Tuning ---
-  const [barWidth, setBarWidth] = useState<number>(1.15); // 1.0 - 1.3
-  const [barcodeHeight, setBarcodeHeight] = useState<number>(24); // 20 - 32px
-  const [activeTab, setActiveTab] = useState<"edit" | "presets">("edit");
+  // Typography & Layout Fine Tuning
+  const [fontSizeScale, setFontSizeScale] = useState<"compact" | "normal" | "large">("compact");
+  const [barcodeHeight, setBarcodeHeight] = useState<number>(18); // 18px for 38x25mm prevents any cut-off
+  const [wrapTitle, setWrapTitle] = useState<boolean>(true); // Wrap long names to 2 lines without truncation!
 
-  // Generate Barcode SVG reactively
+  // Update local fields when switching items in batch mode
+  React.useEffect(() => {
+    setProductName(activeItem.productName || "قطعة كاجوال");
+    setColor(activeItem.color || "أسود");
+    setSize(activeItem.size || "XL");
+    setPrice(activeItem.price || 0);
+    setBarcodeText(activeItem.barcode || "2001001001");
+    if (activeItem.branchName) setBranchName(activeItem.branchName);
+  }, [activeItem]);
+
+  // Generate Barcode SVG reactively with thin barWidth (1.15) and safe quiet zones
   const barcodeSvg = useMemo(() => {
-    return generateCode128Svg(barcodeText, barcodeHeight, barWidth);
-  }, [barcodeText, barcodeHeight, barWidth]);
+    return generateCode128Svg(barcodeText, barcodeHeight, 1.15);
+  }, [barcodeText, barcodeHeight]);
 
   const handlePrint = () => {
     window.print();
   };
 
   const handleResetToDefaults = () => {
-    setStoreName(item.storeName || "BAZAAR");
-    setSubtitle(item.subtitle || "كاجوال وير • شبابي");
-    setProductName(item.productName || "قطعة كاجوال");
-    setColor(item.color || "أسود");
-    setSize(item.size || "XL");
-    setPrice(item.price || 0);
-    setBarcodeText(item.barcode || "2001001001");
+    setStoreName("BAZAAR");
+    setBranchName(activeItem.branchName || "فرع عباس العقاد");
+    setSubtitle("كاجوال وير • شبابي");
+    setProductName(activeItem.productName || "قطعة كاجوال");
+    setColor(activeItem.color || "أسود");
+    setSize(activeItem.size || "XL");
+    setPrice(activeItem.price || 0);
+    setBarcodeText(activeItem.barcode || "2001001001");
     setSizePreset("38x25");
     setShowStoreName(true);
+    setShowBranchName(true);
     setShowSubtitle(false);
     setShowProductName(true);
     setShowBadges(true);
     setShowBarcodeSvg(true);
     setShowBarcodeText(true);
     setShowPrice(true);
-    setBarWidth(1.15);
-    setBarcodeHeight(24);
+    setFontSizeScale("compact");
+    setBarcodeHeight(18);
+    setWrapTitle(true);
   };
 
-  // Label width & height in millimeters
   const labelWidthMm = sizePreset === "50x25" ? 50 : 38;
   const labelHeightMm = 25;
 
-  // Single sticker component for Live Preview and Print Output
-  const renderStickerContent = (isPrint = false) => {
+  // Single sticker component used for Live Preview and Spooled Print Output
+  const renderStickerContent = (customData?: BarcodeItemData, isPrint = false) => {
     const is50 = sizePreset === "50x25";
+    const pName = customData?.productName ?? productName;
+    const pColor = customData?.color ?? color;
+    const pSize = customData?.size ?? size;
+    const pPrice = customData?.price ?? price;
+    const pBarcode = customData?.barcode ?? barcodeText;
+    const pBranch = customData?.branchName ?? branchName;
+
+    // Font size sizing tokens
+    const titleSize =
+      fontSizeScale === "compact"
+        ? is50
+          ? "9.5px"
+          : "7.5px"
+        : fontSizeScale === "normal"
+        ? is50
+          ? "10.5px"
+          : "8.5px"
+        : is50
+        ? "11.5px"
+        : "9.5px";
+
+    const svgOutput = isPrint
+      ? generateCode128Svg(pBarcode, barcodeHeight, 1.15)
+      : barcodeSvg;
+
     return (
       <div
         className={`w-full h-full flex flex-col justify-between text-black select-none ${
@@ -112,28 +184,36 @@ export default function PrintBarcodeTag({
         }`}
         style={{
           boxSizing: "border-box",
-          padding: is50 ? "1.2mm 2.2mm" : "0.8mm 1.5mm",
+          padding: is50 ? "1mm 2mm" : "0.6mm 1.2mm",
           overflow: "hidden",
           fontFamily: "'Cairo', 'Segoe UI', system-ui, sans-serif",
-          lineHeight: 1.15,
+          lineHeight: 1.12,
         }}
         dir="rtl"
       >
-        {/* Top Header: Store Name & Subtitle */}
-        {(showStoreName || showSubtitle) && (
-          <div className="flex items-center justify-between border-b border-black/80 pb-[1px] mb-[1px]">
+        {/* ROW 1: Store Brand Name & Branch / Subtitle */}
+        {(showStoreName || (showBranchName && pBranch)) && (
+          <div className="flex items-center justify-between border-b border-black/80 pb-[0.5px] mb-[0.5px]">
             {showStoreName && (
               <span
-                className="font-black tracking-wider uppercase"
-                style={{ fontSize: is50 ? "10.5px" : "9px", letterSpacing: "0.5px" }}
+                className="font-black tracking-wider uppercase font-sans text-black"
+                style={{ fontSize: is50 ? "10px" : "8px" }}
               >
                 {storeName}
               </span>
             )}
-            {showSubtitle && (
+            {showBranchName && pBranch && (
               <span
-                className="text-gray-800 font-bold truncate max-w-[60%]"
+                className="text-gray-900 font-bold truncate max-w-[65%]"
                 style={{ fontSize: is50 ? "8px" : "6.5px" }}
+              >
+                {pBranch.replace("فرع ", "")}
+              </span>
+            )}
+            {showSubtitle && !showBranchName && (
+              <span
+                className="text-gray-700 font-bold truncate max-w-[60%]"
+                style={{ fontSize: is50 ? "7.5px" : "6px" }}
               >
                 {subtitle}
               </span>
@@ -141,58 +221,67 @@ export default function PrintBarcodeTag({
           </div>
         )}
 
-        {/* Product Name */}
+        {/* ROW 2: Product Name (Wrapped cleanly to 2 lines without truncating!) */}
         {showProductName && (
           <div
-            className="font-black text-right truncate leading-none text-black"
-            style={{ fontSize: is50 ? "10px" : "8.5px", margin: "1px 0" }}
+            className={`font-black text-right text-black ${
+              wrapTitle ? "line-clamp-2 leading-tight" : "truncate"
+            }`}
+            style={{
+              fontSize: titleSize,
+              margin: "0.5px 0",
+              maxHeight: is50 ? "24px" : "18px",
+              overflow: "hidden",
+            }}
           >
-            {productName}
+            {pName}
           </div>
         )}
 
-        {/* Attributes Badges: Size & Color */}
+        {/* ROW 3: Size & Color Capsules */}
         {showBadges && (
           <div
-            className="flex items-center justify-between text-black font-mono leading-none my-[1px]"
-            style={{ fontSize: is50 ? "9px" : "7.5px" }}
+            className="flex items-center justify-between text-black font-mono leading-none my-[0.5px]"
+            style={{ fontSize: is50 ? "8.5px" : "7px" }}
           >
-            <div className="flex items-center gap-1 font-bold">
-              <span className="text-[7px] text-gray-700">اللون:</span>
-              <span className="truncate max-w-[70px]">{color}</span>
+            <div className="flex items-center gap-1 font-bold truncate max-w-[65%]">
+              <span className="text-[6.5px] text-gray-700 font-sans">لون:</span>
+              <span className="truncate">{pColor}</span>
             </div>
-            <div className="bg-black text-white px-1 py-[1px] rounded font-black tracking-tight">
-              مقاس {size}
+            <div className="bg-black text-white px-1 py-[0.5px] rounded font-black tracking-tight shrink-0">
+              مقاس {pSize}
             </div>
           </div>
         )}
 
-        {/* Barcode Graphic */}
+        {/* ROW 4: Barcode Graphic (Crisp Vector SVG with Quiet Zones) */}
         {showBarcodeSvg && (
           <div
-            className="my-[1px] flex justify-center items-center overflow-hidden w-full"
+            className="my-[0.5px] flex justify-center items-center overflow-hidden w-full max-w-[88%] mx-auto"
             style={{ height: `${barcodeHeight}px` }}
-            dangerouslySetInnerHTML={{ __html: barcodeSvg }}
+            dangerouslySetInnerHTML={{ __html: svgOutput }}
           />
         )}
 
-        {/* Bottom Row: Barcode Digits & Price */}
-        <div className="flex items-center justify-between border-t border-black/80 pt-[1px] mt-[1px]">
+        {/* ROW 5: Bottom Numbers & Price in EGP */}
+        <div className="flex items-center justify-between border-t border-black/80 pt-[0.5px] mt-[0.5px]">
           {showBarcodeText ? (
             <span
-              className="font-mono font-bold tracking-widest text-black"
-              style={{ fontSize: is50 ? "8.5px" : "7.5px" }}
+              className="font-mono font-bold tracking-wider text-black"
+              style={{ fontSize: is50 ? "8px" : "6.8px" }}
             >
-              {barcodeText}
+              {pBarcode}
             </span>
           ) : (
             <span />
           )}
 
           {showPrice && (
-            <div className="flex items-center gap-0.5 text-black font-black leading-none">
-              <span style={{ fontSize: is50 ? "11.5px" : "10px" }}>{price}</span>
-              <span style={{ fontSize: is50 ? "7.5px" : "6.5px" }}>{currency}</span>
+            <div className="flex items-center gap-0.5 text-black font-black leading-none font-mono">
+              <span style={{ fontSize: is50 ? "11px" : "9px" }}>{pPrice}</span>
+              <span style={{ fontSize: is50 ? "7px" : "6px" }} className="font-sans font-bold">
+                {currency}
+              </span>
             </div>
           )}
         </div>
@@ -277,14 +366,16 @@ export default function PrintBarcodeTag({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-black text-base sm:text-lg text-white">
-                  استوديو طباعة استيكر وتيكت الباركود
+                  استوديو طباعة استيكر وتيكت الملابس
                 </h3>
-                <span className="text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full">
-                  معاينة ديناميكية حية
-                </span>
+                {isBatchMode && (
+                  <span className="text-[10px] font-black bg-[#00ff66]/20 text-[#00ff66] border border-[#00ff66]/30 px-2.5 py-0.5 rounded-full">
+                    طباعة مجمعة لكولكشن ({batchItems?.length} صنف)
+                  </span>
+                )}
               </div>
               <p className="text-xs text-white/50">
-                مقاسات قياسية موحدة (38×25 مم / 50×25 مم) متوافقة مع طابعات Xprinter الحرارية في مصر
+                مقاسات قياسية موحدة (38×25 مم / 50×25 مم) مع تفادي قص النصوص ومطابقة طابعات Xprinter
               </p>
             </div>
           </div>
@@ -292,7 +383,7 @@ export default function PrintBarcodeTag({
           <div className="flex items-center gap-2">
             <button
               onClick={handleResetToDefaults}
-              title="إعادة ضبط الحقول للقيم الأصلية"
+              title="إعادة ضبط الحقول"
               className="p-2.5 rounded-xl bg-white/5 hover:bg-white/15 text-white/60 hover:text-white transition-all text-xs flex items-center gap-1.5"
             >
               <RotateCcw size={15} />
@@ -309,15 +400,50 @@ export default function PrintBarcodeTag({
           </div>
         </div>
 
-        {/* Modal Body: Split between Controls & Live Preview */}
+        {/* Batch Navigator Bar (if batch items provided) */}
+        {isBatchMode && batchItems && (
+          <div className="bg-black/60 border-b border-white/10 px-4 py-2.5 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <Layers size={15} className="text-[#00ff66]" />
+              <span className="text-white/80 font-bold">
+                الصنف المعروض للمعاينة ({currentBatchIndex + 1} من {batchItems.length}):
+              </span>
+              <span className="text-amber-300 font-bold">
+                {activeItem.productName} ({activeItem.color} - مقاس {activeItem.size})
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                disabled={currentBatchIndex === 0}
+                onClick={() => setCurrentBatchIndex(currentBatchIndex - 1)}
+                className="p-1 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30"
+              >
+                <ChevronRight size={16} />
+              </button>
+              <span className="font-mono px-2 text-white/60">
+                {currentBatchIndex + 1} / {batchItems.length}
+              </span>
+              <button
+                disabled={currentBatchIndex === batchItems.length - 1}
+                onClick={() => setCurrentBatchIndex(currentBatchIndex + 1)}
+                className="p-1 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30"
+              >
+                <ChevronLeft size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Body: Controls & Live Preview */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* LEFT / MAIN CONTROLS (7 Cols) */}
-          <div className="lg:col-span-7 space-y-5">
+          {/* LEFT: CONTROLS (7 Cols) */}
+          <div className="lg:col-span-7 space-y-4">
             {/* 1. Size Preset Picker */}
             <div>
               <label className="text-xs font-bold text-white/70 block mb-2 flex items-center gap-1.5">
                 <Tag size={14} className="text-amber-400" />
-                مقاس استيكر الباركود (Label Dimension):
+                مقاس الاستيكر (Label Size):
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
@@ -334,7 +460,7 @@ export default function PrintBarcodeTag({
                     {sizePreset === "38x25" && <Check size={14} className="text-amber-400" />}
                   </div>
                   <span className="text-[10px] text-white/70 leading-tight">
-                    القياسي المعتمد (الأكثر توفراً والأرخص في مصر • رول 40×25)
+                    القياسي المعتمد (رول 40×25 مم الأكثر انتشاراً والأرخص في مصر)
                   </span>
                 </button>
 
@@ -352,7 +478,7 @@ export default function PrintBarcodeTag({
                     {sizePreset === "50x25" && <Check size={14} className="text-amber-400" />}
                   </div>
                   <span className="text-[10px] text-white/70 leading-tight">
-                    مقاس موسع (يشيل الاسم والتفاصيل والأسعار بارتياح)
+                    مقاس موسع (يشيل التفاصيل الكاملة براحة بدون أي اختصار)
                   </span>
                 </button>
 
@@ -370,98 +496,68 @@ export default function PrintBarcodeTag({
                     {sizePreset === "2-up" && <Check size={14} className="text-amber-400" />}
                   </div>
                   <span className="text-[10px] text-white/70 leading-tight">
-                    2 استيكر في الصف على رول 80 مم (عرض عمودين)
+                    2 استيكر في الصف على رول 80 مم (عمودين)
                   </span>
                 </button>
               </div>
             </div>
 
-            {/* 2. Quantity Selector Bar */}
-            <div className="bg-black/40 border border-white/10 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Layers size={16} className="text-amber-400" />
-                <span className="text-xs font-bold text-white">عدد النسخ المطلوب طباعتها:</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 flex items-center justify-center text-white"
-                >
-                  <Minus size={14} />
-                </button>
-
-                <input
-                  type="number"
-                  min={1}
-                  max={500}
-                  value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                  className="w-16 bg-black/60 border border-white/20 rounded-xl py-1.5 text-center text-amber-300 font-mono font-bold text-sm outline-none"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 flex items-center justify-center text-white"
-                >
-                  <Plus size={14} />
-                </button>
-
-                <div className="flex items-center gap-1 mr-2 border-r border-white/10 pr-2">
-                  {[1, 5, 10, 25].map((q) => (
-                    <button
-                      key={q}
-                      type="button"
-                      onClick={() => setQuantity(q)}
-                      className={`text-[11px] font-mono font-bold px-2 py-1 rounded-lg border transition-all ${
-                        quantity === q
-                          ? "bg-amber-500 text-black border-amber-500"
-                          : "bg-white/5 border-white/10 text-white/60 hover:text-white"
-                      }`}
-                    >
-                      {q}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Dynamic Editable Fields */}
-            <div className="space-y-3">
-              <span className="text-xs font-bold text-white/70 block">
-                تعديل نصوص الاستيكر مباشرة:
-              </span>
-
-              <div className="grid grid-cols-2 gap-2.5 text-xs">
+            {/* 2. Branch Assignment & Store Info */}
+            <div className="bg-black/40 border border-white/10 rounded-2xl p-3.5 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                 <div>
-                  <label className="text-[11px] text-white/50 block mb-1">اسم البراند / المحل:</label>
+                  <label className="text-[11px] text-white/70 font-bold block mb-1 flex items-center gap-1">
+                    <MapPin size={12} className="text-amber-400" />
+                    الفرع المخصص للاستيكر:
+                  </label>
+                  <select
+                    value={branchName}
+                    onChange={(e) => setBranchName(e.target.value)}
+                    className="w-full bg-black/60 border border-white/15 rounded-xl p-2 text-white outline-none focus:border-amber-500 font-bold"
+                  >
+                    <option value="">بدون اسم فرع (عام لكافة الفروع / المخزن)</option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.name}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-white/70 font-bold block mb-1">
+                    اسم البراند / المحل:
+                  </label>
                   <input
                     type="text"
                     value={storeName}
                     onChange={(e) => setStoreName(e.target.value)}
-                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2 text-white outline-none focus:border-amber-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-white/50 block mb-1">الوصف المختصر:</label>
-                  <input
-                    type="text"
-                    value={subtitle}
-                    onChange={(e) => setSubtitle(e.target.value)}
-                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2 text-white outline-none focus:border-amber-500"
+                    className="w-full bg-black/60 border border-white/15 rounded-xl p-2 text-white outline-none focus:border-amber-500 font-bold"
                   />
                 </div>
               </div>
+            </div>
 
+            {/* 3. Product Text & Anti-Truncation Tuning */}
+            <div className="space-y-3">
               <div>
-                <label className="text-[11px] text-white/50 block mb-1">اسم الموديل / الصنف:</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] text-white/70 font-bold">اسم الموديل / الصنف:</label>
+                  <label className="flex items-center gap-1 text-[10px] text-amber-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={wrapTitle}
+                      onChange={(e) => setWrapTitle(e.target.checked)}
+                      className="rounded accent-amber-500"
+                    />
+                    <span>التفاف الاسم على سطرين (يمنع قطع الكلمات)</span>
+                  </label>
+                </div>
                 <input
                   type="text"
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
-                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2 text-white outline-none focus:border-amber-500"
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2 text-white outline-none focus:border-amber-500 text-xs"
                 />
               </div>
 
@@ -472,7 +568,7 @@ export default function PrintBarcodeTag({
                     type="text"
                     value={size}
                     onChange={(e) => setSize(e.target.value)}
-                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2 text-white outline-none focus:border-amber-500"
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2 text-white outline-none focus:border-amber-500 font-bold"
                   />
                 </div>
                 <div>
@@ -481,11 +577,11 @@ export default function PrintBarcodeTag({
                     type="text"
                     value={color}
                     onChange={(e) => setColor(e.target.value)}
-                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2 text-white outline-none focus:border-amber-500"
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2 text-white outline-none focus:border-amber-500 font-bold"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-white/50 block mb-1">السعر:</label>
+                  <label className="text-[11px] text-white/50 block mb-1">السعر (ج.م):</label>
                   <input
                     type="number"
                     value={price}
@@ -501,16 +597,36 @@ export default function PrintBarcodeTag({
                   type="text"
                   value={barcodeText}
                   onChange={(e) => setBarcodeText(e.target.value)}
-                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2 text-white font-mono font-bold outline-none focus:border-amber-500"
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2 text-white font-mono font-bold outline-none focus:border-amber-500 text-xs"
                 />
               </div>
             </div>
 
-            {/* 4. Live Toggles */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-2">
-              <span className="text-[11px] font-bold text-white/60 block mb-1">
-                تخصيص العناصر المرئية في الاستيكر:
-              </span>
+            {/* 4. Font Size Scale & Layout Toggles */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
+                <span className="text-[11px] font-bold text-white/80 flex items-center gap-1.5">
+                  <Type size={13} className="text-amber-400" />
+                  حجم الخط (Font Scale):
+                </span>
+                <div className="flex gap-1">
+                  {(["compact", "normal", "large"] as const).map((scale) => (
+                    <button
+                      key={scale}
+                      type="button"
+                      onClick={() => setFontSizeScale(scale)}
+                      className={`text-[10px] px-2.5 py-1 rounded-lg border font-bold transition-all ${
+                        fontSizeScale === scale
+                          ? "bg-amber-500 text-black border-amber-500"
+                          : "bg-white/5 border-white/10 text-white/60 hover:text-white"
+                      }`}
+                    >
+                      {scale === "compact" ? "صغير (آمن)" : scale === "normal" ? "متوسط" : "عريض"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                 <label className="flex items-center gap-2 cursor-pointer text-white/80 select-none">
                   <input
@@ -524,11 +640,11 @@ export default function PrintBarcodeTag({
                 <label className="flex items-center gap-2 cursor-pointer text-white/80 select-none">
                   <input
                     type="checkbox"
-                    checked={showSubtitle}
-                    onChange={(e) => setShowSubtitle(e.target.checked)}
+                    checked={showBranchName}
+                    onChange={(e) => setShowBranchName(e.target.checked)}
                     className="rounded accent-amber-500"
                   />
-                  <span>الوصف الفرعي</span>
+                  <span>اسم الفرع</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer text-white/80 select-none">
                   <input
@@ -546,7 +662,7 @@ export default function PrintBarcodeTag({
                     onChange={(e) => setShowBadges(e.target.checked)}
                     className="rounded accent-amber-500"
                   />
-                  <span>اللون والمقاس</span>
+                  <span>المقاس واللون</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer text-white/80 select-none">
                   <input
@@ -568,9 +684,57 @@ export default function PrintBarcodeTag({
                 </label>
               </div>
             </div>
+
+            {/* 5. Quantity Bar (in single item mode) */}
+            {!isBatchMode && (
+              <div className="bg-black/40 border border-white/10 rounded-2xl p-3 flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Layers size={15} className="text-amber-400" />
+                  عدد النسخ:
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 flex items-center justify-center text-white"
+                  >
+                    <Minus size={14} />
+                  </button>
+                  <input
+                    type="number"
+                    min={1}
+                    max={500}
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    className="w-16 bg-black/60 border border-white/20 rounded-xl py-1 text-center text-amber-300 font-mono font-bold text-sm outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 flex items-center justify-center text-white"
+                  >
+                    <Plus size={14} />
+                  </button>
+                  {[1, 5, 10, 20].map((q) => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => setQuantity(q)}
+                      className={`text-[10px] font-mono font-bold px-2 py-1 rounded-lg border transition-all ${
+                        quantity === q
+                          ? "bg-amber-500 text-black border-amber-500"
+                          : "bg-white/5 border-white/10 text-white/60 hover:text-white"
+                      }`}
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* RIGHT: DYNAMIC LIVE PREVIEW (5 Cols) */}
+          {/* RIGHT: REALISTIC LIVE PREVIEW (5 Cols) */}
           <div className="lg:col-span-5 flex flex-col items-center justify-between bg-black/40 border border-white/10 rounded-2xl p-4 sm:p-5">
             <div className="w-full">
               <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
@@ -589,33 +753,24 @@ export default function PrintBarcodeTag({
 
               {/* Realistic Thermal Label Preview Box */}
               <div className="bg-[#242430] p-4 rounded-2xl flex flex-col items-center justify-center min-h-[220px] shadow-inner relative overflow-hidden">
-                {/* Background Grid Pattern representing paper roll */}
                 <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px]" />
 
                 {sizePreset === "2-up" ? (
-                  /* 2-up preview container */
                   <div className="flex items-center gap-2 w-full max-w-[320px] justify-center relative z-10">
                     <div
                       className="bg-white rounded-lg shadow-xl border border-gray-300 overflow-hidden"
-                      style={{
-                        width: "148px",
-                        height: "98px",
-                      }}
+                      style={{ width: "148px", height: "98px" }}
                     >
-                      {renderStickerContent(false)}
+                      {renderStickerContent(activeItem, false)}
                     </div>
                     <div
                       className="bg-white rounded-lg shadow-xl border border-gray-300 overflow-hidden"
-                      style={{
-                        width: "148px",
-                        height: "98px",
-                      }}
+                      style={{ width: "148px", height: "98px" }}
                     >
-                      {renderStickerContent(false)}
+                      {renderStickerContent(activeItem, false)}
                     </div>
                   </div>
                 ) : (
-                  /* Single sticker preview */
                   <div
                     className="bg-white rounded-lg shadow-2xl border border-gray-300 overflow-hidden transition-all duration-200 relative z-10"
                     style={{
@@ -623,12 +778,11 @@ export default function PrintBarcodeTag({
                       height: "120px",
                     }}
                   >
-                    {renderStickerContent(false)}
+                    {renderStickerContent(activeItem, false)}
                   </div>
                 )}
 
-                {/* Dimensions badge indicator */}
-                <div className="mt-4 text-[10px] text-white/50 font-mono text-center relative z-10">
+                <div className="mt-3 text-[10px] text-white/50 font-mono text-center relative z-10">
                   {sizePreset === "38x25" && (
                     <span>📏 العرض: 38 مم | الارتفاع: 25 مم (معتمد للرول 40×25 مم)</span>
                   )}
@@ -636,7 +790,7 @@ export default function PrintBarcodeTag({
                     <span>📏 العرض: 50 مم | الارتفاع: 25 مم (مساحة تفاصيل أكبر)</span>
                   )}
                   {sizePreset === "2-up" && (
-                    <span>📏 العرض الإجمالي: 80 مم (استيكرين 38×25 مم بجوار بعض)</span>
+                    <span>📏 العرض الإجمالي: 80 مم (2 استيكر 38×25 مم بجوار بعض)</span>
                   )}
                 </div>
               </div>
@@ -644,8 +798,8 @@ export default function PrintBarcodeTag({
               {/* Printing Tips Reminder */}
               <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200/90 leading-relaxed">
                 <span className="font-bold block mb-0.5">💡 تعليمات الطباعة على طابعات Xprinter:</span>
-                في نافذة الطباعة المنبثقة، تأكد من ضبط الهوامش (Margins) على <strong>None</strong>،
-                وحجم الورق على المقاس المختار، ولن يتم سحب أي استيكر فارغ نهائياً.
+                في شاشة الطباعة، تأكد من ضبط الهوامش (Margins) على <strong>None</strong>، وتم ضبط
+                أبعاد كل استيكر برمجياً لمنع سحب أي استيكر فارغ نهائياً.
               </div>
             </div>
 
@@ -656,7 +810,12 @@ export default function PrintBarcodeTag({
                 className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all text-xs"
               >
                 <Printer size={16} />
-                طباعة الآن ({quantity} {quantity > 1 ? "نسخ" : "نسخة"})
+                {isBatchMode
+                  ? `طباعة الكولكشن بالكامل (${batchItems?.reduce(
+                      (acc, i) => acc + (i.quantity || 1),
+                      0
+                    )} استيكر)`
+                  : `طباعة الآن (${quantity} ${quantity > 1 ? "نسخ" : "نسخة"})`}
               </button>
               {onClose && (
                 <button
@@ -671,15 +830,28 @@ export default function PrintBarcodeTag({
         </div>
       </div>
 
-      {/* ── HIDDEN PRINT-ONLY TARGET CONTAINER ── */}
+      {/* ── HIDDEN PRINT SPOOLER TARGET CONTAINER ── */}
       <div id="printable-barcode-tag-area" className="no-screen">
-        {sizePreset === "2-up" ? (
+        {isBatchMode && batchItems ? (
+          // Spool all batch items sequentially
+          batchItems.flatMap((bItem) =>
+            Array.from({ length: bItem.quantity || 1 }).map((_, idx) => (
+              <div key={`${bItem.barcode}-${idx}`} className="sticker-print-page-single">
+                {renderStickerContent(bItem, true)}
+              </div>
+            ))
+          )
+        ) : sizePreset === "2-up" ? (
           // 2-up rows
           Array.from({ length: Math.ceil(quantity / 2) }).map((_, rowIdx) => (
             <div key={rowIdx} className="sticker-print-page-2up">
-              <div className="sticker-print-col">{renderStickerContent(true)}</div>
+              <div className="sticker-print-col">{renderStickerContent(activeItem, true)}</div>
               <div className="sticker-print-col">
-                {rowIdx * 2 + 1 < quantity ? renderStickerContent(true) : <div />}
+                {rowIdx * 2 + 1 < quantity ? (
+                  renderStickerContent(activeItem, true)
+                ) : (
+                  <div />
+                )}
               </div>
             </div>
           ))
@@ -687,7 +859,7 @@ export default function PrintBarcodeTag({
           // Single sticker pages
           Array.from({ length: quantity }).map((_, idx) => (
             <div key={idx} className="sticker-print-page-single">
-              {renderStickerContent(true)}
+              {renderStickerContent(activeItem, true)}
             </div>
           ))
         )}

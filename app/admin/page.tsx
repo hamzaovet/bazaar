@@ -194,6 +194,8 @@ export default function AdminDashboardPage() {
 
   // Barcode Printing state
   const [selectedTagItem, setSelectedTagItem] = useState<any>(null);
+  const [batchTagItems, setBatchTagItems] = useState<any[] | null>(null);
+  const [selectedBarcodeBranch, setSelectedBarcodeBranch] = useState<string>("all");
 
   // Add Product Modal
   const [showAddProductModal, setShowAddProductModal] = useState<boolean>(false);
@@ -886,6 +888,86 @@ export default function AdminDashboardPage() {
     } finally {
       setSavingOffers(false);
     }
+  };
+
+  // Helper to trigger batch print for a single product across all its variants
+  const handleBatchPrintProduct = (prod: any, branchId: string = selectedBarcodeBranch) => {
+    if (!prod?.variants || prod.variants.length === 0) {
+      showToast("لا توجد مقاسات أو ألوان مسجلة لهذا الموديل", "error");
+      return;
+    }
+
+    const targetBranch = branches.find((b) => b.id === branchId);
+    const bName = targetBranch ? targetBranch.name : undefined;
+
+    const items = prod.variants.map((v: any) => {
+      let qty = 1;
+      if (branchId === "central") {
+        qty = v.stockCentral || 1;
+      } else if (branchId && branchId !== "all") {
+        const bStock = v.branchStocks?.find((bs: any) => bs.branchId === branchId);
+        qty = bStock?.quantity && bStock.quantity > 0 ? bStock.quantity : 1;
+      } else {
+        const totalStock =
+          (v.stockCentral || 0) +
+          (v.branchStocks?.reduce((acc: number, bs: any) => acc + (bs.quantity || 0), 0) || 0);
+        qty = totalStock > 0 ? totalStock : 1;
+      }
+
+      return {
+        productName: prod.nameAr,
+        size: v.size,
+        color: v.color,
+        barcode: v.barcode,
+        price: v.priceOverride || prod.basePrice,
+        branchName: bName,
+        quantity: Math.max(1, qty),
+      };
+    });
+
+    setBatchTagItems(items);
+  };
+
+  // Helper to trigger batch print for all products in a branch
+  const handleBatchPrintEntireBranch = (branchId: string = selectedBarcodeBranch) => {
+    const targetBranch = branches.find((b) => b.id === branchId);
+    const bName = targetBranch ? targetBranch.name : "بزار كاجوال";
+
+    const allItems: any[] = [];
+    products.forEach((prod) => {
+      prod.variants?.forEach((v: any) => {
+        let qty = 0;
+        if (branchId === "central") {
+          qty = v.stockCentral || 0;
+        } else if (branchId && branchId !== "all") {
+          const bStock = v.branchStocks?.find((bs: any) => bs.branchId === branchId);
+          qty = bStock?.quantity || 0;
+        } else {
+          qty =
+            (v.stockCentral || 0) +
+            (v.branchStocks?.reduce((acc: number, bs: any) => acc + (bs.quantity || 0), 0) || 0);
+        }
+
+        if (qty > 0) {
+          allItems.push({
+            productName: prod.nameAr,
+            size: v.size,
+            color: v.color,
+            barcode: v.barcode,
+            price: v.priceOverride || prod.basePrice,
+            branchName: bName,
+            quantity: qty,
+          });
+        }
+      });
+    });
+
+    if (allItems.length === 0) {
+      showToast("لا توجد بضاعة برصيد موجب في هذا التحديد لطباعة تكتاتها", "error");
+      return;
+    }
+
+    setBatchTagItems(allItems);
   };
 
   // Login handler
@@ -1773,6 +1855,13 @@ export default function AdminDashboardPage() {
                                 {vIdx === 0 && (
                                   <>
                                     <button
+                                      onClick={() => handleBatchPrintProduct(p, "all")}
+                                      className="p-1.5 bg-[#ffb703]/20 hover:bg-[#ffb703]/30 text-[#ffb703] border border-[#ffb703]/40 rounded-lg text-xs"
+                                      title="طباعة مجمعة لكل مقاسات هذا الموديل دفعة واحدة"
+                                    >
+                                      🏷️⚡
+                                    </button>
+                                    <button
                                       onClick={() => setEditingProduct({ ...p })}
                                       className="p-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-xs"
                                       title="تعديل الموديل وصورته"
@@ -1801,53 +1890,175 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 3: BARCODE MAKER */}
+        {/* TAB 3: BARCODE MAKER & BATCH TAG STUDIO */}
         {activeTab === "barcodes" && (
-          <div className="bg-[#12121a] border border-white/10 rounded-3xl p-6 space-y-4">
-            <div className="flex items-center gap-3 pb-3 border-b border-white/10">
-              <span className="p-2.5 bg-[#ffb703]/10 text-[#ffb703] rounded-xl text-xl">🏷️</span>
-              <div>
-                <h3 className="font-bold text-base text-white">
-                  منظومة طباعة باركود الملابس والتيكت الحراري (50 × 25 مم)
-                </h3>
-                <p className="text-xs text-white/50">
-                  اطبع استيكرات الباركود المباشرة للصقها على تيكت الملابس بجميع الفروع
-                </p>
+          <div className="bg-[#12121a] border border-white/10 rounded-3xl p-6 space-y-6">
+            {/* Header & Subtitle */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#ffb703]/10 border border-[#ffb703]/30 flex items-center justify-center text-[#ffb703] text-2xl">
+                  🏷️
+                </div>
+                <div>
+                  <h3 className="font-black text-lg text-white">
+                    استوديو طباعة باركود الملابس والتيكت الحراري الموحد (38×25 مم / 50×25 مم)
+                  </h3>
+                  <p className="text-xs text-white/50">
+                    طباعة فردية سريعة أو طباعة مجمعة لكولكشن كامل مقسم على المقاسات والألوان وفروع البيع
+                  </p>
+                </div>
+              </div>
+
+              {/* Branch Selector & Master Batch Button */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 bg-black/60 border border-white/15 px-3 py-1.5 rounded-xl">
+                  <span className="text-[11px] text-white/60 font-bold">فرع التخصيص:</span>
+                  <select
+                    value={selectedBarcodeBranch}
+                    onChange={(e) => setSelectedBarcodeBranch(e.target.value)}
+                    className="bg-transparent text-xs text-amber-300 font-bold focus:outline-none cursor-pointer"
+                  >
+                    <option value="all" className="bg-[#12121a] text-white">
+                      جميع الفروع والمخزن (إجمالي)
+                    </option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id} className="bg-[#12121a] text-white">
+                        {b.name}
+                      </option>
+                    ))}
+                    <option value="central" className="bg-[#12121a] text-white">
+                      المخزن المركزي الرئيسي فقط
+                    </option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={() => handleBatchPrintEntireBranch(selectedBarcodeBranch)}
+                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                >
+                  <Printer size={15} />
+                  <span>⚡ طباعة بضاعة الفرع بالكامل دفعة واحدة</span>
+                </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {products.map((p) =>
-                p.variants.map((v: any) => (
+            {/* Products Grouped with Batch Controls */}
+            <div className="space-y-4">
+              {products.map((p) => {
+                const totalModelStock = p.variants?.reduce((acc: number, v: any) => {
+                  if (selectedBarcodeBranch === "central") return acc + (v.stockCentral || 0);
+                  if (selectedBarcodeBranch && selectedBarcodeBranch !== "all") {
+                    const bs = v.branchStocks?.find((b: any) => b.branchId === selectedBarcodeBranch);
+                    return acc + (bs?.quantity || 0);
+                  }
+                  return (
+                    acc +
+                    (v.stockCentral || 0) +
+                    (v.branchStocks?.reduce((bacc: number, b: any) => bacc + (b.quantity || 0), 0) || 0)
+                  );
+                }, 0) || 0;
+
+                return (
                   <div
-                    key={v.id}
-                    className="p-3.5 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between"
+                    key={p.id}
+                    className="bg-black/40 border border-white/10 rounded-2xl p-4 space-y-3 hover:border-white/20 transition-all"
                   >
-                    <div>
-                      <h4 className="font-bold text-xs text-white line-clamp-1">{p.nameAr}</h4>
-                      <p className="text-[10px] text-white/50 mt-0.5">
-                        {v.color} • مقاس {v.size} • {v.priceOverride || p.basePrice} ج
-                      </p>
-                      <p className="font-mono text-[9px] text-[#ffb703] mt-1">{v.barcode}</p>
+                    {/* Product Master Row */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                      <div className="flex items-center gap-3">
+                        {p.featuredImage ? (
+                          <img
+                            src={p.featuredImage}
+                            alt={p.nameAr}
+                            className="w-12 h-12 rounded-xl object-cover border border-white/10"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xs text-white/40">
+                            👕
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="font-black text-sm text-white">{p.nameAr}</h4>
+                          <div className="flex items-center gap-3 text-xs text-white/50 mt-0.5">
+                            <span>السعر: <strong className="text-amber-400 font-mono">{p.basePrice} ج.م</strong></span>
+                            <span>عدد المقاسات والألوان: <strong className="text-white font-mono">{p.variants?.length || 0}</strong></span>
+                            <span>الرصيد المتاح: <strong className="text-[#00ff66] font-mono">{totalModelStock} قطعة</strong></span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Batch Print All Sizes of This Model */}
+                      <button
+                        onClick={() => handleBatchPrintProduct(p, selectedBarcodeBranch)}
+                        className="bg-[#00ff66]/10 hover:bg-[#00ff66]/20 border border-[#00ff66]/40 text-[#00ff66] px-3.5 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95"
+                      >
+                        <Printer size={15} />
+                        <span>⚡ طباعة كل مقاسات هذا الموديل ({p.variants?.length} تكت دفعة واحدة)</span>
+                      </button>
                     </div>
-                    <button
-                      onClick={() =>
-                        setSelectedTagItem({
-                          productName: p.nameAr,
-                          size: v.size,
-                          color: v.color,
-                          barcode: v.barcode,
-                          price: v.priceOverride || p.basePrice,
-                        })
-                      }
-                      className="bg-[#ffb703] hover:bg-amber-400 text-black px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 shadow-md shadow-[#ffb703]/20 transition-all"
-                    >
-                      <Printer size={14} />
-                      طباعة
-                    </button>
+
+                    {/* Variants Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                      {p.variants?.map((v: any) => {
+                        const targetQty =
+                          selectedBarcodeBranch === "central"
+                            ? v.stockCentral || 0
+                            : selectedBarcodeBranch && selectedBarcodeBranch !== "all"
+                            ? v.branchStocks?.find((b: any) => b.branchId === selectedBarcodeBranch)?.quantity || 0
+                            : (v.stockCentral || 0) +
+                              (v.branchStocks?.reduce((acc: number, b: any) => acc + (b.quantity || 0), 0) || 0);
+
+                        const currentBName =
+                          selectedBarcodeBranch !== "all"
+                            ? branches.find((b) => b.id === selectedBarcodeBranch)?.name
+                            : undefined;
+
+                        return (
+                          <div
+                            key={v.id}
+                            className="p-3 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between text-xs hover:bg-white/10 transition-all"
+                          >
+                            <div>
+                              <div className="flex items-center gap-1.5 font-bold text-white">
+                                <span className="text-white/60">لون:</span>
+                                <span>{v.color}</span>
+                                <span className="bg-black/60 text-amber-300 px-1.5 py-0.5 rounded text-[10px] font-mono">
+                                  {v.size}
+                                </span>
+                              </div>
+                              <div className="font-mono text-[10px] text-white/50 mt-1">
+                                {v.barcode}
+                              </div>
+                              <div className="text-[10px] text-[#00ff66] font-mono mt-0.5">
+                                الرصيد: {targetQty} قطعة
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() =>
+                                setSelectedTagItem({
+                                  productName: p.nameAr,
+                                  size: v.size,
+                                  color: v.color,
+                                  barcode: v.barcode,
+                                  price: v.priceOverride || p.basePrice,
+                                  branchName: currentBName,
+                                  quantity: Math.max(1, targetQty),
+                                })
+                              }
+                              className="bg-white/10 hover:bg-amber-500 hover:text-black text-white px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all"
+                              title="طباعة استيكر هذا المقاس فقط"
+                            >
+                              <Printer size={12} />
+                              <span>تيكت</span>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                ))
-              )}
+                );
+              })}
             </div>
           </div>
         )}
@@ -4959,12 +5170,17 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Barcode Tag Print Preview */}
-      {selectedTagItem && (
+      {/* Barcode Tag Print Preview (Single & Batch) */}
+      {(selectedTagItem || batchTagItems) && (
         <PrintBarcodeTag
-          item={selectedTagItem}
+          item={selectedTagItem || undefined}
+          batchItems={batchTagItems || undefined}
+          branches={branches}
           quantity={1}
-          onClose={() => setSelectedTagItem(null)}
+          onClose={() => {
+            setSelectedTagItem(null);
+            setBatchTagItems(null);
+          }}
         />
       )}
 

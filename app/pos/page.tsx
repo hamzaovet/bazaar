@@ -21,6 +21,8 @@ import {
   Layers,
   CheckCircle,
   AlertTriangle,
+  Receipt,
+  Eye,
 } from "lucide-react";
 import PrintThermalReceipt from "@/components/PrintThermalReceipt";
 import PrintBarcodeTag from "@/components/PrintBarcodeTag";
@@ -87,6 +89,11 @@ export default function POSPage() {
 
   // Receipt Modal
   const [completedInvoice, setCompletedInvoice] = useState<any>(null);
+
+  // Invoices History Modal
+  const [showInvoicesModal, setShowInvoicesModal] = useState<boolean>(false);
+  const [recentInvoices, setRecentInvoices] = useState<any[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState<boolean>(false);
 
   // Barcode Tag print modal
   const [tagToPrint, setTagToPrint] = useState<any>(null);
@@ -291,6 +298,68 @@ export default function POSPage() {
   const subtotal = cart.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
   const netTotal = Math.max(0, subtotal - discountAmount);
 
+  // Preview Draft Receipt before Checkout
+  const handlePreviewDraftReceipt = () => {
+    if (cart.length === 0) {
+      showToast("السلة فارغة، أضف أصنافاً أولاً لمعاينة الفاتورة", "error");
+      return;
+    }
+    const currentBranch = branches.find((b) => b.id === activeBranchId) || {
+      name: "فرع عباس العقاد الرئيسي",
+      address: "عباس العقاد بجوار ابو العز السوري وصالون صدام",
+      phone: "01008038041",
+    };
+
+    const draftInvoice = {
+      invoiceNumber: `DRAFT-${Math.floor(1000 + Math.random() * 9000)}`,
+      createdAt: new Date().toISOString(),
+      branch: currentBranch,
+      user: session || { name: "الكاشير المسؤول" },
+      cashierUser: session || { name: "الكاشير المسؤول" },
+      customer: {
+        name: customerName || (customerPhone ? "عميل بزار كاجوال" : "عميل كاشير مباشر"),
+        phone: customerPhone || "010XXXXXXXX",
+        points: customerPoints ?? 0,
+      },
+      lines: cart.map((item) => ({
+        variant: {
+          product: { nameAr: item.name },
+          color: item.color,
+          size: item.size,
+        },
+        productName: item.name,
+        color: item.color,
+        size: item.size,
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+        subtotal: item.unitPrice * item.quantity,
+      })),
+      subtotal,
+      discountAmount,
+      netTotal,
+      paymentMethod,
+    };
+
+    setCompletedInvoice(draftInvoice);
+  };
+
+  // Fetch today's invoices for reprint
+  const handleFetchInvoices = async () => {
+    setShowInvoicesModal(true);
+    setLoadingInvoices(true);
+    try {
+      const res = await fetch(`/api/invoices?branchId=${activeBranchId || ""}`);
+      const data = await res.json();
+      if (data.invoices) {
+        setRecentInvoices(data.invoices);
+      }
+    } catch (e) {
+      showToast("فشل استرجاع سجل الفواتير", "error");
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
+
   // Complete POS Sale
   const handleCheckout = async () => {
     if (cart.length === 0) return;
@@ -330,7 +399,18 @@ export default function POSPage() {
       const data = await res.json();
       if (data.success && data.invoice) {
         playBeep(1200, 0.2);
-        setCompletedInvoice(data.invoice);
+        const currentBranch = branches.find((b) => b.id === targetBranchId) || {
+          name: "فرع عباس العقاد الرئيسي",
+          address: "عباس العقاد بجوار ابو العز السوري وصالون صدام",
+          phone: "01008038041",
+        };
+        const completeInv = {
+          ...data.invoice,
+          branch: data.invoice.branch || currentBranch,
+          user: data.invoice.cashierUser || session || { name: "الكاشير" },
+          cashierUser: data.invoice.cashierUser || session || { name: "الكاشير" },
+        };
+        setCompletedInvoice(completeInv);
         // Reset state
         setCart([]);
         setDiscountAmount(0);
@@ -338,7 +418,7 @@ export default function POSPage() {
         setCustomerName("");
         setCustomerPoints(null);
         setShowPaymentModal(false);
-        showToast("تم إتمام الفاتورة بنجاح!", "success");
+        showToast("تم إتمام الفاتورة بنجاح وتجهيز الريسيت للطباعة! 🧾", "success");
         // Refresh shift
         if (session) loadCurrentShift(session.id, targetBranchId);
       } else {
@@ -465,6 +545,16 @@ export default function POSPage() {
               <span>فتح وردية جديدة</span>
             </button>
           )}
+
+          {/* Today's Invoices & Reprint */}
+          <button
+            onClick={handleFetchInvoices}
+            className="bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+            title="استعراض فواتير اليوم وإعادة طباعة أي ريسيت"
+          >
+            <Receipt size={14} className="text-amber-400" />
+            <span className="hidden sm:inline">سجل الفواتير</span>
+          </button>
 
           <div className="text-right hidden sm:block">
             <div className="text-xs font-bold text-white">{session?.name || "الكاشير"}</div>
@@ -610,16 +700,18 @@ export default function POSPage() {
                         <span className="font-mono">باركود: {item.barcode}</span>
                         <span>السعر: {item.unitPrice} ج</span>
                         <button
-                          onClick={() =>
+                          onClick={() => {
+                            const curBranch = branches.find((b) => b.id === activeBranchId);
                             setTagToPrint({
                               productName: item.name,
                               size: item.size,
                               color: item.color,
                               barcode: item.barcode,
                               price: item.unitPrice,
-                            })
-                          }
-                          className="text-amber-400 hover:underline flex items-center gap-1"
+                              branchName: curBranch?.name || "فرع عباس العقاد الرئيسي",
+                            });
+                          }}
+                          className="text-amber-400 hover:underline flex items-center gap-1 font-bold"
                         >
                           <Printer size={10} />
                           طباعة استيكر
@@ -797,6 +889,18 @@ export default function POSPage() {
               </button>
             </div>
 
+            {/* Preview Draft Receipt Button */}
+            {cart.length > 0 && (
+              <button
+                type="button"
+                onClick={handlePreviewDraftReceipt}
+                className="w-full py-2.5 mb-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 font-bold text-xs text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md"
+              >
+                <Eye size={15} className="text-amber-400" />
+                <span>معاينة شكل الفاتورة والريسيت قبل إتمام البيع 🧾</span>
+              </button>
+            )}
+
             {/* Final Pay & Print Button */}
             <button
               onClick={handleCheckout}
@@ -968,6 +1072,100 @@ export default function POSPage() {
           quantity={1}
           onClose={() => setTagToPrint(null)}
         />
+      )}
+
+      {/* Invoices History Modal */}
+      {showInvoicesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-[#121218] border border-white/15 rounded-3xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-white/10 flex items-center justify-between bg-black/30">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <Receipt size={20} />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-white">سجل فواتير مبيعات اليوم</h3>
+                  <p className="text-xs text-white/50">
+                    استعراض فواتير الكاشير وإعادة طباعة الريسيت الحراري لأي فاتورة سابقة
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowInvoicesModal(false)}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 flex items-center justify-center text-white/60 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto flex-1 space-y-3">
+              {loadingInvoices ? (
+                <div className="text-center py-12 text-white/50">جاري تحميل الفواتير...</div>
+              ) : recentInvoices.length === 0 ? (
+                <div className="text-center py-12 text-white/40">لا توجد فواتير مسجلة اليوم حتى الآن</div>
+              ) : (
+                <div className="border border-white/10 rounded-2xl overflow-hidden">
+                  <table className="w-full text-right text-xs">
+                    <thead className="bg-white/5 text-white/60 font-semibold border-b border-white/10">
+                      <tr>
+                        <th className="p-3">رقم الفاتورة</th>
+                        <th className="p-3">الوقت</th>
+                        <th className="p-3">العميل</th>
+                        <th className="p-3">عدد الأصناف</th>
+                        <th className="p-3">الصافي</th>
+                        <th className="p-3">الدفع</th>
+                        <th className="p-3 text-center">معاينة وطباعة</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 font-mono">
+                      {recentInvoices.map((inv) => (
+                        <tr key={inv.id} className="hover:bg-white/[0.02]">
+                          <td className="p-3 font-bold text-white">{inv.invoiceNumber}</td>
+                          <td className="p-3 text-white/60">
+                            {new Date(inv.createdAt).toLocaleTimeString("ar-EG", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </td>
+                          <td className="p-3 font-sans text-white/80">
+                            {inv.customer?.name || inv.customerName || "-"}
+                          </td>
+                          <td className="p-3 text-white/70">{inv.lines?.length || 0} قطع</td>
+                          <td className="p-3 font-black text-amber-400">{inv.netTotal} ج.م</td>
+                          <td className="p-3 font-sans text-white/60">
+                            {inv.paymentMethod === "cash" && "كاش"}
+                            {inv.paymentMethod === "visa" && "فيزا"}
+                            {inv.paymentMethod === "instapay" && "إنستاباي"}
+                            {inv.paymentMethod === "split" && "مقسم"}
+                            {!inv.paymentMethod && "كاش"}
+                          </td>
+                          <td className="p-3 text-center">
+                            <button
+                              onClick={() => {
+                                const currentBranch = branches.find((b) => b.id === inv.branchId) || inv.branch;
+                                setCompletedInvoice({
+                                  ...inv,
+                                  branch: currentBranch || inv.branch,
+                                  user: inv.cashierUser || inv.user || { name: "الكاشير" },
+                                  cashierUser: inv.cashierUser || inv.user || { name: "الكاشير" },
+                                });
+                                setShowInvoicesModal(false);
+                              }}
+                              className="bg-amber-500 hover:bg-amber-400 text-black px-2.5 py-1 rounded-lg font-sans font-bold text-[11px] flex items-center gap-1 mx-auto"
+                            >
+                              <Printer size={12} />
+                              معاينة وطباعة
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
