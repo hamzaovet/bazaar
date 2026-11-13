@@ -30,10 +30,11 @@ const CODE128_PATTERNS: Record<number, string> = {
 
 const START_CODE_B = 104;
 
-export function generateCode128Svg(text: string, height = 40): string {
+export function generateCode128Svg(text: string, height = 28, barWidth = 1.15): string {
+  const safeText = (text || "00000000").trim();
   const codes: number[] = [START_CODE_B];
-  for (let i = 0; i < text.length; i++) {
-    const code = text.charCodeAt(i) - 32;
+  for (let i = 0; i < safeText.length; i++) {
+    const code = safeText.charCodeAt(i) - 32;
     if (code >= 0 && code <= 95) {
       codes.push(code);
     }
@@ -59,15 +60,16 @@ export function generateCode128Svg(text: string, height = 40): string {
     }
   }
 
-  const barWidth = 1.6;
-  const totalWidth = modules.length * barWidth;
+  // Quiet zones (safe white margins on left & right for thermal barcode scanners)
+  const quietZoneModules = 6;
+  const totalWidth = (modules.length + quietZoneModules * 2) * barWidth;
   let rects = "";
 
   for (let i = 0; i < modules.length; i++) {
     if (modules[i] === "1") {
-      rects += `<rect x="${(i * barWidth).toFixed(1)}" y="0" width="${barWidth}" height="${height}" fill="#000000" />`;
+      rects += `<rect x="${((i + quietZoneModules) * barWidth).toFixed(2)}" y="0" width="${barWidth.toFixed(2)}" height="${height}" fill="#000000" shape-rendering="crispEdges" />`;
     }
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalWidth.toFixed(1)} ${height}" width="100%" height="${height}" preserveAspectRatio="none">${rects}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalWidth.toFixed(2)} ${height}" style="width: 100%; height: ${height}px; display: block; margin: 0 auto;" preserveAspectRatio="xMidYMid meet">${rects}</svg>`;
 }

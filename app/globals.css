@@ -84,11 +84,23 @@ body {
   scrollbar-width: none;
 }
 
-/* Print Styles for 80mm & 58mm Thermal Printers and 50x25mm Barcode Stickers */
+/* Print Styles for 80mm Continuous Receipts and 38x25mm / 50x25mm Die-Cut Barcode Labels */
 @media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    overflow: hidden !important;
+  }
+
   body * {
     visibility: hidden;
   }
+
+  /* Thermal Receipt Mode (80mm Continuous / 72mm Printable Area) */
   #printable-receipt,
   #printable-receipt * {
     visibility: visible;
@@ -97,10 +109,33 @@ body {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 2mm !important;
+    width: 72mm !important;
+    max-width: 72mm !important;
+    margin: 0 auto !important;
+    padding: 1mm !important;
     box-shadow: none !important;
     border: none !important;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  /* Thermal Barcode Sticker Mode (38x25mm / 40x25mm / 50x25mm / 2-up) */
+  #printable-barcode-tag-area,
+  #printable-barcode-tag-area * {
+    visibility: visible;
+  }
+  #printable-barcode-tag-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+  }
+
+  .no-print {
+    display: none !important;
   }
 }
