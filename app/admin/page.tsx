@@ -32,6 +32,14 @@ import {
   Image as ImageIcon,
   Check,
   X,
+  RotateCcw,
+  Truck,
+  Flame,
+  CreditCard,
+  Wallet,
+  FileSpreadsheet,
+  Eye,
+  Receipt,
 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import PrintBarcodeTag from "@/components/PrintBarcodeTag";
@@ -61,7 +69,17 @@ export default function AdminDashboardPage() {
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<
-    "overview" | "inventory" | "barcodes" | "ai" | "transfers" | "treasury" | "customers" | "users"
+    | "overview"
+    | "inventory"
+    | "barcodes"
+    | "ai"
+    | "transfers"
+    | "treasury"
+    | "customers"
+    | "users"
+    | "returns"
+    | "purchases"
+    | "seasons"
   >("overview");
 
   // Dashboard Data
@@ -74,7 +92,90 @@ export default function AdminDashboardPage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>(null);
   const [usersList, setUsersList] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [purchases, setPurchases] = useState<any[]>([]);
+  const [returnsList, setReturnsList] = useState<any[]>([]);
+  const [seasons, setSeasons] = useState<any[]>([]);
   const [dataLoading, setDataLoading] = useState<boolean>(false);
+
+  // --- Returns & Exchanges State ---
+  const [returnSearchInput, setReturnSearchInput] = useState<string>("");
+  const [lookedUpInvoice, setLookedUpInvoice] = useState<any>(null);
+  const [selectedReturnItems, setSelectedReturnItems] = useState<Record<string, { quantity: number; unitPrice: number }>>({});
+  const [returnType, setReturnType] = useState<"RETURN" | "EXCHANGE">("RETURN");
+  const [returnSettlementType, setReturnSettlementType] = useState<"CASH_REFUND" | "DEBT_CREDIT" | "EXCHANGE">("CASH_REFUND");
+  const [returnReason, setReturnReason] = useState<string>("مقاس غير مناسب / استبدال موديل");
+  const [returnBranchId, setReturnBranchId] = useState<string>("");
+  const [submittingReturn, setSubmittingReturn] = useState<boolean>(false);
+
+  // --- Suppliers & Purchases State ---
+  const [suppliersSubTab, setSuppliersSubTab] = useState<"suppliers" | "purchases">("suppliers");
+  const [showAddSupplierModal, setShowAddSupplierModal] = useState<boolean>(false);
+  const [supplierFormData, setSupplierFormData] = useState({ id: "", name: "", contactName: "", phone: "", address: "", openingBalance: 0, notes: "" });
+  const [selectedSupplierForLedger, setSelectedSupplierForLedger] = useState<any>(null);
+  const [supplierLedgerTransactions, setSupplierLedgerTransactions] = useState<any[]>([]);
+  const [showSupplierLedgerModal, setShowSupplierLedgerModal] = useState<boolean>(false);
+  const [showSupplierPayModal, setShowSupplierPayModal] = useState<boolean>(false);
+  const [supplierPaySupplier, setSupplierPaySupplier] = useState<any>(null);
+  const [supplierPayAmount, setSupplierPayAmount] = useState<string>("");
+  const [supplierPayMethod, setSupplierPayMethod] = useState<string>("CASH");
+  const [supplierPayNotes, setSupplierPayNotes] = useState<string>("");
+
+  const [showAddPurchaseModal, setShowAddPurchaseModal] = useState<boolean>(false);
+  const [purchaseFormSupplierId, setPurchaseFormSupplierId] = useState<string>("");
+  const [purchaseFormBranchId, setPurchaseFormBranchId] = useState<string>("CENTRAL_WAREHOUSE");
+  const [purchaseFormType, setPurchaseFormType] = useState<"PURCHASE" | "RETURN">("PURCHASE");
+  const [purchaseFormLines, setPurchaseFormLines] = useState<any[]>([{ variantId: "", quantity: 10, costPrice: 200 }]);
+  const [purchaseFormPaidAmount, setPurchaseFormPaidAmount] = useState<number>(0);
+  const [purchaseFormNotes, setPurchaseFormNotes] = useState<string>("");
+  const [submittingPurchase, setSubmittingPurchase] = useState<boolean>(false);
+
+  // --- Customer Ledger & Debt Settlement State ---
+  const [selectedCustomerForLedger, setSelectedCustomerForLedger] = useState<any>(null);
+  const [customerLedgerTransactions, setCustomerLedgerTransactions] = useState<any[]>([]);
+  const [showCustomerLedgerModal, setShowCustomerLedgerModal] = useState<boolean>(false);
+  const [showCustomerPayModal, setShowCustomerPayModal] = useState<boolean>(false);
+  const [customerPayTarget, setCustomerPayTarget] = useState<any>(null);
+  const [customerPayAmount, setCustomerPayAmount] = useState<string>("");
+  const [customerPayMethod, setCustomerPayMethod] = useState<string>("CASH");
+  const [customerPayNotes, setCustomerPayNotes] = useState<string>("");
+
+  // --- Seasons & Choco Landing Offers State ---
+  const [showAddSeasonModal, setShowAddSeasonModal] = useState<boolean>(false);
+  const [seasonFormData, setSeasonFormData] = useState({ id: "", name: "", startDate: "", endDate: "", notes: "" });
+  const [offersSectionEnabled, setOffersSectionEnabled] = useState<boolean>(true);
+  const [offersBadgeInput, setOffersBadgeInput] = useState<string>("عروض حصرية محدودة 🔥");
+  const [offersTitleInput, setOffersTitleInput] = useState<string>("العروض الخاصة والكومبوهات الملكية");
+  const [offersSubtitleInput, setOffersSubtitleInput] = useState<string>("عروض استثنائية وباقات متجددة أسبوعياً — اسأل الكاشير عن عرض اليوم");
+  const [offersBannerBadgeInput, setOffersBannerBadgeInput] = useState<string>("الأكثر طلباً هذا الأسبوع");
+  const [offersBannerTitleInput, setOffersBannerTitleInput] = useState<string>("طقم الأوفر سايز والكارجو التكتيكال");
+  const [offersBannerImageInput, setOffersBannerImageInput] = useState<string>("https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&w=1200&q=80");
+  const [offersBannerLinkTextInput, setOffersBannerLinkTextInput] = useState<string>("تصفح العرض في التشكيلة");
+  const [offersBannerLinkHrefInput, setOffersBannerLinkHrefInput] = useState<string>("#collection");
+  const [offersCardsList, setOffersCardsList] = useState<any[]>([
+    {
+      id: "combo-1",
+      title: "كومبو الشارع الملكي",
+      desc: "تيشرت أوفر سايز هيفي ويت + بنطلون كارجو تكتيكال بسعر 850 ج.م بدل 1100 ج.م",
+      badge: "وفر 250 ج.م",
+      icon: "flame",
+    },
+    {
+      id: "combo-2",
+      title: "شحن مجاني لكافة المحافظات",
+      desc: "اطلب قطعتين أو أكثر والشحن مجاني بالكامل لباب بيتك مع إمكانية المعاينة قبل الاستلام",
+      badge: "توصيل سريع",
+      icon: "delivery",
+    },
+    {
+      id: "combo-3",
+      title: "استبدال مقاس فوري 14 يوماً",
+      desc: "عاين وقيس مع المندوب وضمان استبدال المقاس مجاناً خلال 14 يوماً بأصل الفاتورة",
+      badge: "ضمان ملكي",
+      icon: "shield",
+    },
+  ]);
+  const [savingOffers, setSavingOffers] = useState<boolean>(false);
 
   // Users Management State
   const [showAddUserModal, setShowAddUserModal] = useState<boolean>(false);
@@ -176,7 +277,7 @@ export default function AdminDashboardPage() {
   const fetchAllData = async () => {
     try {
       setDataLoading(true);
-      const [bRes, pRes, cRes, iRes, tRes, sRes, custRes, setRes, uRes] = await Promise.all([
+      const [bRes, pRes, cRes, iRes, tRes, sRes, custRes, setRes, uRes, supRes, purRes, retRes, seaRes] = await Promise.all([
         fetch("/api/branches"),
         fetch("/api/products"),
         fetch("/api/categories"),
@@ -186,9 +287,13 @@ export default function AdminDashboardPage() {
         fetch("/api/customers"),
         fetch("/api/settings"),
         fetch("/api/users"),
+        fetch("/api/suppliers"),
+        fetch("/api/purchases"),
+        fetch("/api/returns"),
+        fetch("/api/seasons"),
       ]);
 
-      const [b, p, c, i, t, s, cust, st, u] = await Promise.all([
+      const [b, p, c, i, t, s, cust, st, u, sup, pur, ret, sea] = await Promise.all([
         bRes.json(),
         pRes.json(),
         cRes.json(),
@@ -198,6 +303,10 @@ export default function AdminDashboardPage() {
         custRes.json(),
         setRes.json(),
         uRes.json(),
+        supRes.json(),
+        purRes.json(),
+        retRes.json(),
+        seaRes.json(),
       ]);
 
       if (b.branches) setBranches(b.branches);
@@ -208,11 +317,38 @@ export default function AdminDashboardPage() {
       if (s.shifts) setShifts(s.shifts);
       if (cust.customers) setCustomers(cust.customers);
       if (u.users) setUsersList(u.users);
+      if (sup.suppliers) setSuppliers(sup.suppliers);
+      if (pur.purchases) setPurchases(pur.purchases);
+      if (ret.returns) setReturnsList(ret.returns);
+      if (sea.seasons) setSeasons(sea.seasons);
+
       if (st.settings) {
         setSettings(st.settings);
         setHeroBannerUrl(st.settings.heroBannerImage || "");
         setHeroTaglineInput(st.settings.heroTagline || "");
         setHeroDescInput(st.settings.heroDescription || "");
+
+        if (st.settings.offersSectionEnabled !== undefined) {
+          setOffersSectionEnabled(st.settings.offersSectionEnabled);
+        }
+        if (st.settings.offersBadge) setOffersBadgeInput(st.settings.offersBadge);
+        if (st.settings.offersTitle) setOffersTitleInput(st.settings.offersTitle);
+        if (st.settings.offersSubtitle) setOffersSubtitleInput(st.settings.offersSubtitle);
+        if (st.settings.offersBannerBadge) setOffersBannerBadgeInput(st.settings.offersBannerBadge);
+        if (st.settings.offersBannerTitle) setOffersBannerTitleInput(st.settings.offersBannerTitle);
+        if (st.settings.offersBannerImage) setOffersBannerImageInput(st.settings.offersBannerImage);
+        if (st.settings.offersBannerLinkText) setOffersBannerLinkTextInput(st.settings.offersBannerLinkText);
+        if (st.settings.offersBannerLinkHref) setOffersBannerLinkHrefInput(st.settings.offersBannerLinkHref);
+        if (st.settings.offersCards) {
+          try {
+            const parsed = JSON.parse(st.settings.offersCards);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setOffersCardsList(parsed);
+            }
+          } catch (e) {
+            // Ignored
+          }
+        }
       }
     } catch (e) {
       console.error("Dashboard fetch error:", e);
@@ -428,6 +564,327 @@ export default function AdminDashboardPage() {
       }
     } catch (e) {
       showToast("حدث خطأ أثناء إضافة اللون", "error");
+    }
+  };
+
+  // --- Returns & Exchanges Handlers ---
+  const handleLookupInvoiceForReturn = async () => {
+    if (!returnSearchInput.trim()) {
+      showToast("يرجى إدخال رقم الفاتورة أو هاتف العميل", "error");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/returns?lookupInvoice=${encodeURIComponent(returnSearchInput.trim())}`);
+      const data = await res.json();
+      if (data.invoice) {
+        setLookedUpInvoice(data.invoice);
+        setReturnBranchId(data.invoice.branchId || branches[0]?.id || "");
+        setSelectedReturnItems({});
+        showToast(`تم العثور على الفاتورة (${data.invoice.invoiceNumber}) بنجاح!`, "success");
+      } else {
+        setLookedUpInvoice(null);
+        showToast(data.error || "لم يتم العثور على الفاتورة", "error");
+      }
+    } catch (e) {
+      showToast("حدث خطأ أثناء البحث عن الفاتورة", "error");
+    }
+  };
+
+  const handleExecuteReturn = async () => {
+    if (!lookedUpInvoice) return;
+    const selectedKeys = Object.keys(selectedReturnItems);
+    if (selectedKeys.length === 0) {
+      showToast("يرجى تحديد قطعة واحدة على الأقل لإرجاعها أو استبدالها", "error");
+      return;
+    }
+
+    const linesToReturn = selectedKeys
+      .map((varId) => ({
+        variantId: varId,
+        quantity: selectedReturnItems[varId].quantity,
+        unitPrice: selectedReturnItems[varId].unitPrice,
+      }))
+      .filter((l) => l.quantity > 0);
+
+    if (linesToReturn.length === 0) {
+      showToast("يرجى التأكد من أن الكميات المسترجعة أكبر من صفر", "error");
+      return;
+    }
+
+    const refundAmt = linesToReturn.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
+
+    try {
+      setSubmittingReturn(true);
+      const res = await fetch("/api/returns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          originalInvoiceId: lookedUpInvoice.id,
+          customerId: lookedUpInvoice.customerId,
+          branchId: returnBranchId || branches[0]?.id,
+          type: returnType,
+          settlementType: returnSettlementType,
+          refundAmount: refundAmt,
+          reason: returnReason,
+          lines: linesToReturn,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.returnInvoice) {
+        showToast(`تم تسجيل إذن المرتجع (${data.returnInvoice.returnNumber}) وإرجاع البضاعة للمخزن! 👑`, "success");
+        setLookedUpInvoice(null);
+        setSelectedReturnItems({});
+        setReturnSearchInput("");
+        fetchAllData();
+      } else {
+        showToast(data.error || "فشل تسجيل المرتجع", "error");
+      }
+    } catch (e) {
+      showToast("حدث خطأ أثناء تسجيل المرتجع", "error");
+    } finally {
+      setSubmittingReturn(false);
+    }
+  };
+
+  // --- Suppliers & Purchases Handlers ---
+  const handleSaveSupplier = async () => {
+    if (!supplierFormData.name.trim()) {
+      showToast("اسم المورد أو المصنع حقل إلزامي", "error");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/suppliers", {
+        method: supplierFormData.id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(supplierFormData),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast(supplierFormData.id ? "تم تحديث بيانات المورد بنجاح" : "تمت إضافة المورد الجديد بنجاح! 🏭", "success");
+        setShowAddSupplierModal(false);
+        setSupplierFormData({ id: "", name: "", contactName: "", phone: "", address: "", openingBalance: 0, notes: "" });
+        fetchAllData();
+      } else {
+        showToast(data.error || "فشل حفظ بيانات المورد", "error");
+      }
+    } catch (e) {
+      showToast("حدث خطأ أثناء حفظ المورد", "error");
+    }
+  };
+
+  const handleOpenSupplierLedger = async (sup: any) => {
+    setSelectedSupplierForLedger(sup);
+    setShowSupplierLedgerModal(true);
+    try {
+      const res = await fetch(`/api/suppliers/transactions?supplierId=${sup.id}`);
+      const data = await res.json();
+      if (data.transactions) {
+        setSupplierLedgerTransactions(data.transactions);
+      }
+    } catch (e) {
+      showToast("فشل تحميل كشف حساب المورد", "error");
+    }
+  };
+
+  const handleExecuteSupplierPay = async () => {
+    if (!supplierPaySupplier) return;
+    const amt = parseFloat(supplierPayAmount);
+    if (!amt || amt <= 0) {
+      showToast("يرجى إدخال مبلغ دفع صحيح أكبر من صفر", "error");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/suppliers/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          supplierId: supplierPaySupplier.id,
+          amount: amt,
+          paymentMethod: supplierPayMethod,
+          notes: supplierPayNotes,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast(`تم سداد ${amt} ج.م للمورد (${supplierPaySupplier.name}) وتحديث الرصيد! 💵`, "success");
+        setShowSupplierPayModal(false);
+        setSupplierPayAmount("");
+        setSupplierPayNotes("");
+        fetchAllData();
+      } else {
+        showToast(data.error || "فشل تسجيل دفعة السداد", "error");
+      }
+    } catch (e) {
+      showToast("حدث خطأ أثناء تسجيل السداد", "error");
+    }
+  };
+
+  const handleExecutePurchase = async () => {
+    if (!purchaseFormSupplierId) {
+      showToast("يرجى اختيار المورد أولاً", "error");
+      return;
+    }
+    const validLines = purchaseFormLines.filter((l) => l.variantId && l.quantity > 0);
+    if (validLines.length === 0) {
+      showToast("يرجى إضافة صنف واحد على الأقل مع تحديد الكمية وسعر التكلفة", "error");
+      return;
+    }
+
+    const totalAmt = validLines.reduce((acc, l) => acc + l.quantity * l.costPrice, 0);
+
+    try {
+      setSubmittingPurchase(true);
+      const res = await fetch("/api/purchases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          supplierId: purchaseFormSupplierId,
+          branchId: purchaseFormBranchId === "CENTRAL_WAREHOUSE" ? null : purchaseFormBranchId,
+          type: purchaseFormType,
+          totalAmount: totalAmt,
+          paidAmount: purchaseFormPaidAmount,
+          notes: purchaseFormNotes,
+          lines: validLines,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast(
+          purchaseFormType === "PURCHASE"
+            ? `تم تسجيل فاتورة المشتريات (${data.purchaseInvoice.invoiceNumber}) وزيادة المخزون! 📦`
+            : `تم تسجيل مردودات المشتريات وتخفيض مديونية المورد! ↩️`,
+          "success"
+        );
+        setShowAddPurchaseModal(false);
+        setPurchaseFormLines([{ variantId: "", quantity: 10, costPrice: 200 }]);
+        setPurchaseFormPaidAmount(0);
+        setPurchaseFormNotes("");
+        fetchAllData();
+      } else {
+        showToast(data.error || "فشل تسجيل الفاتورة", "error");
+      }
+    } catch (e) {
+      showToast("حدث خطأ في الاتصال بالخادم", "error");
+    } finally {
+      setSubmittingPurchase(false);
+    }
+  };
+
+  // --- Customer Ledger & Settlement Handlers ---
+  const handleOpenCustomerLedger = async (cust: any) => {
+    setSelectedCustomerForLedger(cust);
+    setShowCustomerLedgerModal(true);
+    try {
+      const res = await fetch(`/api/customers/transactions?customerId=${cust.id}`);
+      const data = await res.json();
+      if (data.transactions) {
+        setCustomerLedgerTransactions(data.transactions);
+      }
+    } catch (e) {
+      showToast("فشل استرجاع كشف حساب العميل", "error");
+    }
+  };
+
+  const handleExecuteCustomerPay = async () => {
+    if (!customerPayTarget) return;
+    const amt = parseFloat(customerPayAmount);
+    if (!amt || amt <= 0) {
+      showToast("يرجى إدخال مبلغ تحصيل صحيح أكبر من صفر", "error");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/customers/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId: customerPayTarget.id,
+          amount: amt,
+          paymentMethod: customerPayMethod,
+          notes: customerPayNotes,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast(`تم تحصيل ${amt} ج.م من العميل (${customerPayTarget.name}) وتسوية المديونية! 🌟`, "success");
+        setShowCustomerPayModal(false);
+        setCustomerPayAmount("");
+        setCustomerPayNotes("");
+        fetchAllData();
+      } else {
+        showToast(data.error || "فشل تسجيل التحصيل", "error");
+      }
+    } catch (e) {
+      showToast("حدث خطأ أثناء تسجيل السداد", "error");
+    }
+  };
+
+  // --- Seasons & Choco Landing Offers Handlers ---
+  const handleSaveSeason = async () => {
+    if (!seasonFormData.name.trim()) {
+      showToast("اسم الموسم حقل إلزامي", "error");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/seasons", {
+        method: seasonFormData.id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(seasonFormData),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast(seasonFormData.id ? "تم تحديث الموسم بنجاح" : "تمت إضافة الموسم الجديد بنجاح! ☀️", "success");
+        setShowAddSeasonModal(false);
+        setSeasonFormData({ id: "", name: "", startDate: "", endDate: "", notes: "" });
+        fetchAllData();
+      } else {
+        showToast(data.error || "فشل حفظ الموسم", "error");
+      }
+    } catch (e) {
+      showToast("حدث خطأ في حفظ الموسم", "error");
+    }
+  };
+
+  const handleSaveLandingOffers = async () => {
+    try {
+      setSavingOffers(true);
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          offersSectionEnabled,
+          offersBadge: offersBadgeInput,
+          offersTitle: offersTitleInput,
+          offersSubtitle: offersSubtitleInput,
+          offersCards: JSON.stringify(offersCardsList),
+          offersBannerBadge: offersBannerBadgeInput,
+          offersBannerTitle: offersBannerTitleInput,
+          offersBannerImage: offersBannerImageInput,
+          offersBannerLinkText: offersBannerLinkTextInput,
+          offersBannerLinkHref: offersBannerLinkHrefInput,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setSettings(data.settings);
+        showToast("✅ تم حفظ وتحديث قسم العروض الملكية وتظهر فورياً في الصفحة الرئيسية كالمحترفين!", "success");
+      } else {
+        showToast(data.error || "فشل حفظ إعدادات العروض", "error");
+      }
+    } catch (e) {
+      showToast("حدث خطأ في الاتصال بالخادم", "error");
+    } finally {
+      setSavingOffers(false);
     }
   };
 
@@ -908,12 +1365,15 @@ export default function AdminDashboardPage() {
           {[
             { id: "overview", label: "نظرة عامة والتحليلات", icon: BarChart3 },
             { id: "inventory", label: "المخزون والمخزن المركزي", icon: Package },
-            { id: "barcodes", label: "طباعة الباركود والتيكت", icon: Barcode },
-            { id: "ai", label: "فحص الفواتير بالذكاء الاصطناعي", icon: Bot },
+            { id: "returns", label: "مردودات المبيعات والاستبدال", icon: RotateCcw },
+            { id: "purchases", label: "المشتريات والموردين", icon: Truck },
+            { id: "customers", label: "العملاء والحسابات", icon: Users },
+            { id: "seasons", label: "المواسم وعروض الشارع", icon: Flame },
             { id: "transfers", label: "أذون تحويل البضاعة", icon: ArrowRightLeft },
             { id: "treasury", label: "الخزينة والورديات", icon: DollarSign },
-            { id: "customers", label: "قاعدة العملاء والولاء", icon: Users },
-            { id: "users", label: "المستخدمين وصلاحيات المالك", icon: ShieldAlert },
+            { id: "barcodes", label: "طباعة الباركود والتيكت", icon: Barcode },
+            { id: "ai", label: "فحص الفواتير بالذكاء الاصطناعي", icon: Bot },
+            { id: "users", label: "طاقم العمل والمايسترو", icon: ShieldAlert },
           ].map((tab) => {
             const Icon = tab.icon;
             const isSelected = activeTab === tab.id;
@@ -1561,39 +2021,819 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 7: CUSTOMERS CRM */}
+        {/* TAB 7: CUSTOMERS CRM & LEDGER */}
         {activeTab === "customers" && (
-          <div className="bg-[#12121a] border border-white/10 rounded-3xl p-6 space-y-4">
-            <h3 className="font-bold text-base text-white pb-3 border-b border-white/10 flex items-center gap-2">
-              <Users size={18} className="text-[#00ff66]" />
-              <span>قاعدة عملاء بزار ونقاط الولاء (CRM)</span>
-            </h3>
+          <div className="bg-[#12121a] border border-white/10 rounded-3xl p-6 space-y-4 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#00ff66]/10 border border-[#00ff66]/30 flex items-center justify-center text-[#00ff66]">
+                  <Users size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white flex items-center gap-2">
+                    <span>قاعدة عملاء بزار والمديونيات ونقاط الولاء (CRM)</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-white/10 text-[#ffb703] border border-[#ffb703]/30">
+                      {customers.length} عملاء
+                    </span>
+                  </h3>
+                  <p className="text-xs text-white/50 mt-0.5">
+                    متابعة كشوف حسابات العملاء، تحصيل وتسوية المديونيات، ونقاط المكافآت
+                  </p>
+                </div>
+              </div>
+            </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-right text-xs">
                 <thead>
                   <tr className="border-b border-white/10 text-white/50">
-                    <th className="py-2">اسم العميل</th>
-                    <th className="py-2">رقم الهاتف</th>
-                    <th className="py-2">رصيد نقاط الولاء</th>
-                    <th className="py-2">إجمالي المشتريات</th>
-                    <th className="py-2">تاريخ آخر زيارة</th>
+                    <th className="py-3 px-3">اسم العميل</th>
+                    <th className="py-3 px-3">رقم الهاتف</th>
+                    <th className="py-3 px-3">المديونية / الرصيد الحسابي</th>
+                    <th className="py-3 px-3">رصيد نقاط الولاء</th>
+                    <th className="py-3 px-3">إجمالي المشتريات</th>
+                    <th className="py-3 px-3 text-left">إجراءات الحساب</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {customers.map((c) => (
-                    <tr key={c.id} className="py-2.5 hover:bg-white/5">
-                      <td className="py-2.5 font-bold text-white">{c.name}</td>
-                      <td className="py-2.5 font-mono text-[#ffb703]">{c.phone}</td>
-                      <td className="py-2.5 font-bold text-[#00ff66]">{c.points} نقطة 🌟</td>
-                      <td className="py-2.5 font-mono font-bold text-white">{c.totalPurchases} ج.م</td>
-                      <td className="py-2.5 text-white/40 text-[10px]">
-                        {new Date(c.lastVisit).toLocaleDateString("ar-EG")}
-                      </td>
-                    </tr>
-                  ))}
+                  {customers.map((c) => {
+                    const debt = c.totalDebt || 0;
+                    return (
+                      <tr key={c.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="py-3 px-3 font-bold text-white">
+                          <div className="flex items-center gap-2">
+                            <span className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center font-bold text-white text-[11px]">
+                              {c.name ? c.name.charAt(0) : "C"}
+                            </span>
+                            <span>{c.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-3 font-mono text-[#ffb703]">{c.phone}</td>
+                        <td className="py-3 px-3 font-mono">
+                          {debt > 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-500/15 border border-red-500/40 text-red-300">
+                              <span>عليه {debt.toLocaleString()} ج.م</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 border border-emerald-500/40 text-emerald-300">
+                              <span>خالص الرصيد ✓</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 font-bold text-[#00ff66]">{c.points || 0} نقطة 🌟</td>
+                        <td className="py-3 px-3 font-mono font-bold text-white">{(c.totalPurchases || 0).toLocaleString()} ج.م</td>
+                        <td className="py-3 px-3 text-left">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => {
+                                setCustomerPayTarget(c);
+                                setCustomerPayAmount(debt > 0 ? String(debt) : "");
+                                setShowCustomerPayModal(true);
+                              }}
+                              className="px-2.5 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] font-bold flex items-center gap-1 transition-all"
+                            >
+                              <DollarSign size={12} />
+                              <span>سداد / تحصيل</span>
+                            </button>
+                            <button
+                              onClick={() => handleOpenCustomerLedger(c)}
+                              className="px-2.5 py-1 rounded-xl bg-[#00ff66]/10 hover:bg-[#00ff66]/20 border border-[#00ff66]/30 text-[#00ff66] text-[11px] font-bold flex items-center gap-1 transition-all"
+                            >
+                              <FileSpreadsheet size={12} />
+                              <span>كشف الحساب</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: RETURNS & EXCHANGES (مردودات المبيعات والاستبدال) */}
+        {activeTab === "returns" && (
+          <div className="space-y-6">
+            {/* Header & Lookup Card */}
+            <div className="bg-[#12121a] border border-white/10 rounded-3xl p-6 space-y-4 shadow-xl">
+              <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <RotateCcw size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white">
+                    مردودات المبيعات واستبدال المقاسات والموديلات (Returns & Exchanges)
+                  </h3>
+                  <p className="text-xs text-white/50 mt-0.5">
+                    استرجاع القطع وإعادتها لمخزون الفرع فورياً مع تسوية النقدية أو كشف حساب العميل
+                  </p>
+                </div>
+              </div>
+
+              {/* Search Bar */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Search size={16} className="absolute right-3.5 top-3 text-white/40" />
+                  <input
+                    type="text"
+                    placeholder="ابحث برقم الفاتورة الأصلية (مثال: BAZ-1001) أو هاتف العميل..."
+                    value={returnSearchInput}
+                    onChange={(e) => setReturnSearchInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleLookupInvoiceForReturn()}
+                    className="w-full bg-black/50 border border-white/15 focus:border-amber-400 rounded-xl pr-10 pl-3 py-2.5 text-xs text-white outline-none font-mono"
+                  />
+                </div>
+                <button
+                  onClick={handleLookupInvoiceForReturn}
+                  className="bg-gradient-to-r from-amber-500 to-[#fb8500] hover:brightness-110 text-black px-5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95"
+                >
+                  <Search size={14} />
+                  <span>بحث واستدعاء الفاتورة</span>
+                </button>
+              </div>
+
+              {/* Looked up Invoice Details & Return Selector */}
+              {lookedUpInvoice && (
+                <div className="mt-4 p-4 rounded-2xl bg-black/60 border border-amber-500/30 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-white/10 text-xs">
+                    <div>
+                      <span className="text-white/60">رقم الفاتورة: </span>
+                      <span className="font-mono font-bold text-amber-300">{lookedUpInvoice.invoiceNumber}</span>
+                      <span className="text-white/40 mx-2">•</span>
+                      <span className="text-white/60">الفرع: </span>
+                      <span className="text-white font-bold">{lookedUpInvoice.branch?.name}</span>
+                      <span className="text-white/40 mx-2">•</span>
+                      <span className="text-white/60">العميل: </span>
+                      <span className="text-white font-bold">{lookedUpInvoice.customerName || lookedUpInvoice.customer?.name || "عميل نقدي"}</span>
+                    </div>
+                    <div className="font-mono text-white/80">
+                      إجمالي الفاتورة: <strong className="text-[#00ff66]">{lookedUpInvoice.finalTotal} ج.م</strong>
+                    </div>
+                  </div>
+
+                  {/* Lines to return */}
+                  <div className="space-y-2">
+                    <div className="text-xs font-bold text-white/80">حدد القطع المراد إرجاعها أو استبدالها:</div>
+                    <div className="space-y-2">
+                      {lookedUpInvoice.lines.map((line: any) => {
+                        const isSelected = !!selectedReturnItems[line.variantId];
+                        const available = line.availableToReturn ?? line.quantity;
+
+                        return (
+                          <div
+                            key={line.id}
+                            className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
+                              isSelected
+                                ? "bg-amber-500/10 border-amber-500/40"
+                                : "bg-white/[0.02] border-white/10"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                disabled={available <= 0}
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedReturnItems({
+                                      ...selectedReturnItems,
+                                      [line.variantId]: { quantity: 1, unitPrice: line.unitPrice },
+                                    });
+                                  } else {
+                                    const next = { ...selectedReturnItems };
+                                    delete next[line.variantId];
+                                    setSelectedReturnItems(next);
+                                  }
+                                }}
+                                className="w-4 h-4 rounded text-amber-500 focus:ring-0 cursor-pointer"
+                              />
+                              <div>
+                                <div className="font-bold text-white text-xs">{line.productName}</div>
+                                <div className="text-[11px] text-white/50 flex items-center gap-2 mt-0.5">
+                                  <span>اللون: <strong className="text-white/80">{line.color}</strong></span>
+                                  <span>المقاس: <strong className="text-white/80">{line.size}</strong></span>
+                                  <span>السعر: <strong className="text-[#00ff66]">{line.unitPrice} ج.م</strong></span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <div className="text-[11px] text-white/50">
+                                المتاح للاسترجاع: <strong className="text-amber-300 font-mono">{available}</strong> قطعة
+                              </div>
+
+                              {isSelected && (
+                                <div className="flex items-center gap-1.5 bg-black/60 px-2.5 py-1 rounded-xl border border-white/15">
+                                  <label className="text-[10px] text-white/60">الكمية:</label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max={available}
+                                    value={selectedReturnItems[line.variantId]?.quantity || 1}
+                                    onChange={(e) => {
+                                      const val = Math.min(available, Math.max(1, parseInt(e.target.value, 10) || 1));
+                                      setSelectedReturnItems({
+                                        ...selectedReturnItems,
+                                        [line.variantId]: {
+                                          ...selectedReturnItems[line.variantId],
+                                          quantity: val,
+                                        },
+                                      });
+                                    }}
+                                    className="w-12 bg-transparent text-center font-mono font-bold text-amber-300 focus:outline-none text-xs"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Return Options & Confirm */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-white/10 text-xs">
+                    <div>
+                      <label className="block mb-1 text-white/70 font-bold">نوع العملية:</label>
+                      <select
+                        value={returnType}
+                        onChange={(e) => setReturnType(e.target.value as any)}
+                        className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white"
+                      >
+                        <option value="RETURN">إرجاع واسترداد (Return)</option>
+                        <option value="EXCHANGE">استبدال مقاس / موديل (Exchange)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block mb-1 text-white/70 font-bold">طريقة التسوية المالية:</label>
+                      <select
+                        value={returnSettlementType}
+                        onChange={(e) => setReturnSettlementType(e.target.value as any)}
+                        className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white"
+                      >
+                        <option value="CASH_REFUND">استرداد نقدي فوري من الخزينة (Cash)</option>
+                        <option value="DEBT_CREDIT">تسوية كرصيد في حساب العميل (Credit)</option>
+                        <option value="EXCHANGE">استبدال بقطعة بديلة (Exchange)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block mb-1 text-white/70 font-bold">سبب الاسترجاع:</label>
+                      <input
+                        type="text"
+                        value={returnReason}
+                        onChange={(e) => setReturnReason(e.target.value)}
+                        className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-white/10">
+                    <div className="text-xs">
+                      إجمالي قيمة المرتجع:{" "}
+                      <strong className="text-base text-amber-400 font-mono font-black">
+                        {Object.values(selectedReturnItems).reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)}{" "}
+                        ج.م
+                      </strong>
+                    </div>
+
+                    <button
+                      onClick={handleExecuteReturn}
+                      disabled={submittingReturn}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all active:scale-95 flex items-center gap-1.5"
+                    >
+                      <Check size={14} />
+                      <span>{submittingReturn ? "جاري التنفيذ..." : "تأكيد وتنفيذ المرتجع فوراً"}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Past Returns Table */}
+            <div className="bg-[#12121a] border border-white/10 rounded-3xl p-6 space-y-4 shadow-xl">
+              <h3 className="font-bold text-sm text-white pb-3 border-b border-white/10 flex items-center gap-2">
+                <Receipt size={16} className="text-amber-400" />
+                <span>سجل أذون المردودات والاستبدال السابقة ({returnsList.length} أذون)</span>
+              </h3>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-right text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-white/50">
+                      <th className="py-2.5 px-3">رقم إذن المرتجع</th>
+                      <th className="py-2.5 px-3">الفاتورة الأصلية</th>
+                      <th className="py-2.5 px-3">الفرع</th>
+                      <th className="py-2.5 px-3">العميل</th>
+                      <th className="py-2.5 px-3">النوع</th>
+                      <th className="py-2.5 px-3">مبلغ الاسترداد</th>
+                      <th className="py-2.5 px-3">السبب</th>
+                      <th className="py-2.5 px-3">التاريخ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {returnsList.map((ret) => (
+                      <tr key={ret.id} className="hover:bg-white/[0.02]">
+                        <td className="py-2.5 px-3 font-mono font-bold text-amber-300">{ret.returnNumber}</td>
+                        <td className="py-2.5 px-3 font-mono text-white/70">{ret.originalInvoice?.invoiceNumber || "—"}</td>
+                        <td className="py-2.5 px-3 text-white/90">{ret.branch?.name}</td>
+                        <td className="py-2.5 px-3 text-white">{ret.customer?.name || "عميل نقدي"}</td>
+                        <td className="py-2.5 px-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              ret.type === "EXCHANGE"
+                                ? "bg-blue-500/10 text-blue-400 border border-blue-500/30"
+                                : "bg-amber-500/10 text-amber-400 border border-amber-500/30"
+                            }`}
+                          >
+                            {ret.type === "EXCHANGE" ? "استبدال" : "مرتجع"}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 font-mono font-bold text-[#00ff66]">
+                          {ret.refundAmount?.toLocaleString()} ج.م
+                        </td>
+                        <td className="py-2.5 px-3 text-white/60">{ret.reason || "—"}</td>
+                        <td className="py-2.5 px-3 text-white/40 text-[10px]">
+                          {new Date(ret.createdAt).toLocaleDateString("ar-EG")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: PURCHASES & SUPPLIERS (المشتريات والموردين) */}
+        {activeTab === "purchases" && (
+          <div className="space-y-6">
+            {/* Top Switcher: Suppliers vs Purchase Invoices */}
+            <div className="flex items-center justify-between gap-4 p-4 bg-[#12121a] border border-white/10 rounded-3xl">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setSuppliersSubTab("suppliers")}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                    suppliersSubTab === "suppliers"
+                      ? "bg-[#ffb703] text-black border-[#ffb703] shadow-md shadow-[#ffb703]/20 font-black"
+                      : "bg-white/5 text-white/70 border-white/5 hover:border-white/20"
+                  }`}
+                >
+                  🏭 سجل الموردين والمصانع ({suppliers.length})
+                </button>
+                <button
+                  onClick={() => setSuppliersSubTab("purchases")}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                    suppliersSubTab === "purchases"
+                      ? "bg-[#00ff66] text-black border-[#00ff66] shadow-md shadow-[#00ff66]/20 font-black"
+                      : "bg-white/5 text-white/70 border-white/5 hover:border-white/20"
+                  }`}
+                >
+                  📦 فواتير المشتريات والتوريد ({purchases.length})
+                </button>
+              </div>
+
+              {suppliersSubTab === "suppliers" ? (
+                <button
+                  onClick={() => {
+                    setSupplierFormData({ id: "", name: "", contactName: "", phone: "", address: "", openingBalance: 0, notes: "" });
+                    setShowAddSupplierModal(true);
+                  }}
+                  className="bg-gradient-to-r from-[#ffb703] to-[#fb8500] hover:brightness-110 text-black px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md transition-all active:scale-95"
+                >
+                  <Plus size={14} />
+                  <span>إضافة مورد / مصنع جديد</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setPurchaseFormSupplierId(suppliers[0]?.id || "");
+                    setPurchaseFormBranchId("CENTRAL_WAREHOUSE");
+                    setPurchaseFormType("PURCHASE");
+                    setPurchaseFormLines([{ variantId: products[0]?.variants[0]?.id || "", quantity: 20, costPrice: 200 }]);
+                    setPurchaseFormPaidAmount(0);
+                    setPurchaseFormNotes("");
+                    setShowAddPurchaseModal(true);
+                  }}
+                  className="bg-gradient-to-r from-[#00ff66] to-emerald-400 hover:brightness-110 text-black px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md transition-all active:scale-95"
+                >
+                  <Plus size={14} />
+                  <span>فاتورة مشتريات وتوريد بضاعة جديدة</span>
+                </button>
+              )}
+            </div>
+
+            {/* Sub-view: Suppliers List */}
+            {suppliersSubTab === "suppliers" ? (
+              <div className="bg-[#12121a] border border-white/10 rounded-3xl p-6 space-y-4 shadow-xl">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-right text-xs">
+                    <thead>
+                      <tr className="border-b border-white/10 text-white/50">
+                        <th className="py-3 px-3">اسم المورد / المصنع</th>
+                        <th className="py-3 px-3">مسؤول الاتصال</th>
+                        <th className="py-3 px-3">الهاتف</th>
+                        <th className="py-3 px-3">العنوان</th>
+                        <th className="py-3 px-3">المستحقات الحالية (المديونية)</th>
+                        <th className="py-3 px-3">الفواتير</th>
+                        <th className="py-3 px-3 text-left">إجراءات الحساب</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {suppliers.map((s) => {
+                        const debt = s.totalDebt || 0;
+                        return (
+                          <tr key={s.id} className="hover:bg-white/[0.02]">
+                            <td className="py-3 px-3 font-bold text-white">
+                              <div className="flex items-center gap-2">
+                                <span className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center font-bold text-[11px]">
+                                  🏭
+                                </span>
+                                <span>{s.name}</span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 text-white/80">{s.contactName || "—"}</td>
+                            <td className="py-3 px-3 font-mono text-[#ffb703]">{s.phone || "—"}</td>
+                            <td className="py-3 px-3 text-white/60">{s.address || "—"}</td>
+                            <td className="py-3 px-3 font-mono">
+                              {debt > 0 ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 border border-amber-500/40 text-amber-300">
+                                  <span>له {debt.toLocaleString()} ج.م</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 border border-emerald-500/40 text-emerald-300">
+                                  <span>خالص المستحقات ✓</span>
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 font-mono text-white/70">{s._count?.purchaseInvoices || 0}</td>
+                            <td className="py-3 px-3 text-left">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => {
+                                    setSupplierPaySupplier(s);
+                                    setSupplierPayAmount(debt > 0 ? String(debt) : "");
+                                    setShowSupplierPayModal(true);
+                                  }}
+                                  className="px-2.5 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold flex items-center gap-1 transition-all"
+                                >
+                                  <DollarSign size={12} />
+                                  <span>سداد دفعة</span>
+                                </button>
+                                <button
+                                  onClick={() => handleOpenSupplierLedger(s)}
+                                  className="px-2.5 py-1 rounded-xl bg-[#ffb703]/10 hover:bg-[#ffb703]/20 border border-[#ffb703]/30 text-[#ffb703] text-[11px] font-bold flex items-center gap-1 transition-all"
+                                >
+                                  <FileSpreadsheet size={12} />
+                                  <span>كشف الحساب</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              /* Sub-view: Purchase Invoices List */
+              <div className="bg-[#12121a] border border-white/10 rounded-3xl p-6 space-y-4 shadow-xl">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-right text-xs">
+                    <thead>
+                      <tr className="border-b border-white/10 text-white/50">
+                        <th className="py-3 px-3">رقم الفاتورة</th>
+                        <th className="py-3 px-3">المورد / المصنع</th>
+                        <th className="py-3 px-3">المستودع / الفرع المستلم</th>
+                        <th className="py-3 px-3">النوع</th>
+                        <th className="py-3 px-3">إجمالي الفاتورة</th>
+                        <th className="py-3 px-3">المدفوع نقداً</th>
+                        <th className="py-3 px-3">المتبقي (آجل)</th>
+                        <th className="py-3 px-3">التاريخ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {purchases.map((p) => (
+                        <tr key={p.id} className="hover:bg-white/[0.02]">
+                          <td className="py-3 px-3 font-mono font-bold text-amber-300">{p.invoiceNumber}</td>
+                          <td className="py-3 px-3 font-bold text-white">{p.supplier?.name}</td>
+                          <td className="py-3 px-3 text-white/80">
+                            {p.branch?.name ? p.branch.name : "المخزن المركزي الرئيسي المشترك"}
+                          </td>
+                          <td className="py-3 px-3">
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                p.type === "RETURN"
+                                  ? "bg-red-500/10 text-red-400 border border-red-500/30"
+                                  : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                              }`}
+                            >
+                              {p.type === "RETURN" ? "مردودات للمورد ↩️" : "توريد بضاعة 📦"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 font-mono font-bold text-white">{p.totalAmount?.toLocaleString()} ج.م</td>
+                          <td className="py-3 px-3 font-mono text-[#00ff66]">{p.paidAmount?.toLocaleString()} ج.م</td>
+                          <td className="py-3 px-3 font-mono text-amber-400 font-bold">{p.remainingDebt?.toLocaleString()} ج.م</td>
+                          <td className="py-3 px-3 text-white/40 text-[10px]">
+                            {new Date(p.createdAt).toLocaleDateString("ar-EG")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB: SEASONS & CHOCO LANDING OFFERS (المواسم وعروض الشارع) */}
+        {activeTab === "seasons" && (
+          <div className="space-y-6">
+            {/* Seasons Management Section */}
+            <div className="bg-[#12121a] border border-white/10 rounded-3xl p-6 space-y-4 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                    <Sparkles size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-white">إدارة المواسم السنوية (Seasons Engine)</h3>
+                    <p className="text-xs text-white/50 mt-0.5">
+                      تحديد فترات المواسم (صيف، شتاء، أعياد، جمعة بيضاء) لربط كولكشن الملابس وعروض التخفيضات
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setSeasonFormData({ id: "", name: "", startDate: "", endDate: "", notes: "" });
+                    setShowAddSeasonModal(true);
+                  }}
+                  className="bg-gradient-to-r from-amber-500 to-[#fb8500] hover:brightness-110 text-black px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md self-start sm:self-auto"
+                >
+                  <Plus size={14} />
+                  <span>إضافة موسم جديد</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {seasons.map((s) => (
+                  <div key={s.id} className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-black text-white text-sm">{s.name}</h4>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#00ff66]/15 border border-[#00ff66]/30 text-[#00ff66]">
+                        {s.isActive ? "نشط حالياً" : "غير نشط"}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-white/50">
+                      {s.startDate ? new Date(s.startDate).toLocaleDateString("ar-EG") : "البداية مفتوحة"} —{" "}
+                      {s.endDate ? new Date(s.endDate).toLocaleDateString("ar-EG") : "مستمر"}
+                    </div>
+                    {s.notes && <p className="text-[11px] text-white/60">{s.notes}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Choco House Style Landing Page Offers Customizer */}
+            <div className="bg-gradient-to-b from-[#141208] to-[#101018] border border-[#ffb703]/30 rounded-3xl p-6 space-y-6 shadow-2xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#ffb703]/10 border border-[#ffb703]/30 flex items-center justify-center text-[#ffb703] text-xl">
+                    🔥
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-white flex items-center gap-2">
+                      <span>طريقة عرض العروض الملكية في اللاندينج بيدج (تصميم شوكو هاوس)</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        ديناميكي بالكامل
+                      </span>
+                    </h3>
+                    <p className="text-xs text-white/50 mt-0.5">
+                      التحكم في كروت العروض الثلاثية الفخمة وبانر العرض الكبير المعروض في واجهة المتجر
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer bg-black/40 px-3 py-1.5 rounded-xl border border-white/15">
+                    <input
+                      type="checkbox"
+                      checked={offersSectionEnabled}
+                      onChange={(e) => setOffersSectionEnabled(e.target.checked)}
+                      className="w-4 h-4 rounded text-amber-500 cursor-pointer"
+                    />
+                    <span className="text-xs font-bold text-white">إظهار قسم العروض في المتجر</span>
+                  </label>
+                  <button
+                    onClick={handleSaveLandingOffers}
+                    disabled={savingOffers}
+                    className="bg-gradient-to-r from-[#ffb703] to-[#fb8500] hover:brightness-110 text-black px-4 py-2 rounded-xl text-xs font-black shadow-lg shadow-[#ffb703]/20 active:scale-95 transition-all"
+                  >
+                    {savingOffers ? "جاري الحفظ..." : "حفظ التعديلات فورياً ✓"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Header texts */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div>
+                  <label className="block mb-1 text-white/70 font-bold">شارة العروض (Badge):</label>
+                  <input
+                    type="text"
+                    value={offersBadgeInput}
+                    onChange={(e) => setOffersBadgeInput(e.target.value)}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-amber-300 font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 text-white/70 font-bold">عنوان القسم الرئيسي (Title):</label>
+                  <input
+                    type="text"
+                    value={offersTitleInput}
+                    onChange={(e) => setOffersTitleInput(e.target.value)}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 text-white/70 font-bold">الوصف الفرعي (Subtitle):</label>
+                  <input
+                    type="text"
+                    value={offersSubtitleInput}
+                    onChange={(e) => setOffersSubtitleInput(e.target.value)}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white/80"
+                  />
+                </div>
+              </div>
+
+              {/* 3 Luxury Cards Editor */}
+              <div className="space-y-3 pt-3 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>كروت العروض الفخمة (Cards Layout):</span>
+                    <span className="text-amber-400 font-mono">({offersCardsList.length} كروت)</span>
+                  </h4>
+                  <button
+                    onClick={() => {
+                      setOffersCardsList([
+                        ...offersCardsList,
+                        {
+                          id: `offer-${Date.now()}`,
+                          title: "عرض جديد",
+                          desc: "تفاصيل العرض والخصم الخاص هنا...",
+                          badge: "عرض حصري",
+                          icon: "gift",
+                        },
+                      ]);
+                    }}
+                    className="text-[11px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1"
+                  >
+                    <Plus size={12} />
+                    <span>+ إضافة كارت عرض</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {offersCardsList.map((card, idx) => (
+                    <div key={card.id || idx} className="p-3.5 rounded-2xl bg-black/60 border border-[#ffb703]/20 space-y-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <input
+                          type="text"
+                          value={card.title}
+                          onChange={(e) => {
+                            const next = [...offersCardsList];
+                            next[idx].title = e.target.value;
+                            setOffersCardsList(next);
+                          }}
+                          placeholder="عنوان العرض..."
+                          className="font-bold text-amber-400 bg-transparent border-b border-white/10 pb-0.5 outline-none flex-1"
+                        />
+                        {offersCardsList.length > 1 && (
+                          <button
+                            onClick={() => setOffersCardsList(offersCardsList.filter((_, i) => i !== idx))}
+                            className="p-1 text-red-400 hover:text-red-300 mr-2"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+
+                      <textarea
+                        rows={2}
+                        value={card.desc}
+                        onChange={(e) => {
+                          const next = [...offersCardsList];
+                          next[idx].desc = e.target.value;
+                          setOffersCardsList(next);
+                        }}
+                        placeholder="تفاصيل العرض..."
+                        className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-white/80 text-[11px] outline-none resize-none"
+                      />
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-white/50 block">الشارة (Badge):</label>
+                          <input
+                            type="text"
+                            value={card.badge || ""}
+                            onChange={(e) => {
+                              const next = [...offersCardsList];
+                              next[idx].badge = e.target.value;
+                              setOffersCardsList(next);
+                            }}
+                            className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-[#00ff66] text-[11px]"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-white/50 block">الأيقونة (Icon):</label>
+                          <select
+                            value={card.icon || "flame"}
+                            onChange={(e) => {
+                              const next = [...offersCardsList];
+                              next[idx].icon = e.target.value;
+                              setOffersCardsList(next);
+                            }}
+                            className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-white text-[11px]"
+                          >
+                            <option value="flame">🔥 شعلة / حريق أسعار</option>
+                            <option value="delivery">🚚 شحن وتوصيل</option>
+                            <option value="shield">🛡️ ضمان واستبدال</option>
+                            <option value="gift">🎁 هدية / باقة</option>
+                            <option value="sparkles">✨ بريميوم ملكي</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Big Featured Banner Customizer */}
+              <div className="pt-3 border-t border-white/10 space-y-3">
+                <h4 className="text-xs font-bold text-white">بانر العرض الكبير المميز (Featured Banner):</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="block mb-1 text-white/70 font-bold">رابط صورة خلفية البانر أو رفعها:</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={offersBannerImageInput}
+                        onChange={(e) => setOffersBannerImageInput(e.target.value)}
+                        className="flex-1 bg-black/50 border border-white/15 rounded-xl p-2.5 text-white font-mono text-xs"
+                      />
+                      <label className="bg-amber-500 hover:bg-amber-400 text-black px-3 py-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1 font-mono">
+                        <Upload size={14} />
+                        <span>رفع</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleImageUpload(file, (url) => setOffersBannerImageInput(url));
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block mb-1 text-white/70 font-bold">عنوان البانر الرئيسي:</label>
+                    <input
+                      type="text"
+                      value={offersBannerTitleInput}
+                      onChange={(e) => setOffersBannerTitleInput(e.target.value)}
+                      className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white font-black"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-1 text-white/70 font-bold">شارة البانر الصغيرة:</label>
+                    <input
+                      type="text"
+                      value={offersBannerBadgeInput}
+                      onChange={(e) => setOffersBannerBadgeInput(e.target.value)}
+                      className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-amber-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-1 text-white/70 font-bold">نص زر التصفح:</label>
+                    <input
+                      type="text"
+                      value={offersBannerLinkTextInput}
+                      onChange={(e) => setOffersBannerLinkTextInput(e.target.value)}
+                      className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-[#00ff66]"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -2831,6 +4071,886 @@ export default function AdminDashboardPage() {
               <button
                 onClick={() => setShowAddVariantModal(false)}
                 className="bg-white/10 text-white font-bold py-3 px-4 rounded-xl text-xs"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Customer Ledger Modal (كشف حساب عميل) */}
+      {showCustomerLedgerModal && selectedCustomerForLedger && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#12121a] border border-white/15 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Header */}
+            <div className="p-6 border-b border-white/10 flex items-center justify-between bg-black/30">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#00ff66]/10 border border-[#00ff66]/30 flex items-center justify-center text-[#00ff66]">
+                  <FileText size={24} />
+                </div>
+                <div>
+                  <h3 className="font-black text-lg text-white">كشف حساب العميل التراكمي (Statement of Account)</h3>
+                  <div className="flex items-center gap-4 text-xs text-white/60 mt-1">
+                    <span>العميل: <strong className="text-white">{selectedCustomerForLedger.name}</strong></span>
+                    <span>الهاتف: <strong className="text-white font-mono">{selectedCustomerForLedger.phone}</strong></span>
+                    <span>المديونية الحالية: <strong className={`font-mono font-bold ${(selectedCustomerForLedger.totalDebt || 0) > 0 ? "text-rose-400" : "text-emerald-400"}`}>{(selectedCustomerForLedger.totalDebt || 0).toLocaleString()} ج.م</strong></span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-3 rounded-xl text-xs flex items-center gap-1.5 transition-all"
+                >
+                  <Printer size={15} />
+                  طباعة الكشف
+                </button>
+                <button
+                  onClick={() => setShowCustomerLedgerModal(false)}
+                  className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/15 flex items-center justify-center text-white/60 hover:text-white transition-all"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              {customerLedgerTransactions.length === 0 ? (
+                <div className="text-center py-12 text-white/40 space-y-2">
+                  <FileText size={36} className="mx-auto opacity-30" />
+                  <p>لا توجد معاملات مسجلة في كشف حساب هذا العميل حتى الآن</p>
+                </div>
+              ) : (
+                <div className="border border-white/10 rounded-2xl overflow-hidden">
+                  <table className="w-full text-right text-xs">
+                    <thead className="bg-white/5 text-white/60 font-semibold border-b border-white/10">
+                      <tr>
+                        <th className="p-3">التاريخ والوقت</th>
+                        <th className="p-3">نوع الحركة</th>
+                        <th className="p-3">رقم المرجع / الفاتورة</th>
+                        <th className="p-3">المبلغ</th>
+                        <th className="p-3">الرصيد التراكمي</th>
+                        <th className="p-3">طريقة الدفع / الملاحظات</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 font-mono">
+                      {customerLedgerTransactions.map((tx: any, idx: number) => (
+                        <tr key={tx.id || idx} className="hover:bg-white/[0.02]">
+                          <td className="p-3 text-white/60">{new Date(tx.createdAt).toLocaleDateString("ar-EG")} {new Date(tx.createdAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-sans font-bold ${
+                              tx.type === "INVOICE"
+                                ? "bg-amber-500/10 text-amber-300 border border-amber-500/20"
+                                : tx.type === "PAYMENT"
+                                ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
+                                : "bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                            }`}>
+                              {tx.type === "INVOICE" ? "فاتورة مبيعات (+مديونية)" : tx.type === "PAYMENT" ? "سداد نقدية (-سداد)" : "مردودات مبيعات (-تسوية)"}
+                            </span>
+                          </td>
+                          <td className="p-3 text-white font-bold">{tx.referenceNumber || "-"}</td>
+                          <td className={`p-3 font-bold ${tx.type === "INVOICE" ? "text-rose-400" : "text-emerald-400"}`}>
+                            {tx.type === "INVOICE" ? "+" : "-"}{Number(tx.amount).toLocaleString()} ج.م
+                          </td>
+                          <td className="p-3 text-amber-300 font-bold">
+                            {(tx.runningBalance ?? 0).toLocaleString()} ج.م
+                          </td>
+                          <td className="p-3 text-white/70 font-sans">{tx.notes || tx.paymentMethod || "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-white/10 bg-black/40 flex items-center justify-between text-xs">
+              <span className="text-white/50">إجمالي الحركات: {customerLedgerTransactions.length}</span>
+              <button
+                onClick={() => setShowCustomerLedgerModal(false)}
+                className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-5 rounded-xl transition-all"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Customer Debt Collection Modal (تحصيل وسداد مديونية عميل) */}
+      {showCustomerPayModal && customerPayTarget && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#12121a] border border-white/15 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <Wallet size={20} />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-white">تحصيل وسداد مديونية عميل</h3>
+                  <p className="text-xs text-white/50">{customerPayTarget.name} - {customerPayTarget.phone}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCustomerPayModal(false)}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 flex items-center justify-center text-white/60 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 flex items-center justify-between">
+              <span className="text-xs text-rose-300 font-bold">المديونية الحالية على العميل:</span>
+              <span className="text-lg font-black font-mono text-rose-400">{(customerPayTarget.totalDebt || 0).toLocaleString()} ج.م</span>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-white/70 font-bold">مبلغ التحصيل (ج.م) *:</label>
+                  <button
+                    type="button"
+                    onClick={() => setCustomerPayAmount(String(customerPayTarget.totalDebt || 0))}
+                    className="text-[#00ff66] hover:underline text-[11px]"
+                  >
+                    تسوية كامل المديونية
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  step="any"
+                  value={customerPayAmount}
+                  onChange={(e) => setCustomerPayAmount(e.target.value)}
+                  placeholder="أدخل المبلغ المحصل..."
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono font-bold text-sm focus:border-emerald-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1.5 text-white/70 font-bold">طريقة التحصيل / الدفع:</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCustomerPayMethod("CASH")}
+                    className={`p-2.5 rounded-xl border text-center font-bold flex items-center justify-center gap-1.5 transition-all ${
+                      customerPayMethod === "CASH"
+                        ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
+                        : "bg-white/5 border-white/10 text-white/70"
+                    }`}
+                  >
+                    <Wallet size={14} />
+                    نقدي (خزينة)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCustomerPayMethod("VISA")}
+                    className={`p-2.5 rounded-xl border text-center font-bold flex items-center justify-center gap-1.5 transition-all ${
+                      customerPayMethod === "VISA"
+                        ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
+                        : "bg-white/5 border-white/10 text-white/70"
+                    }`}
+                  >
+                    <CreditCard size={14} />
+                    شبكة / فيزا
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block mb-1.5 text-white/70 font-bold">ملاحظات التحصيل:</label>
+                <input
+                  type="text"
+                  value={customerPayNotes}
+                  onChange={(e) => setCustomerPayNotes(e.target.value)}
+                  placeholder="مثال: سداد قسط، دفعة من الحساب..."
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={handleExecuteCustomerPay}
+                className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+              >
+                تأكيد التحصيل والتسوية 💵
+              </button>
+              <button
+                onClick={() => setShowCustomerPayModal(false)}
+                className="bg-white/10 hover:bg-white/15 text-white font-bold py-3 px-4 rounded-xl text-xs"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Supplier Ledger Modal (كشف حساب مورد / مصنع) */}
+      {showSupplierLedgerModal && selectedSupplierForLedger && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#12121a] border border-white/15 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Header */}
+            <div className="p-6 border-b border-white/10 flex items-center justify-between bg-black/30">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <FileSpreadsheet size={24} />
+                </div>
+                <div>
+                  <h3 className="font-black text-lg text-white">كشف حساب المورد والمصنع (Supplier Statement)</h3>
+                  <div className="flex items-center gap-4 text-xs text-white/60 mt-1">
+                    <span>المورد: <strong className="text-white">{selectedSupplierForLedger.name}</strong></span>
+                    <span>المسؤول: <strong className="text-white">{selectedSupplierForLedger.contactName || "-"}</strong></span>
+                    <span>الهاتف: <strong className="text-white font-mono">{selectedSupplierForLedger.phone || "-"}</strong></span>
+                    <span>مستحقات المورد: <strong className={`font-mono font-bold ${(selectedSupplierForLedger.totalDebt || 0) > 0 ? "text-amber-400" : "text-emerald-400"}`}>{(selectedSupplierForLedger.totalDebt || 0).toLocaleString()} ج.م</strong></span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-3 rounded-xl text-xs flex items-center gap-1.5 transition-all"
+                >
+                  <Printer size={15} />
+                  طباعة الكشف
+                </button>
+                <button
+                  onClick={() => setShowSupplierLedgerModal(false)}
+                  className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/15 flex items-center justify-center text-white/60 hover:text-white transition-all"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              {supplierLedgerTransactions.length === 0 ? (
+                <div className="text-center py-12 text-white/40 space-y-2">
+                  <FileSpreadsheet size={36} className="mx-auto opacity-30" />
+                  <p>لا توجد حركات مسجلة في كشف حساب هذا المورد</p>
+                </div>
+              ) : (
+                <div className="border border-white/10 rounded-2xl overflow-hidden">
+                  <table className="w-full text-right text-xs">
+                    <thead className="bg-white/5 text-white/60 font-semibold border-b border-white/10">
+                      <tr>
+                        <th className="p-3">التاريخ والوقت</th>
+                        <th className="p-3">نوع الحركة</th>
+                        <th className="p-3">رقم الفاتورة / المرجع</th>
+                        <th className="p-3">المبلغ</th>
+                        <th className="p-3">رصيد المورد التراكمي</th>
+                        <th className="p-3">طريقة الدفع / الملاحظات</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 font-mono">
+                      {supplierLedgerTransactions.map((tx: any, idx: number) => (
+                        <tr key={tx.id || idx} className="hover:bg-white/[0.02]">
+                          <td className="p-3 text-white/60">{new Date(tx.createdAt).toLocaleDateString("ar-EG")} {new Date(tx.createdAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-sans font-bold ${
+                              tx.type === "PURCHASE"
+                                ? "bg-amber-500/10 text-amber-300 border border-amber-500/20"
+                                : tx.type === "PAYMENT"
+                                ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
+                                : "bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                            }`}>
+                              {tx.type === "PURCHASE" ? "فاتورة توريد (+مستحق)" : tx.type === "PAYMENT" ? "سداد دفعة (-سداد)" : tx.type === "RETURN" ? "مردودات مشتريات (-تسوية)" : "رصيد افتتاحي"}
+                            </span>
+                          </td>
+                          <td className="p-3 text-white font-bold">{tx.referenceNumber || "-"}</td>
+                          <td className={`p-3 font-bold ${tx.type === "PURCHASE" || tx.type === "OPENING_BALANCE" ? "text-amber-400" : "text-emerald-400"}`}>
+                            {tx.type === "PURCHASE" || tx.type === "OPENING_BALANCE" ? "+" : "-"}{Number(tx.amount).toLocaleString()} ج.م
+                          </td>
+                          <td className="p-3 text-sky-300 font-bold">
+                            {(tx.runningBalance ?? 0).toLocaleString()} ج.م
+                          </td>
+                          <td className="p-3 text-white/70 font-sans">{tx.notes || tx.paymentMethod || "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-white/10 bg-black/40 flex items-center justify-between text-xs">
+              <span className="text-white/50">إجمالي الحركات: {supplierLedgerTransactions.length}</span>
+              <button
+                onClick={() => setShowSupplierLedgerModal(false)}
+                className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-5 rounded-xl transition-all"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Supplier Payment Modal (سداد دفعة لمورد / مصنع) */}
+      {showSupplierPayModal && supplierPaySupplier && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#12121a] border border-white/15 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <DollarSign size={20} />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-white">سداد دفعة نقدية لمورد / مصنع</h3>
+                  <p className="text-xs text-white/50">{supplierPaySupplier.name} {supplierPaySupplier.phone ? `(${supplierPaySupplier.phone})` : ""}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSupplierPayModal(false)}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 flex items-center justify-center text-white/60 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center justify-between">
+              <span className="text-xs text-amber-300 font-bold">إجمالي مستحقات المورد الحالية:</span>
+              <span className="text-lg font-black font-mono text-amber-400">{(supplierPaySupplier.totalDebt || 0).toLocaleString()} ج.م</span>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-white/70 font-bold">مبلغ السداد (ج.م) *:</label>
+                  <button
+                    type="button"
+                    onClick={() => setSupplierPayAmount(String(supplierPaySupplier.totalDebt || 0))}
+                    className="text-[#00ff66] hover:underline text-[11px]"
+                  >
+                    سداد كامل المستحق
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  step="any"
+                  value={supplierPayAmount}
+                  onChange={(e) => setSupplierPayAmount(e.target.value)}
+                  placeholder="أدخل مبلغ السداد..."
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono font-bold text-sm focus:border-amber-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1.5 text-white/70 font-bold">طريقة السداد:</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSupplierPayMethod("CASH")}
+                    className={`p-2.5 rounded-xl border text-center font-bold flex items-center justify-center gap-1.5 transition-all ${
+                      supplierPayMethod === "CASH"
+                        ? "bg-amber-500/20 border-amber-500 text-amber-300"
+                        : "bg-white/5 border-white/10 text-white/70"
+                    }`}
+                  >
+                    <Wallet size={14} />
+                    نقدي من الخزينة
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSupplierPayMethod("BANK_TRANSFER")}
+                    className={`p-2.5 rounded-xl border text-center font-bold flex items-center justify-center gap-1.5 transition-all ${
+                      supplierPayMethod === "BANK_TRANSFER"
+                        ? "bg-amber-500/20 border-amber-500 text-amber-300"
+                        : "bg-white/5 border-white/10 text-white/70"
+                    }`}
+                  >
+                    <CreditCard size={14} />
+                    تحويل بنكي / محفظة
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block mb-1.5 text-white/70 font-bold">ملاحظات / رقم إيصال التحويل:</label>
+                <input
+                  type="text"
+                  value={supplierPayNotes}
+                  onChange={(e) => setSupplierPayNotes(e.target.value)}
+                  placeholder="مثال: دفعة تحت حساب طلبيات الأوفر سايز..."
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={handleExecuteSupplierPay}
+                className="flex-1 bg-amber-500 hover:bg-amber-400 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+              >
+                تأكيد سداد المبلغ للمورد 💵
+              </button>
+              <button
+                onClick={() => setShowSupplierPayModal(false)}
+                className="bg-white/10 hover:bg-white/15 text-white font-bold py-3 px-4 rounded-xl text-xs"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add / Edit Supplier Modal (إضافة أو تعديل مورد / مصنع) */}
+      {showAddSupplierModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#12121a] border border-white/15 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <Truck size={20} />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-white">
+                    {supplierFormData.id ? "تعديل بيانات المورد / المصنع" : "إضافة مورد / مصنع ملابس جديد 🏭"}
+                  </h3>
+                  <p className="text-xs text-white/50">تسجيل وتحديث بيانات المصانع وشركات استيراد وتوريد الملابس</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddSupplierModal(false)}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 flex items-center justify-center text-white/60 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block mb-1.5 text-white/70 font-bold">اسم المورد / المصنع *:</label>
+                <input
+                  type="text"
+                  value={supplierFormData.name}
+                  onChange={(e) => setSupplierFormData({ ...supplierFormData, name: e.target.value })}
+                  placeholder="مثال: مصنع النسيج التركي للملابس الجاهزة"
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white focus:border-amber-500 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block mb-1.5 text-white/70">اسم المسؤول / المندوب:</label>
+                  <input
+                    type="text"
+                    value={supplierFormData.contactName}
+                    onChange={(e) => setSupplierFormData({ ...supplierFormData, contactName: e.target.value })}
+                    placeholder="مثال: أ / أحمد الديب"
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1.5 text-white/70">رقم الهاتف / الواتساب:</label>
+                  <input
+                    type="text"
+                    value={supplierFormData.phone}
+                    onChange={(e) => setSupplierFormData({ ...supplierFormData, phone: e.target.value })}
+                    placeholder="010XXXXXXXX"
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white font-mono outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block mb-1.5 text-white/70">العنوان / المحافظة:</label>
+                  <input
+                    type="text"
+                    value={supplierFormData.address}
+                    onChange={(e) => setSupplierFormData({ ...supplierFormData, address: e.target.value })}
+                    placeholder="مثال: المحلة الكبرى، المنطقة الصناعية"
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1.5 text-white/70">الرصيد الافتتاحي (ج.م):</label>
+                  <input
+                    type="number"
+                    value={supplierFormData.openingBalance}
+                    onChange={(e) => setSupplierFormData({ ...supplierFormData, openingBalance: parseFloat(e.target.value) || 0 })}
+                    placeholder="0"
+                    disabled={!!supplierFormData.id}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white font-mono outline-none disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block mb-1.5 text-white/70">ملاحظات / أصناف التوريد:</label>
+                <textarea
+                  value={supplierFormData.notes}
+                  onChange={(e) => setSupplierFormData({ ...supplierFormData, notes: e.target.value })}
+                  placeholder="مثال: متخصص في خامات القطن الميلتون والهودي الصيفي..."
+                  rows={2}
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={handleSaveSupplier}
+                className="flex-1 bg-amber-500 hover:bg-amber-400 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+              >
+                {supplierFormData.id ? "حفظ التعديلات" : "إضافة المورد وحفظ 🏭"}
+              </button>
+              <button
+                onClick={() => setShowAddSupplierModal(false)}
+                className="bg-white/10 hover:bg-white/15 text-white font-bold py-3 px-4 rounded-xl text-xs"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Purchase Invoice Modal (فاتورة مشتريات / مردودات مشتريات) */}
+      {showAddPurchaseModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#12121a] border border-white/15 rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Header */}
+            <div className="p-6 border-b border-white/10 flex items-center justify-between bg-black/30">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <Package size={24} />
+                </div>
+                <div>
+                  <h3 className="font-black text-lg text-white">
+                    {purchaseFormType === "PURCHASE" ? "تسجيل فاتورة توريد / مشتريات جديدة 📦" : "تسجيل مردودات مشتريات للمورد ↩️"}
+                  </h3>
+                  <p className="text-xs text-white/50">
+                    {purchaseFormType === "PURCHASE"
+                      ? "إضافة الأصناف والمقاسات مباشرة إلى رصيد المخزن وتحديث كشف حساب المورد"
+                      : "إرجاع قطع إلى المورد وتخفيض رصيد المخزن ومديونية المورد"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddPurchaseModal(false)}
+                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/15 flex items-center justify-center text-white/60 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-5 text-xs">
+              {/* Type & Destination & Supplier */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block mb-1.5 text-white/70 font-bold">نوع المعاملة:</label>
+                  <select
+                    value={purchaseFormType}
+                    onChange={(e: any) => setPurchaseFormType(e.target.value)}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white font-bold outline-none"
+                  >
+                    <option value="PURCHASE">📦 فاتورة مشتريات (توريد للمخزن)</option>
+                    <option value="RETURN">↩️ مردودات مشتريات (إرجاع للمورد)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block mb-1.5 text-white/70 font-bold">جهة التوريد / المخزن:</label>
+                  <select
+                    value={purchaseFormBranchId}
+                    onChange={(e) => setPurchaseFormBranchId(e.target.value)}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white outline-none"
+                  >
+                    <option value="CENTRAL_WAREHOUSE">🏢 المخزن المركزي الرئيسي (Bazaar Central)</option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        📍 {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block mb-1.5 text-white/70 font-bold">المورد / المصنع *:</label>
+                  <select
+                    value={purchaseFormSupplierId}
+                    onChange={(e) => setPurchaseFormSupplierId(e.target.value)}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-amber-300 font-bold outline-none"
+                  >
+                    <option value="">-- اختر المورد أو المصنع --</option>
+                    {suppliers.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} {s.contactName ? `(${s.contactName})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Items Lines */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-white font-bold flex items-center gap-1.5">
+                    <Barcode size={15} className="text-[#00ff66]" />
+                    الأصناف والمقاسات الموردة:
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setPurchaseFormLines([...purchaseFormLines, { variantId: "", quantity: 10, costPrice: 200 }])}
+                    className="bg-[#00ff66]/10 hover:bg-[#00ff66]/20 text-[#00ff66] border border-[#00ff66]/30 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1"
+                  >
+                    <Plus size={14} />
+                    إضافة صنف آخر
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {purchaseFormLines.map((line, idx) => (
+                    <div key={idx} className="bg-black/40 border border-white/10 rounded-2xl p-3 flex flex-col md:flex-row items-center gap-3">
+                      {/* Variant Select */}
+                      <div className="flex-1 w-full">
+                        <select
+                          value={line.variantId}
+                          onChange={(e) => {
+                            const newLines = [...purchaseFormLines];
+                            newLines[idx].variantId = e.target.value;
+                            // Pre-fill costPrice if available
+                            products.forEach((p) => {
+                              p.variants?.forEach((v: any) => {
+                                if (v.id === e.target.value && v.costPrice) {
+                                  newLines[idx].costPrice = v.costPrice;
+                                }
+                              });
+                            });
+                            setPurchaseFormLines(newLines);
+                          }}
+                          className="w-full bg-black/70 border border-white/15 rounded-xl p-2 text-white outline-none"
+                        >
+                          <option value="">-- اختر الصنف واللون والمقاس --</option>
+                          {products.map((p) =>
+                            p.variants?.map((v: any) => (
+                              <option key={v.id} value={v.id}>
+                                {p.nameAr} - {v.color} - مقاس {v.size} (باركود: {v.barcode})
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      </div>
+
+                      {/* Quantity */}
+                      <div className="w-full md:w-28 flex items-center gap-1.5">
+                        <span className="text-white/50 text-[11px] whitespace-nowrap">الكمية:</span>
+                        <input
+                          type="number"
+                          min="1"
+                          value={line.quantity}
+                          onChange={(e) => {
+                            const newLines = [...purchaseFormLines];
+                            newLines[idx].quantity = parseInt(e.target.value, 10) || 0;
+                            setPurchaseFormLines(newLines);
+                          }}
+                          className="w-full bg-black/70 border border-white/15 rounded-xl p-2 text-center text-white font-mono font-bold outline-none"
+                        />
+                      </div>
+
+                      {/* Cost Price */}
+                      <div className="w-full md:w-32 flex items-center gap-1.5">
+                        <span className="text-white/50 text-[11px] whitespace-nowrap">سعر التكلفة:</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          value={line.costPrice}
+                          onChange={(e) => {
+                            const newLines = [...purchaseFormLines];
+                            newLines[idx].costPrice = parseFloat(e.target.value) || 0;
+                            setPurchaseFormLines(newLines);
+                          }}
+                          className="w-full bg-black/70 border border-white/15 rounded-xl p-2 text-center text-amber-300 font-mono font-bold outline-none"
+                        />
+                      </div>
+
+                      {/* Total */}
+                      <div className="w-full md:w-28 text-left md:text-right font-mono font-bold text-white/90">
+                        {((line.quantity || 0) * (line.costPrice || 0)).toLocaleString()} ج.م
+                      </div>
+
+                      {/* Delete */}
+                      {purchaseFormLines.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setPurchaseFormLines(purchaseFormLines.filter((_, i) => i !== idx))}
+                          className="w-8 h-8 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 flex items-center justify-center transition-all"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Calculations Bar */}
+              {(() => {
+                const totalAmt = purchaseFormLines.reduce((acc, l) => acc + (l.quantity || 0) * (l.costPrice || 0), 0);
+                const remaining = totalAmt - (purchaseFormPaidAmount || 0);
+                return (
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                    <div>
+                      <span className="text-white/60 block mb-1">إجمالي الفاتورة:</span>
+                      <span className="text-xl font-black font-mono text-[#00ff66]">{totalAmt.toLocaleString()} ج.م</span>
+                    </div>
+
+                    <div>
+                      <label className="text-white/70 block mb-1">المبلغ المدفوع كاش للمورد الآن:</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={purchaseFormPaidAmount}
+                        onChange={(e) => setPurchaseFormPaidAmount(parseFloat(e.target.value) || 0)}
+                        placeholder="0"
+                        className="w-full bg-black/60 border border-white/20 rounded-xl p-2 text-white font-mono font-bold outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <span className="text-white/60 block mb-1">المتبقي آجل على المنظومة:</span>
+                      <span className={`text-xl font-black font-mono ${remaining > 0 ? "text-amber-400" : "text-emerald-400"}`}>
+                        {remaining.toLocaleString()} ج.م
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div>
+                <label className="block mb-1.5 text-white/70 font-bold">ملاحظات الفاتورة:</label>
+                <input
+                  type="text"
+                  value={purchaseFormNotes}
+                  onChange={(e) => setPurchaseFormNotes(e.target.value)}
+                  placeholder="مثال: فاتورة طلبيات تيشرتات الأوفر سايز كولكشن الشتاء..."
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-white/10 bg-black/40 flex gap-2">
+              <button
+                disabled={submittingPurchase}
+                onClick={handleExecutePurchase}
+                className="flex-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                {submittingPurchase ? (
+                  <>
+                    <RefreshCw size={15} className="animate-spin" />
+                    جاري الحفظ والتسجيل في المخزن...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle size={15} />
+                    حفظ واعتماد الفاتورة وتحديث الأرصدة والمخزن 📦
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setShowAddPurchaseModal(false)}
+                className="bg-white/10 hover:bg-white/15 text-white font-bold py-3 px-5 rounded-xl text-xs"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add / Edit Season Modal (إضافة أو تعديل موسم أزياء) */}
+      {showAddSeasonModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#12121a] border border-white/15 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-white">
+                    {seasonFormData.id ? "تعديل الموسم" : "إضافة موسم أزياء جديد ☀️"}
+                  </h3>
+                  <p className="text-xs text-white/50">تحديد مواسم الموضة والعروض لربط المنتجات والتشكيلات بها</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddSeasonModal(false)}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/15 flex items-center justify-center text-white/60 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block mb-1.5 text-white/70 font-bold">اسم الموسم *:</label>
+                <input
+                  type="text"
+                  value={seasonFormData.name}
+                  onChange={(e) => setSeasonFormData({ ...seasonFormData, name: e.target.value })}
+                  placeholder="مثال: شتاء 2026، كولكشن العيد، صيف 2026..."
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white focus:border-amber-500 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block mb-1.5 text-white/70">تاريخ البداية:</label>
+                  <input
+                    type="date"
+                    value={seasonFormData.startDate}
+                    onChange={(e) => setSeasonFormData({ ...seasonFormData, startDate: e.target.value })}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1.5 text-white/70">تاريخ النهاية:</label>
+                  <input
+                    type="date"
+                    value={seasonFormData.endDate}
+                    onChange={(e) => setSeasonFormData({ ...seasonFormData, endDate: e.target.value })}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block mb-1.5 text-white/70">ملاحظات الموسم:</label>
+                <textarea
+                  value={seasonFormData.notes}
+                  onChange={(e) => setSeasonFormData({ ...seasonFormData, notes: e.target.value })}
+                  placeholder="مثال: يركز على التيشرتات الأوفر سايز والهوديز القطن..."
+                  rows={2}
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={handleSaveSeason}
+                className="flex-1 bg-amber-500 hover:bg-amber-400 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+              >
+                {seasonFormData.id ? "حفظ التعديلات" : "حفظ الموسم الجديد ☀️"}
+              </button>
+              <button
+                onClick={() => setShowAddSeasonModal(false)}
+                className="bg-white/10 hover:bg-white/15 text-white font-bold py-3 px-4 rounded-xl text-xs"
               >
                 إلغاء
               </button>

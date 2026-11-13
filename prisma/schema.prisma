@@ -32,6 +32,8 @@ model Branch {
   shifts          Shift[]
   offers          Offer[]
   customers       Customer[]
+  purchases       PurchaseInvoice[]
+  returns         ReturnInvoice[]
 }
 
 // ----------------------------------------------------
@@ -116,6 +118,8 @@ model ProductVariant {
   branchStocks      BranchStock[]
   invoiceLines      InvoiceLine[]
   transferLines     StockTransferLine[]
+  returnLines       ReturnInvoiceLine[]
+  purchaseLines     PurchaseInvoiceLine[]
 
   @@unique([productId, color, size])
 }
@@ -178,11 +182,17 @@ model Customer {
   vipLevel          String            @default("REGULAR") // "REGULAR" | "SILVER" | "GOLD" | "ROYAL_VIP"
   branchId          String?
   branch            Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  openingBalance    Float             @default(0.0)
+  openingBalanceDate DateTime?
+  totalDebt         Float             @default(0.0)
+  creditLimit       Float             @default(0.0)
   notes             String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
   invoices          Invoice[]
+  transactions      CustomerTransaction[]
+  returns           ReturnInvoice[]
 }
 
 // ----------------------------------------------------
@@ -216,6 +226,7 @@ model Invoice {
   updatedAt         DateTime          @updatedAt
 
   lines             InvoiceLine[]
+  returns           ReturnInvoice[]
 }
 
 model InvoiceLine {
@@ -370,6 +381,143 @@ model SystemSettings {
   geminiApiKey            String?
   loyaltyPointsPer100Egp  Int               @default(5)
   currency                String            @default("ج.م")
+
+  // Choco House Style Landing Page Offers Section
+  offersSectionEnabled    Boolean           @default(true)
+  offersBadge             String            @default("عروض حصرية محدودة 🔥")
+  offersTitle             String            @default("العروض الخاصة والكومبوهات الملكية")
+  offersSubtitle          String            @default("عروض استثنائية وباقات متجددة أسبوعياً — اسأل الكاشير عن عرض اليوم")
+  offersCards             String            @default("[]") // JSON of {id, title, desc, icon, badge}
+  offersBannerBadge       String            @default("الأكثر طلباً هذا الأسبوع")
+  offersBannerTitle       String            @default("طقم الأوفر سايز والكارجو التكتيكال")
+  offersBannerImage       String            @default("https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&w=1200&q=80")
+  offersBannerLinkText    String            @default("تصفح العرض في التشكيلة")
+  offersBannerLinkHref    String            @default("#collection")
+
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
+}
+
+// ----------------------------------------------------
+// 13. CUSTOMER FINANCIAL TRANSACTIONS & DEBT LEDGER
+// ----------------------------------------------------
+model CustomerTransaction {
+  id              String            @id @default(cuid())
+  customerId      String
+  customer        Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type            String            // "INVOICE" | "PAYMENT" | "RETURN" | "OPENING_BALANCE"
+  amount          Float
+  referenceNumber String?
+  paymentMethod   String?           // "CASH" | "VISA" | "INSTAPAY"
+  notes           String?
+  createdAt       DateTime          @default(now())
+}
+
+// ----------------------------------------------------
+// 14. SUPPLIERS & PURCHASES SYSTEM (الموردين والمشتريات)
+// ----------------------------------------------------
+model Supplier {
+  id                  String                @id @default(cuid())
+  name                String                @unique
+  contactName         String?
+  phone               String?
+  address             String?
+  openingBalance      Float                 @default(0.0)
+  openingBalanceDate  DateTime?
+  totalDebt           Float                 @default(0.0) // مديونية المورد (المستحقات له)
+  notes               String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  transactions        SupplierTransaction[]
+  purchaseInvoices    PurchaseInvoice[]
+}
+
+model SupplierTransaction {
+  id              String            @id @default(cuid())
+  supplierId      String
+  supplier        Supplier          @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  type            String            // "PURCHASE" | "PAYMENT" | "RETURN" | "OPENING_BALANCE"
+  amount          Float
+  referenceNumber String?
+  paymentMethod   String?           // "CASH" | "BANK_TRANSFER"
+  notes           String?
+  createdAt       DateTime          @default(now())
+}
+
+model PurchaseInvoice {
+  id            String                @id @default(cuid())
+  invoiceNumber String                @unique // "PUR-2026-001"
+  supplierId    String
+  supplier      Supplier              @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  branchId      String?
+  branch        Branch?               @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  type          String                @default("PURCHASE") // "PURCHASE" | "RETURN"
+  totalAmount   Float
+  paidAmount    Float                 @default(0.0)
+  remainingDebt Float                 @default(0.0)
+  status        String                @default("COMPLETED") // "COMPLETED" | "CANCELLED"
+  notes         String?
+  createdAt     DateTime              @default(now())
+
+  lines         PurchaseInvoiceLine[]
+}
+
+model PurchaseInvoiceLine {
+  id                String          @id @default(cuid())
+  purchaseInvoiceId String
+  purchaseInvoice   PurchaseInvoice @relation(fields: [purchaseInvoiceId], references: [id], onDelete: Cascade)
+  variantId         String
+  variant           ProductVariant  @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  quantity          Int
+  costPrice         Float
+  total             Float
+}
+
+// ----------------------------------------------------
+// 15. SALES RETURNS & EXCHANGES (مردودات المبيعات والاستبدال)
+// ----------------------------------------------------
+model ReturnInvoice {
+  id                String              @id @default(cuid())
+  returnNumber      String              @unique // "RET-2026-001"
+  originalInvoiceId String?
+  originalInvoice   Invoice?            @relation(fields: [originalInvoiceId], references: [id], onDelete: SetNull)
+  customerId        String?
+  customer          Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  branchId          String
+  branch            Branch              @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  type              String              @default("RETURN") // "RETURN" | "EXCHANGE"
+  settlementType    String              @default("CASH_REFUND") // "CASH_REFUND" | "DEBT_CREDIT" | "EXCHANGE"
+  refundAmount      Float               @default(0.0)
+  reason            String?
+  notes             String?
+  createdAt         DateTime            @default(now())
+
+  lines             ReturnInvoiceLine[]
+}
+
+model ReturnInvoiceLine {
+  id                String         @id @default(cuid())
+  returnInvoiceId   String
+  returnInvoice     ReturnInvoice  @relation(fields: [returnInvoiceId], references: [id], onDelete: Cascade)
+  variantId         String
+  variant           ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  quantity          Int
+  unitPrice         Float
+  total             Float
+}
+
+// ----------------------------------------------------
+// 16. SEASONS & PROMOTIONS (المواسم والعروض السنوية)
+// ----------------------------------------------------
+model Season {
+  id          String            @id @default(cuid())
+  name        String            @unique // "موسم صيف 2026", "موسم شتاء 2026"
+  slug        String            @unique
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive    Boolean           @default(true)
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 }

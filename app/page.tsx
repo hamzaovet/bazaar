@@ -26,10 +26,53 @@ import {
   LogOut,
   ExternalLink,
   Menu,
+  Truck,
+  Gift,
+  Percent,
 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import PrintableCard from "@/components/PrintableCard";
 import { useToast } from "@/components/Toast";
+
+const defaultOffersCards = [
+  {
+    id: "combo-1",
+    title: "كومبو الشارع الملكي",
+    desc: "تيشرت أوفر سايز هيفي ويت + بنطلون كارجو تكتيكال بسعر 850 ج.م بدل 1100 ج.م",
+    badge: "وفر 250 ج.م",
+    icon: "flame",
+  },
+  {
+    id: "combo-2",
+    title: "شحن وتوصيل فوري للباب",
+    desc: "توصيل خلال 24 ساعة لجميع مناطق القاهرة والجيزة لأي طلبية من المتجر",
+    badge: "شحن مجاني +1000",
+    icon: "truck",
+  },
+  {
+    id: "combo-3",
+    title: "ضمان الاستبدال الفوري",
+    desc: "معاينة القطع عند الاستلام مع إمكانية استبدال المقاس أو الموديل مجاناً",
+    badge: "ضمان 100%",
+    icon: "shield",
+  },
+];
+
+function renderOfferCardIcon(iconName?: string) {
+  switch (iconName) {
+    case "truck":
+    case "delivery":
+      return <Truck size={22} className="text-[#00ff66]" />;
+    case "shield":
+    case "guarantee":
+      return <ShieldCheck size={22} className="text-[#00ff66]" />;
+    case "gift":
+      return <Gift size={22} className="text-[#ffb703]" />;
+    case "flame":
+    default:
+      return <Flame size={22} className="text-[#ffb703]" />;
+  }
+}
 
 interface Branch {
   id: string;
@@ -650,6 +693,102 @@ export default function StorefrontPage() {
           </div>
         </div>
       </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          LUXURY OFFERS & COMBOS SECTION (منقول ومطور من شوكو هاوس)
+      ══════════════════════════════════════════════════════════ */}
+      {settings?.offersSectionEnabled !== false && (
+        <section id="offers" className="px-4 max-w-7xl mx-auto w-full mb-8">
+          {/* Header */}
+          <div className="mb-5 text-right">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ffb703]/10 border border-[#ffb703]/30 text-[#ffb703] text-xs font-black mb-2">
+              <Sparkles size={13} />
+              {settings?.offersBadge || "عروض حصرية محدودة 🔥"}
+            </div>
+            <h2 className="text-xl md:text-3xl font-black text-white tracking-tight">
+              {settings?.offersTitle || "العروض الخاصة والكومبوهات الملكية"}
+            </h2>
+            <p className="text-xs md:text-sm text-white/60 mt-1 max-w-2xl font-medium">
+              {settings?.offersSubtitle || "عروض استثنائية وباقات متجددة أسبوعياً — اسأل الكاشير عن عرض اليوم"}
+            </p>
+          </div>
+
+          {/* 3 Offer Cards Grid */}
+          {(() => {
+            let cards = defaultOffersCards;
+            if (settings?.offersCards) {
+              try {
+                const parsed = typeof settings.offersCards === "string" ? JSON.parse(settings.offersCards) : settings.offersCards;
+                if (Array.isArray(parsed) && parsed.length > 0) cards = parsed;
+              } catch (e) {
+                // fallback to default
+              }
+            }
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                {cards.map((c: any, i: number) => (
+                  <div
+                    key={c.id || i}
+                    className="bg-[#12121a]/90 backdrop-blur-md border border-[#00ff66]/20 hover:border-[#00ff66]/50 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-lg hover:shadow-[#00ff66]/10 hover:-translate-y-0.5 transition-all group"
+                  >
+                    <div className="flex-1 text-right">
+                      {c.badge && (
+                        <span className="inline-block text-[10px] font-black bg-[#00ff66]/10 text-[#00ff66] border border-[#00ff66]/30 px-2 py-0.5 rounded-full mb-1">
+                          {c.badge}
+                        </span>
+                      )}
+                      <h3 className="text-sm font-black text-[#ffb703] group-hover:text-white transition-colors">
+                        {c.title}
+                      </h3>
+                      <p className="text-xs text-white/70 mt-1 leading-relaxed line-clamp-2">
+                        {c.desc}
+                      </p>
+                    </div>
+
+                    <div className="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:border-[#00ff66]/30 transition-colors">
+                      {renderOfferCardIcon(c.icon)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* Featured Big Promo Banner */}
+          <a
+            href={settings?.offersBannerLinkHref || "#collection"}
+            className="block relative rounded-3xl overflow-hidden border border-[#ffb703]/30 hover:border-[#ffb703]/70 group transition-all duration-300 shadow-xl hover:shadow-[#ffb703]/20"
+          >
+            {/* Background Image */}
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+              style={{
+                backgroundImage: `url('${settings?.offersBannerImage || "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&w=1200&q=80"}')`,
+              }}
+            />
+
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent" />
+
+            {/* Content */}
+            <div className="relative z-10 p-6 md:p-8 flex flex-col justify-center items-start max-w-xl text-right">
+              <span className="inline-block text-[11px] font-black bg-[#ffb703] text-black px-3 py-1 rounded-full mb-2 shadow-md">
+                {settings?.offersBannerBadge || "الأكثر طلباً هذا الأسبوع ⚡"}
+              </span>
+              <h3 className="text-lg md:text-2xl font-black text-white leading-tight">
+                {settings?.offersBannerTitle || "طقم الأوفر سايز والكارجو التكتيكال"}
+              </h3>
+              <p className="text-xs md:text-sm text-white/70 mt-2 mb-4 leading-relaxed">
+                خامات شتوية ثقيلة معالجة ومستوردة تدوم لسنوات متوفرة الآن بفروعنا
+              </p>
+              <div className="inline-flex items-center gap-2 bg-[#00ff66] hover:bg-emerald-400 text-black font-black text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-[#00ff66]/20 active:scale-95 transition-all">
+                <span>{settings?.offersBannerLinkText || "تصفح العرض في التشكيلة"}</span>
+                <ArrowRight size={14} className="rotate-180" />
+              </div>
+            </div>
+          </a>
+        </section>
+      )}
 
       {/* Categories Horizontal Wrap Bar - Fully Responsive with No Cutting Off! */}
       <section className="px-4 max-w-7xl mx-auto w-full mb-4">
