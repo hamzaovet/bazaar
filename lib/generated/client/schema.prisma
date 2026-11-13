@@ -1,0 +1,369 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/client"
+}
+
+// ----------------------------------------------------
+// 1. MULTI-BRANCH SYSTEM (منظومة الفروع المتعددة)
+// ----------------------------------------------------
+model Branch {
+  id              String   @id @default(cuid())
+  name            String // e.g. "فرع عباس العقاد الرئيسي", "فرع أول عباس - كشري التحرير"
+  code            String   @unique // "BR-ABBAS-MAIN", "BR-TAHRIR"
+  address         String
+  phone           String
+  whatsapp        String?
+  googleMapsUrl   String?
+  isActive        Boolean  @default(true)
+  isDayOffEnabled Boolean  @default(false)
+  weeklyDayOff    String   @default("NONE") // NONE, MONDAY, etc.
+  dayOffMessage   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  users        User[]
+  branchStocks BranchStock[]
+  invoices     Invoice[]
+  expenses     Expense[]
+  shifts       Shift[]
+  offers       Offer[]
+  customers    Customer[]
+}
+
+// ----------------------------------------------------
+// 2. USERS & RBAC (طاقم العمل والمستخدمين والصلاحيات)
+// ----------------------------------------------------
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  pin       String   @default("157230") // PIN سريع للكاشير
+  name      String
+  role      String // "owner" | "general_manager" | "branch_manager" | "cashier" | "storekeeper"
+  branchId  String?
+  branch    Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  phone     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invoicesHandled Invoice[]
+  shiftsOpened    Shift[]   @relation("ShiftsOpened")
+  shiftsClosed    Shift[]   @relation("ShiftsClosed")
+}
+
+// ----------------------------------------------------
+// 3. CLOTHING INVENTORY: CATEGORIES, PRODUCTS, VARIANTS
+// ----------------------------------------------------
+model Category {
+  id        String   @id @default(cuid())
+  nameAr    String   @unique // "تيشرتات أوفر سايز", "بناطيل جينز", إلخ
+  nameEn    String?
+  slug      String   @unique
+  icon      String? // Emoji or Lucide icon name
+  image     String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  nameAr        String
+  nameEn        String?
+  sku           String?   @unique // e.g. "BAZ-TSH-001"
+  description   String?
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  basePrice     Float // سعر البيع الافتراضي
+  costPrice     Float     @default(0.0) // سعر التكلفة
+  discountPrice Float? // سعر الخصم إن وجد
+  featuredImage String?
+  images        String    @default("[]") // JSON array of image URLs
+  material      String? // قطن 100%، ميلتون معالج، جينز تركي، إلخ
+  brand         String    @default("BAZAAR")
+  isFeatured    Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  variants ProductVariant[]
+}
+
+model ProductVariant {
+  id                String   @id @default(cuid())
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color             String // e.g. "أسود", "أبيض", "كحلي", "بيج", "زيتي"
+  colorHex          String? // "#000000", "#FFFFFF", etc.
+  size              String // "S", "M", "L", "XL", "2XL", "3XL", "4XL"
+  barcode           String   @unique // Unique Barcode string e.g. "6221001001"
+  sku               String? // e.g. "BAZ-TSH-001-BLK-XL"
+  priceOverride     Float? // If this variant has a different price
+  costPriceOverride Float?
+  stockCentral      Int      @default(0) // الرصيد بالمخزن المركزي الرئيسي المشترك
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  branchStocks  BranchStock[]
+  invoiceLines  InvoiceLine[]
+  transferLines StockTransferLine[]
+
+  @@unique([productId, color, size])
+}
+
+// ----------------------------------------------------
+// 4. BRANCH ALLOCATION & STOCK TRANSFERS
+// ----------------------------------------------------
+model BranchStock {
+  id               String         @id @default(cuid())
+  variantId        String
+  variant          ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  branchId         String
+  branch           Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  quantity         Int            @default(0) // الرصيد المعروض بصالة بيع الفرع
+  alertLowQuantity Int            @default(2) // تنبيه عند وصول الرصيد لقطعتين
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([variantId, branchId])
+}
+
+model StockTransfer {
+  id             String   @id @default(cuid())
+  transferNumber String   @unique // "TRF-2026-001"
+  fromLocation   String // "CENTRAL_WAREHOUSE" or Branch ID
+  toLocation     String // Branch ID
+  status         String   @default("PENDING") // "PENDING" | "COMPLETED" | "CANCELLED"
+  requestedBy    String?
+  approvedBy     String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  lines StockTransferLine[]
+}
+
+model StockTransferLine {
+  id         String         @id @default(cuid())
+  transferId String
+  transfer   StockTransfer  @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  variantId  String
+  variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  quantity   Int
+  notes      String?
+}
+
+// ----------------------------------------------------
+// 5. CUSTOMERS & LOYALTY CRM (العملاء ونقاط الولاء)
+// ----------------------------------------------------
+model Customer {
+  id            String   @id @default(cuid())
+  name          String
+  phone         String   @unique
+  email         String?
+  address       String?
+  governorate   String?  @default("القاهرة")
+  loyaltyPoints Int      @default(0)
+  totalSpent    Float    @default(0.0)
+  totalVisits   Int      @default(0)
+  vipLevel      String   @default("REGULAR") // "REGULAR" | "SILVER" | "GOLD" | "ROYAL_VIP"
+  branchId      String?
+  branch        Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  invoices Invoice[]
+}
+
+// ----------------------------------------------------
+// 6. INVOICES & POS SALES (فواتير المبيعات ونقطة البيع)
+// ----------------------------------------------------
+model Invoice {
+  id              String    @id @default(cuid())
+  invoiceNumber   String    @unique // "BAZ-1001"
+  branchId        String
+  branch          Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  cashierId       String?
+  cashierUser     User?     @relation(fields: [cashierId], references: [id], onDelete: SetNull)
+  customerId      String?
+  customer        Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerName    String?
+  customerPhone   String?
+  orderType       String    @default("IN_STORE_POS") // "IN_STORE_POS" | "ONLINE_ORDER" | "WHATSAPP_ORDER"
+  subTotal        Float
+  discountAmount  Float     @default(0.0)
+  taxAmount       Float     @default(0.0)
+  finalTotal      Float
+  paidAmount      Float
+  remainingAmount Float     @default(0.0)
+  paymentMethod   String    @default("CASH") // "CASH" | "VISA" | "INSTAPAY" | "VODAFONE_CASH" | "SPLIT"
+  splitDetails    String? // JSON if split
+  status          String    @default("PAID") // "PAID" | "PENDING_DELIVERY" | "RETURNED" | "EXCHANGED" | "CANCELLED"
+  notes           String?
+  shiftId         String?
+  shift           Shift?    @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  lines InvoiceLine[]
+}
+
+model InvoiceLine {
+  id             String         @id @default(cuid())
+  invoiceId      String
+  invoice        Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  variantId      String
+  variant        ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  productName    String
+  color          String
+  size           String
+  barcode        String
+  quantity       Int
+  unitPrice      Float
+  costPrice      Float          @default(0.0)
+  discountAmount Float          @default(0.0)
+  total          Float
+}
+
+// ----------------------------------------------------
+// 7. DAILY SHIFTS (الورديات وإقفال الكاشير)
+// ----------------------------------------------------
+model Shift {
+  id             String    @id @default(cuid())
+  shiftNumber    String    @unique // "SH-ABBAS-20261113-001"
+  branchId       String
+  branch         Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  openedById     String
+  openedByUser   User      @relation("ShiftsOpened", fields: [openedById], references: [id])
+  closedById     String?
+  closedByUser   User?     @relation("ShiftsClosed", fields: [closedById], references: [id])
+  startTime      DateTime  @default(now())
+  endTime        DateTime?
+  status         String    @default("OPEN") // "OPEN" | "CLOSED"
+  openingCash    Float     @default(0.0)
+  expectedCash   Float     @default(0.0)
+  actualCash     Float     @default(0.0)
+  cashDifference Float     @default(0.0)
+  totalSales     Float     @default(0.0)
+  cashSales      Float     @default(0.0)
+  visaSales      Float     @default(0.0)
+  instapaySales  Float     @default(0.0)
+  vodafoneSales  Float     @default(0.0)
+  totalReturns   Float     @default(0.0)
+  expensesAmount Float     @default(0.0)
+  handedTo       String?
+  notes          String?
+  createdAt      DateTime  @default(now())
+
+  invoices Invoice[]
+  expenses Expense[]
+}
+
+// ----------------------------------------------------
+// 8. EXPENSES (المصروفات النثرية والتشغيلية)
+// ----------------------------------------------------
+model Expense {
+  id            String   @id @default(cuid())
+  branchId      String
+  branch        Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  title         String // e.g. "ضيافة عملاء", "أكياس مطبوعة", "فواتير كهرباء"
+  amount        Float
+  category      String   @default("MISC") // "RENT" | "UTILITIES" | "SUPPLIES" | "SALARIES" | "HOSPITALITY" | "MARKETING" | "MISC"
+  paymentMethod String   @default("CASH")
+  recordedBy    String?
+  notes         String?
+  shiftId       String?
+  shift         Shift?   @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+}
+
+// ----------------------------------------------------
+// 9. LIVE CHAT & COMMUNICATIONS (المحادثات المباشرة)
+// ----------------------------------------------------
+model ChatMessage {
+  id             String   @id @default(cuid())
+  conversationId String // customer phone or id
+  branchId       String?
+  customerPhone  String
+  customerName   String
+  sender         String // "CUSTOMER" | "STORE" | "ADMIN"
+  senderName     String
+  message        String
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
+
+// ----------------------------------------------------
+// 10. WEB PUSH NOTIFICATIONS (إشعارات الهواتف)
+// ----------------------------------------------------
+model PushSubscription {
+  id            String   @id @default(cuid())
+  endpoint      String   @unique
+  p256dh        String
+  auth          String
+  userRole      String   @default("CUSTOMER") // "CUSTOMER" | "ADMIN" | "CASHIER"
+  branchId      String?
+  customerPhone String?
+  userName      String?
+  createdAt     DateTime @default(now())
+}
+
+// ----------------------------------------------------
+// 11. OFFERS & PROMOTIONS (العروض الحصرية لكل فرع)
+// ----------------------------------------------------
+model Offer {
+  id               String    @id @default(cuid())
+  titleAr          String
+  badge            String? // e.g. "خصم 30% 🔥"
+  price            Float
+  oldPrice         Float?
+  discountPercent  Int?
+  image            String?
+  description      String?
+  features         String    @default("[]") // JSON array of features
+  branchId         String?
+  branch           Branch?   @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  announcementText String? // نص الإشعار الترويجي الذي يصل لهواتف العملاء
+  broadcastSentAt  DateTime?
+  isActive         Boolean   @default(true)
+  sortOrder        Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+// ----------------------------------------------------
+// 12. SYSTEM SETTINGS & MASTER EMERGENCY LOCK
+// ----------------------------------------------------
+model SystemSettings {
+  id                Int    @id @default(1)
+  brandNameAr       String @default("بزار كاجوال وير")
+  brandNameEn       String @default("BAZAAR Casual Wear")
+  logoUrl           String @default("/logo.jpg")
+  hotline           String @default("01008038041")
+  whatsappNumber    String @default("01008038041")
+  facebookUrl       String @default("https://www.facebook.com/share/1Dq8mYkoij/")
+  facebookUrl2      String @default("https://www.facebook.com/profile.php?id=100090095202108&mibextid=wwXIfr")
+  tiktokUrl         String @default("https://www.tiktok.com/@mohamed_ashraf327?_r=1&_t=ZS-9BMGDqeFbr2")
+  instagramUrl      String @default("https://www.instagram.com/bazaar_casual_wear")
+  receiptFooterText String @default("شكراً لزيارتكم بزار كاجوال وير • الاستبدال والاسترجاع خلال 14 يوماً بأصل الفاتورة والباركود")
+
+  // Emergency Master Lockout (زر الطوارئ الحصري للمالك Maestro لتعطيل الحسابات وضمان الملكية)
+  isMasterLocked    Boolean @default(false)
+  masterLockMessage String  @default("النظام في وضع الصيانة والتحديث الإداري العام. يرجى التواصل مع إدارة بزار كاجوال وير.")
+
+  // AI Gemini & Integration Keys
+  geminiApiKey           String?
+  loyaltyPointsPer100Egp Int      @default(5)
+  currency               String   @default("ج.م")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
