@@ -394,6 +394,14 @@ model SystemSettings {
   offersBannerLinkText    String            @default("تصفح العرض في التشكيلة")
   offersBannerLinkHref    String            @default("#collection")
 
+  // Smart NFC & QR Card Profile Hub
+  smartCardTitle          String            @default("بزار كاجوال وير • BAZAAR")
+  smartCardBio            String            @default("براند الشارع المصري الفاخر • خامات قطنية تركي وأوفر سايز عصري")
+  smartCardInstapay       String            @default("bazaar@instapay")
+  smartCardVodafoneCash   String            @default("01008038041")
+  smartCardGoogleReviews  String            @default("https://maps.app.goo.gl/MzCnj5n3mP29uurK6")
+  smartCardCustomLinks    String            @default("[]") // JSON array of custom links: { id, title, icon, url, category, isActive }
+
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
 }

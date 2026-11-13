@@ -23631,6 +23631,12 @@ export namespace Prisma {
     offersBannerImage: string | null
     offersBannerLinkText: string | null
     offersBannerLinkHref: string | null
+    smartCardTitle: string | null
+    smartCardBio: string | null
+    smartCardInstapay: string | null
+    smartCardVodafoneCash: string | null
+    smartCardGoogleReviews: string | null
+    smartCardCustomLinks: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -23665,6 +23671,12 @@ export namespace Prisma {
     offersBannerImage: string | null
     offersBannerLinkText: string | null
     offersBannerLinkHref: string | null
+    smartCardTitle: string | null
+    smartCardBio: string | null
+    smartCardInstapay: string | null
+    smartCardVodafoneCash: string | null
+    smartCardGoogleReviews: string | null
+    smartCardCustomLinks: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -23699,6 +23711,12 @@ export namespace Prisma {
     offersBannerImage: number
     offersBannerLinkText: number
     offersBannerLinkHref: number
+    smartCardTitle: number
+    smartCardBio: number
+    smartCardInstapay: number
+    smartCardVodafoneCash: number
+    smartCardGoogleReviews: number
+    smartCardCustomLinks: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -23745,6 +23763,12 @@ export namespace Prisma {
     offersBannerImage?: true
     offersBannerLinkText?: true
     offersBannerLinkHref?: true
+    smartCardTitle?: true
+    smartCardBio?: true
+    smartCardInstapay?: true
+    smartCardVodafoneCash?: true
+    smartCardGoogleReviews?: true
+    smartCardCustomLinks?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -23779,6 +23803,12 @@ export namespace Prisma {
     offersBannerImage?: true
     offersBannerLinkText?: true
     offersBannerLinkHref?: true
+    smartCardTitle?: true
+    smartCardBio?: true
+    smartCardInstapay?: true
+    smartCardVodafoneCash?: true
+    smartCardGoogleReviews?: true
+    smartCardCustomLinks?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -23813,6 +23843,12 @@ export namespace Prisma {
     offersBannerImage?: true
     offersBannerLinkText?: true
     offersBannerLinkHref?: true
+    smartCardTitle?: true
+    smartCardBio?: true
+    smartCardInstapay?: true
+    smartCardVodafoneCash?: true
+    smartCardGoogleReviews?: true
+    smartCardCustomLinks?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -23934,6 +23970,12 @@ export namespace Prisma {
     offersBannerImage: string
     offersBannerLinkText: string
     offersBannerLinkHref: string
+    smartCardTitle: string
+    smartCardBio: string
+    smartCardInstapay: string
+    smartCardVodafoneCash: string
+    smartCardGoogleReviews: string
+    smartCardCustomLinks: string
     createdAt: Date
     updatedAt: Date
     _count: SystemSettingsCountAggregateOutputType | null
@@ -23987,6 +24029,12 @@ export namespace Prisma {
     offersBannerImage?: boolean
     offersBannerLinkText?: boolean
     offersBannerLinkHref?: boolean
+    smartCardTitle?: boolean
+    smartCardBio?: boolean
+    smartCardInstapay?: boolean
+    smartCardVodafoneCash?: boolean
+    smartCardGoogleReviews?: boolean
+    smartCardCustomLinks?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["systemSettings"]>
@@ -24021,6 +24069,12 @@ export namespace Prisma {
     offersBannerImage?: boolean
     offersBannerLinkText?: boolean
     offersBannerLinkHref?: boolean
+    smartCardTitle?: boolean
+    smartCardBio?: boolean
+    smartCardInstapay?: boolean
+    smartCardVodafoneCash?: boolean
+    smartCardGoogleReviews?: boolean
+    smartCardCustomLinks?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["systemSettings"]>
@@ -24055,6 +24109,12 @@ export namespace Prisma {
     offersBannerImage?: boolean
     offersBannerLinkText?: boolean
     offersBannerLinkHref?: boolean
+    smartCardTitle?: boolean
+    smartCardBio?: boolean
+    smartCardInstapay?: boolean
+    smartCardVodafoneCash?: boolean
+    smartCardGoogleReviews?: boolean
+    smartCardCustomLinks?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["systemSettings"]>
@@ -24089,11 +24149,17 @@ export namespace Prisma {
     offersBannerImage?: boolean
     offersBannerLinkText?: boolean
     offersBannerLinkHref?: boolean
+    smartCardTitle?: boolean
+    smartCardBio?: boolean
+    smartCardInstapay?: boolean
+    smartCardVodafoneCash?: boolean
+    smartCardGoogleReviews?: boolean
+    smartCardCustomLinks?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type SystemSettingsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "brandNameAr" | "brandNameEn" | "logoUrl" | "hotline" | "whatsappNumber" | "facebookUrl" | "facebookUrl2" | "tiktokUrl" | "instagramUrl" | "receiptFooterText" | "heroBannerImage" | "heroTagline" | "heroDescription" | "isMasterLocked" | "masterLockMessage" | "geminiApiKey" | "loyaltyPointsPer100Egp" | "currency" | "offersSectionEnabled" | "offersBadge" | "offersTitle" | "offersSubtitle" | "offersCards" | "offersBannerBadge" | "offersBannerTitle" | "offersBannerImage" | "offersBannerLinkText" | "offersBannerLinkHref" | "createdAt" | "updatedAt", ExtArgs["result"]["systemSettings"]>
+  export type SystemSettingsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "brandNameAr" | "brandNameEn" | "logoUrl" | "hotline" | "whatsappNumber" | "facebookUrl" | "facebookUrl2" | "tiktokUrl" | "instagramUrl" | "receiptFooterText" | "heroBannerImage" | "heroTagline" | "heroDescription" | "isMasterLocked" | "masterLockMessage" | "geminiApiKey" | "loyaltyPointsPer100Egp" | "currency" | "offersSectionEnabled" | "offersBadge" | "offersTitle" | "offersSubtitle" | "offersCards" | "offersBannerBadge" | "offersBannerTitle" | "offersBannerImage" | "offersBannerLinkText" | "offersBannerLinkHref" | "smartCardTitle" | "smartCardBio" | "smartCardInstapay" | "smartCardVodafoneCash" | "smartCardGoogleReviews" | "smartCardCustomLinks" | "createdAt" | "updatedAt", ExtArgs["result"]["systemSettings"]>
 
   export type $SystemSettingsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "SystemSettings"
@@ -24128,6 +24194,12 @@ export namespace Prisma {
       offersBannerImage: string
       offersBannerLinkText: string
       offersBannerLinkHref: string
+      smartCardTitle: string
+      smartCardBio: string
+      smartCardInstapay: string
+      smartCardVodafoneCash: string
+      smartCardGoogleReviews: string
+      smartCardCustomLinks: string
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["systemSettings"]>
@@ -24582,6 +24654,12 @@ export namespace Prisma {
     readonly offersBannerImage: FieldRef<"SystemSettings", 'String'>
     readonly offersBannerLinkText: FieldRef<"SystemSettings", 'String'>
     readonly offersBannerLinkHref: FieldRef<"SystemSettings", 'String'>
+    readonly smartCardTitle: FieldRef<"SystemSettings", 'String'>
+    readonly smartCardBio: FieldRef<"SystemSettings", 'String'>
+    readonly smartCardInstapay: FieldRef<"SystemSettings", 'String'>
+    readonly smartCardVodafoneCash: FieldRef<"SystemSettings", 'String'>
+    readonly smartCardGoogleReviews: FieldRef<"SystemSettings", 'String'>
+    readonly smartCardCustomLinks: FieldRef<"SystemSettings", 'String'>
     readonly createdAt: FieldRef<"SystemSettings", 'DateTime'>
     readonly updatedAt: FieldRef<"SystemSettings", 'DateTime'>
   }
@@ -34593,6 +34671,12 @@ export namespace Prisma {
     offersBannerImage: 'offersBannerImage',
     offersBannerLinkText: 'offersBannerLinkText',
     offersBannerLinkHref: 'offersBannerLinkHref',
+    smartCardTitle: 'smartCardTitle',
+    smartCardBio: 'smartCardBio',
+    smartCardInstapay: 'smartCardInstapay',
+    smartCardVodafoneCash: 'smartCardVodafoneCash',
+    smartCardGoogleReviews: 'smartCardGoogleReviews',
+    smartCardCustomLinks: 'smartCardCustomLinks',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -36463,6 +36547,12 @@ export namespace Prisma {
     offersBannerImage?: StringFilter<"SystemSettings"> | string
     offersBannerLinkText?: StringFilter<"SystemSettings"> | string
     offersBannerLinkHref?: StringFilter<"SystemSettings"> | string
+    smartCardTitle?: StringFilter<"SystemSettings"> | string
+    smartCardBio?: StringFilter<"SystemSettings"> | string
+    smartCardInstapay?: StringFilter<"SystemSettings"> | string
+    smartCardVodafoneCash?: StringFilter<"SystemSettings"> | string
+    smartCardGoogleReviews?: StringFilter<"SystemSettings"> | string
+    smartCardCustomLinks?: StringFilter<"SystemSettings"> | string
     createdAt?: DateTimeFilter<"SystemSettings"> | Date | string
     updatedAt?: DateTimeFilter<"SystemSettings"> | Date | string
   }
@@ -36497,6 +36587,12 @@ export namespace Prisma {
     offersBannerImage?: SortOrder
     offersBannerLinkText?: SortOrder
     offersBannerLinkHref?: SortOrder
+    smartCardTitle?: SortOrder
+    smartCardBio?: SortOrder
+    smartCardInstapay?: SortOrder
+    smartCardVodafoneCash?: SortOrder
+    smartCardGoogleReviews?: SortOrder
+    smartCardCustomLinks?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -36534,6 +36630,12 @@ export namespace Prisma {
     offersBannerImage?: StringFilter<"SystemSettings"> | string
     offersBannerLinkText?: StringFilter<"SystemSettings"> | string
     offersBannerLinkHref?: StringFilter<"SystemSettings"> | string
+    smartCardTitle?: StringFilter<"SystemSettings"> | string
+    smartCardBio?: StringFilter<"SystemSettings"> | string
+    smartCardInstapay?: StringFilter<"SystemSettings"> | string
+    smartCardVodafoneCash?: StringFilter<"SystemSettings"> | string
+    smartCardGoogleReviews?: StringFilter<"SystemSettings"> | string
+    smartCardCustomLinks?: StringFilter<"SystemSettings"> | string
     createdAt?: DateTimeFilter<"SystemSettings"> | Date | string
     updatedAt?: DateTimeFilter<"SystemSettings"> | Date | string
   }, "id">
@@ -36568,6 +36670,12 @@ export namespace Prisma {
     offersBannerImage?: SortOrder
     offersBannerLinkText?: SortOrder
     offersBannerLinkHref?: SortOrder
+    smartCardTitle?: SortOrder
+    smartCardBio?: SortOrder
+    smartCardInstapay?: SortOrder
+    smartCardVodafoneCash?: SortOrder
+    smartCardGoogleReviews?: SortOrder
+    smartCardCustomLinks?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: SystemSettingsCountOrderByAggregateInput
@@ -36610,6 +36718,12 @@ export namespace Prisma {
     offersBannerImage?: StringWithAggregatesFilter<"SystemSettings"> | string
     offersBannerLinkText?: StringWithAggregatesFilter<"SystemSettings"> | string
     offersBannerLinkHref?: StringWithAggregatesFilter<"SystemSettings"> | string
+    smartCardTitle?: StringWithAggregatesFilter<"SystemSettings"> | string
+    smartCardBio?: StringWithAggregatesFilter<"SystemSettings"> | string
+    smartCardInstapay?: StringWithAggregatesFilter<"SystemSettings"> | string
+    smartCardVodafoneCash?: StringWithAggregatesFilter<"SystemSettings"> | string
+    smartCardGoogleReviews?: StringWithAggregatesFilter<"SystemSettings"> | string
+    smartCardCustomLinks?: StringWithAggregatesFilter<"SystemSettings"> | string
     createdAt?: DateTimeWithAggregatesFilter<"SystemSettings"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"SystemSettings"> | Date | string
   }
@@ -39121,6 +39235,12 @@ export namespace Prisma {
     offersBannerImage?: string
     offersBannerLinkText?: string
     offersBannerLinkHref?: string
+    smartCardTitle?: string
+    smartCardBio?: string
+    smartCardInstapay?: string
+    smartCardVodafoneCash?: string
+    smartCardGoogleReviews?: string
+    smartCardCustomLinks?: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -39155,6 +39275,12 @@ export namespace Prisma {
     offersBannerImage?: string
     offersBannerLinkText?: string
     offersBannerLinkHref?: string
+    smartCardTitle?: string
+    smartCardBio?: string
+    smartCardInstapay?: string
+    smartCardVodafoneCash?: string
+    smartCardGoogleReviews?: string
+    smartCardCustomLinks?: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -39189,6 +39315,12 @@ export namespace Prisma {
     offersBannerImage?: StringFieldUpdateOperationsInput | string
     offersBannerLinkText?: StringFieldUpdateOperationsInput | string
     offersBannerLinkHref?: StringFieldUpdateOperationsInput | string
+    smartCardTitle?: StringFieldUpdateOperationsInput | string
+    smartCardBio?: StringFieldUpdateOperationsInput | string
+    smartCardInstapay?: StringFieldUpdateOperationsInput | string
+    smartCardVodafoneCash?: StringFieldUpdateOperationsInput | string
+    smartCardGoogleReviews?: StringFieldUpdateOperationsInput | string
+    smartCardCustomLinks?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -39223,6 +39355,12 @@ export namespace Prisma {
     offersBannerImage?: StringFieldUpdateOperationsInput | string
     offersBannerLinkText?: StringFieldUpdateOperationsInput | string
     offersBannerLinkHref?: StringFieldUpdateOperationsInput | string
+    smartCardTitle?: StringFieldUpdateOperationsInput | string
+    smartCardBio?: StringFieldUpdateOperationsInput | string
+    smartCardInstapay?: StringFieldUpdateOperationsInput | string
+    smartCardVodafoneCash?: StringFieldUpdateOperationsInput | string
+    smartCardGoogleReviews?: StringFieldUpdateOperationsInput | string
+    smartCardCustomLinks?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -39257,6 +39395,12 @@ export namespace Prisma {
     offersBannerImage?: string
     offersBannerLinkText?: string
     offersBannerLinkHref?: string
+    smartCardTitle?: string
+    smartCardBio?: string
+    smartCardInstapay?: string
+    smartCardVodafoneCash?: string
+    smartCardGoogleReviews?: string
+    smartCardCustomLinks?: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -39291,6 +39435,12 @@ export namespace Prisma {
     offersBannerImage?: StringFieldUpdateOperationsInput | string
     offersBannerLinkText?: StringFieldUpdateOperationsInput | string
     offersBannerLinkHref?: StringFieldUpdateOperationsInput | string
+    smartCardTitle?: StringFieldUpdateOperationsInput | string
+    smartCardBio?: StringFieldUpdateOperationsInput | string
+    smartCardInstapay?: StringFieldUpdateOperationsInput | string
+    smartCardVodafoneCash?: StringFieldUpdateOperationsInput | string
+    smartCardGoogleReviews?: StringFieldUpdateOperationsInput | string
+    smartCardCustomLinks?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -39325,6 +39475,12 @@ export namespace Prisma {
     offersBannerImage?: StringFieldUpdateOperationsInput | string
     offersBannerLinkText?: StringFieldUpdateOperationsInput | string
     offersBannerLinkHref?: StringFieldUpdateOperationsInput | string
+    smartCardTitle?: StringFieldUpdateOperationsInput | string
+    smartCardBio?: StringFieldUpdateOperationsInput | string
+    smartCardInstapay?: StringFieldUpdateOperationsInput | string
+    smartCardVodafoneCash?: StringFieldUpdateOperationsInput | string
+    smartCardGoogleReviews?: StringFieldUpdateOperationsInput | string
+    smartCardCustomLinks?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -41398,6 +41554,12 @@ export namespace Prisma {
     offersBannerImage?: SortOrder
     offersBannerLinkText?: SortOrder
     offersBannerLinkHref?: SortOrder
+    smartCardTitle?: SortOrder
+    smartCardBio?: SortOrder
+    smartCardInstapay?: SortOrder
+    smartCardVodafoneCash?: SortOrder
+    smartCardGoogleReviews?: SortOrder
+    smartCardCustomLinks?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -41437,6 +41599,12 @@ export namespace Prisma {
     offersBannerImage?: SortOrder
     offersBannerLinkText?: SortOrder
     offersBannerLinkHref?: SortOrder
+    smartCardTitle?: SortOrder
+    smartCardBio?: SortOrder
+    smartCardInstapay?: SortOrder
+    smartCardVodafoneCash?: SortOrder
+    smartCardGoogleReviews?: SortOrder
+    smartCardCustomLinks?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -41471,6 +41639,12 @@ export namespace Prisma {
     offersBannerImage?: SortOrder
     offersBannerLinkText?: SortOrder
     offersBannerLinkHref?: SortOrder
+    smartCardTitle?: SortOrder
+    smartCardBio?: SortOrder
+    smartCardInstapay?: SortOrder
+    smartCardVodafoneCash?: SortOrder
+    smartCardGoogleReviews?: SortOrder
+    smartCardCustomLinks?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }

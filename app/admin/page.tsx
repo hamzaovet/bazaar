@@ -40,9 +40,20 @@ import {
   FileSpreadsheet,
   Eye,
   Receipt,
+  QrCode,
+  Radio,
+  ExternalLink,
+  Share2,
+  Copy,
+  Smartphone,
+  Globe,
+  Star,
+  UserPlus,
+  Phone,
 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import PrintBarcodeTag from "@/components/PrintBarcodeTag";
+import PrintableCard from "@/components/PrintableCard";
 import { useToast } from "@/components/Toast";
 
 interface User {
@@ -80,6 +91,7 @@ export default function AdminDashboardPage() {
     | "returns"
     | "purchases"
     | "seasons"
+    | "smartcard"
   >("overview");
 
   // Dashboard Data
@@ -176,6 +188,27 @@ export default function AdminDashboardPage() {
     },
   ]);
   const [savingOffers, setSavingOffers] = useState<boolean>(false);
+
+  // Smart NFC & QR Card Management State
+  const [smartCardTitleInput, setSmartCardTitleInput] = useState<string>("بزار كاجوال وير • BAZAAR");
+  const [smartCardBioInput, setSmartCardBioInput] = useState<string>("براند الشارع المصري الفاخر • خامات قطنية تركي وأوفر سايز عصري بفروع عباس العقاد");
+  const [smartCardInstapayInput, setSmartCardInstapayInput] = useState<string>("bazaar@instapay");
+  const [smartCardVodafoneCashInput, setSmartCardVodafoneCashInput] = useState<string>("01008038041");
+  const [smartCardGoogleReviewsInput, setSmartCardGoogleReviewsInput] = useState<string>("https://maps.app.goo.gl/MzCnj5n3mP29uurK6");
+  const [smartCardCustomLinksList, setSmartCardCustomLinksList] = useState<any[]>([
+    { id: "whatsapp", title: "واتساب الفروع والطلبات", icon: "💬", url: "https://wa.me/201008038041?text=مرحباً%20بزار%20كاجوال%20وير", category: "chat", isActive: true },
+    { id: "instagram", title: "إنستجرام الرسمي", icon: "📸", url: "https://www.instagram.com/bazaar_casual_wear", category: "social", isActive: true },
+    { id: "tiktok", title: "تيك توك تريندات الموديلات", icon: "🎵", url: "https://www.tiktok.com/@mohamed_ashraf327?_r=1&_t=ZS-9BMGDqeFbr2", category: "video", isActive: true },
+    { id: "fb1", title: "فيسبوك - الصفحة الرسمية 1", icon: "📘", url: "https://www.facebook.com/share/1Dq8mYkoij/", category: "social", isActive: true },
+    { id: "fb2", title: "فيسبوك - كوليكشن كاجوال 2", icon: "👔", url: "https://www.facebook.com/profile.php?id=100090095202108&mibextid=wwXIfr", category: "social", isActive: true },
+    { id: "catalog", title: "متجر بزار الإلكتروني والكتالوج", icon: "🛍️", url: "/#collection", category: "store", isActive: true },
+  ]);
+  const [newIconTitle, setNewIconTitle] = useState<string>("");
+  const [newIconUrl, setNewIconUrl] = useState<string>("");
+  const [newIconEmoji, setNewIconEmoji] = useState<string>("💬");
+  const [newIconCategory, setNewIconCategory] = useState<string>("social");
+  const [savingSmartCard, setSavingSmartCard] = useState<boolean>(false);
+  const [showSmartCardModal, setShowSmartCardModal] = useState<boolean>(false);
 
   // Users Management State
   const [showAddUserModal, setShowAddUserModal] = useState<boolean>(false);
@@ -346,6 +379,26 @@ export default function AdminDashboardPage() {
             const parsed = JSON.parse(st.settings.offersCards);
             if (Array.isArray(parsed) && parsed.length > 0) {
               setOffersCardsList(parsed);
+            }
+          } catch (e) {
+            // Ignored
+          }
+        }
+
+        // Load Smart NFC & QR Card Settings
+        if (st.settings.smartCardTitle) setSmartCardTitleInput(st.settings.smartCardTitle);
+        if (st.settings.smartCardBio) setSmartCardBioInput(st.settings.smartCardBio);
+        if (st.settings.smartCardInstapay) setSmartCardInstapayInput(st.settings.smartCardInstapay);
+        if (st.settings.smartCardVodafoneCash) setSmartCardVodafoneCashInput(st.settings.smartCardVodafoneCash);
+        if (st.settings.smartCardGoogleReviews) setSmartCardGoogleReviewsInput(st.settings.smartCardGoogleReviews);
+        if (st.settings.smartCardCustomLinks) {
+          try {
+            const parsed =
+              typeof st.settings.smartCardCustomLinks === "string"
+                ? JSON.parse(st.settings.smartCardCustomLinks)
+                : st.settings.smartCardCustomLinks;
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setSmartCardCustomLinksList(parsed);
             }
           } catch (e) {
             // Ignored
@@ -888,6 +941,69 @@ export default function AdminDashboardPage() {
     } finally {
       setSavingOffers(false);
     }
+  };
+
+  // Smart Card NFC & QR Settings Handlers
+  const handleSaveSmartCardSettings = async () => {
+    try {
+      setSavingSmartCard(true);
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          smartCardTitle: smartCardTitleInput,
+          smartCardBio: smartCardBioInput,
+          smartCardInstapay: smartCardInstapayInput,
+          smartCardVodafoneCash: smartCardVodafoneCashInput,
+          smartCardGoogleReviews: smartCardGoogleReviewsInput,
+          smartCardCustomLinks: JSON.stringify(smartCardCustomLinksList),
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setSettings(data.settings);
+        showToast("✅ تم حفظ إعدادات وأيقونات ستاند وكارت الـ NFC & QR بنجاح وتحديث الكارت فورياً!", "success");
+      } else {
+        showToast(data.error || "فشل حفظ إعدادات الكارت الذكي", "error");
+      }
+    } catch (e) {
+      showToast("حدث خطأ في الاتصال بالخادم", "error");
+    } finally {
+      setSavingSmartCard(false);
+    }
+  };
+
+  const handleAddCustomIcon = () => {
+    if (!newIconTitle.trim() || !newIconUrl.trim()) {
+      showToast("يرجى إدخال اسم الأيقونة والرابط", "error");
+      return;
+    }
+    const newLink = {
+      id: "icon-" + Date.now(),
+      title: newIconTitle.trim(),
+      url: newIconUrl.trim(),
+      icon: newIconEmoji,
+      category: newIconCategory,
+      isActive: true,
+    };
+    setSmartCardCustomLinksList([...smartCardCustomLinksList, newLink]);
+    setNewIconTitle("");
+    setNewIconUrl("");
+    showToast("✅ تمت إضافة الأيقونة للقائمة، اضغط حفظ لتطبيقها على الكارت", "success");
+  };
+
+  const handleToggleCustomIcon = (id: string) => {
+    setSmartCardCustomLinksList(
+      smartCardCustomLinksList.map((item) =>
+        item.id === id ? { ...item, isActive: !item.isActive } : item
+      )
+    );
+  };
+
+  const handleDeleteCustomIcon = (id: string) => {
+    setSmartCardCustomLinksList(smartCardCustomLinksList.filter((item) => item.id !== id));
+    showToast("تم حذف الأيقونة من القائمة", "info");
   };
 
   // Helper to trigger batch print for a single product across all its variants
@@ -1451,6 +1567,7 @@ export default function AdminDashboardPage() {
             { id: "purchases", label: "المشتريات والموردين", icon: Truck },
             { id: "customers", label: "العملاء والحسابات", icon: Users },
             { id: "seasons", label: "المواسم وعروض الشارع", icon: Flame },
+            { id: "smartcard", label: "ستاند وكارت NFC & QR الذكي", icon: QrCode },
             { id: "transfers", label: "أذون تحويل البضاعة", icon: ArrowRightLeft },
             { id: "treasury", label: "الخزينة والورديات", icon: DollarSign },
             { id: "barcodes", label: "طباعة الباركود والتيكت", icon: Barcode },
@@ -3042,6 +3159,431 @@ export default function AdminDashboardPage() {
                       onChange={(e) => setOffersBannerLinkTextInput(e.target.value)}
                       className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-[#00ff66]"
                     />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: SMART NFC & QR CODE PROFILE HUB & STAND */}
+        {activeTab === "smartcard" && (
+          <div className="space-y-6">
+            {/* Header Hero Banner */}
+            <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-950/40 via-[#14121a] to-emerald-950/30 border border-amber-500/40 shadow-2xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-2 relative z-10">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-black">
+                  <QrCode size={14} className="text-[#00ff66]" />
+                  <span>ستاند الكاشير الأكريليك وكارت الـ VIP الذكي (Leith Store Style)</span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black text-white">
+                  إدارة ستاند وكارت الـ NFC & QR الذكي
+                </h3>
+                <p className="text-xs text-white/70 max-w-2xl leading-relaxed">
+                  تحكم ديناميكي كامل في هوية الكارت، أرقام ومعرفات التحويل السريع (إنستاباي وفودافون كاش)، تقييمات جوجل 5 نجوم، وشبكة أيقونات وروابط التواصل الاجتماعي المفتوحة لأي عدد من الأيقونات والتطبيقات.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 relative z-10">
+                <button
+                  type="button"
+                  onClick={() => setShowSmartCardModal(true)}
+                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black px-4 py-2.5 rounded-2xl text-xs font-black flex items-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                >
+                  <Eye size={16} />
+                  <span>معاينة وطباعة الستاند والكارت</span>
+                </button>
+
+                <a
+                  href="/card"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-white/10 hover:bg-white/15 border border-white/20 text-white px-3.5 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-2 transition-all"
+                >
+                  <ExternalLink size={15} className="text-[#00ff66]" />
+                  <span>فتح صفحة الكارت (/card)</span>
+                </a>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left 2 Columns: Settings Form */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* 1. Brand Identity */}
+                <div className="p-5 rounded-3xl bg-[#0f0f18] border border-white/10 space-y-4 shadow-xl">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-white/10">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black">
+                      👑
+                    </div>
+                    <div>
+                      <h4 className="font-black text-sm text-white">هوية البراند في الكارت</h4>
+                      <p className="text-[11px] text-white/50">الاسم والنبذة التعريفية التي تظهر في أعلى شاشة العميل</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 text-xs">
+                    <div>
+                      <label className="block mb-1 text-white/70 font-bold">اسم البراند / عنوان الكارت:</label>
+                      <input
+                        type="text"
+                        value={smartCardTitleInput}
+                        onChange={(e) => setSmartCardTitleInput(e.target.value)}
+                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-black text-sm focus:border-amber-400 focus:outline-none"
+                        placeholder="بزار كاجوال وير • BAZAAR"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block mb-1 text-white/70 font-bold">النبذة التعريفية وسلوجان المحل:</label>
+                      <textarea
+                        rows={2}
+                        value={smartCardBioInput}
+                        onChange={(e) => setSmartCardBioInput(e.target.value)}
+                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white text-xs leading-relaxed focus:border-amber-400 focus:outline-none"
+                        placeholder="براند الشارع المصري الفاخر • خامات قطنية تركي وأوفر سايز عصري بفروع عباس العقاد"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Cashless Quick Pay Hub (إنستاباي والمحافظ) */}
+                <div className="p-5 rounded-3xl bg-[#0f0f18] border border-amber-500/30 space-y-4 shadow-xl">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-white/10">
+                    <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center font-black">
+                      ⚡
+                    </div>
+                    <div>
+                      <h4 className="font-black text-sm text-white">محفظة الدفع الفوري بدون كاش (Cashless Pay Hub)</h4>
+                      <p className="text-[11px] text-white/50">بيانات التحويل مع زر نسخ فوري للعميل لمنع أخطاء كتابة الأرقام عند الكاشير</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <label className="block mb-1 text-white/70 font-bold flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-purple-400" />
+                        <span>معرف إنستاباي (InstaPay IPA / Handle):</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={smartCardInstapayInput}
+                        onChange={(e) => setSmartCardInstapayInput(e.target.value)}
+                        className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-purple-300 font-mono text-xs focus:border-purple-400 focus:outline-none"
+                        placeholder="bazaar@instapay"
+                      />
+                      <span className="text-[10px] text-white/40 mt-1 block">يظهر للعميل مع زر نسخ فوري ورابط التطبيق</span>
+                    </div>
+
+                    <div>
+                      <label className="block mb-1 text-white/70 font-bold flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-red-400" />
+                        <span>رقم فودافون كاش والمحافظ الإلكترونية:</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={smartCardVodafoneCashInput}
+                        onChange={(e) => setSmartCardVodafoneCashInput(e.target.value)}
+                        className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-red-300 font-mono text-xs focus:border-red-400 focus:outline-none"
+                        placeholder="01008038041"
+                      />
+                      <span className="text-[10px] text-white/40 mt-1 block">يدعم النسخ والاتصال بكود التحويل المباشر</span>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block mb-1 text-white/70 font-bold flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-400" />
+                        <span>رابط تقييمات خرائط جوجل (Google Reviews 5-Stars):</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={smartCardGoogleReviewsInput}
+                        onChange={(e) => setSmartCardGoogleReviewsInput(e.target.value)}
+                        className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white font-mono text-xs focus:border-amber-400 focus:outline-none"
+                        placeholder="https://maps.app.goo.gl/..."
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Dynamic Custom Apps & Social Links Manager */}
+                <div className="p-5 rounded-3xl bg-[#0f0f18] border border-white/10 space-y-4 shadow-xl">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-[#00ff66] flex items-center justify-center font-black">
+                        🌐
+                      </div>
+                      <div>
+                        <h4 className="font-black text-sm text-white">إدارة أيقونات وشبكة التطبيقات (3x3 App Grid)</h4>
+                        <p className="text-[11px] text-white/50">أضف، عطل، أو احذف أي تطبيق أو وسيلة تواصل أو رابط دفع بحرية تامة</p>
+                      </div>
+                    </div>
+                    <span className="text-xs bg-white/5 border border-white/10 text-white/70 px-2.5 py-1 rounded-xl font-mono">
+                      {smartCardCustomLinksList.length} أيقونة مسجلة
+                    </span>
+                  </div>
+
+                  {/* List of Active Links */}
+                  <div className="space-y-2">
+                    {smartCardCustomLinksList.map((item, idx) => (
+                      <div
+                        key={item.id || idx}
+                        className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                          item.isActive !== false
+                            ? "bg-black/40 border-white/10"
+                            : "bg-black/20 border-white/5 opacity-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center text-xl shrink-0">
+                            {item.icon || "🔗"}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-xs text-white truncate">{item.title}</span>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-white/5 text-white/50 font-mono">
+                                {item.category || "social"}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-white/40 font-mono truncate block max-w-sm mt-0.5">
+                              {item.url}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleCustomIcon(item.id)}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all ${
+                              item.isActive !== false
+                                ? "bg-[#00ff66]/15 text-[#00ff66] border-[#00ff66]/30"
+                                : "bg-white/5 text-white/40 border-white/10"
+                            }`}
+                          >
+                            {item.isActive !== false ? "مفعل ✓" : "معطل"}
+                          </button>
+
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white"
+                            title="تجربة الرابط"
+                          >
+                            <ExternalLink size={13} />
+                          </a>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCustomIcon(item.id)}
+                            className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400"
+                            title="حذف الأيقونة"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add New App / Icon Box */}
+                  <div className="p-4 rounded-2xl bg-black/60 border border-emerald-500/30 space-y-3 mt-4">
+                    <div className="flex items-center gap-2 text-xs font-bold text-[#00ff66]">
+                      <Plus size={14} />
+                      <span>إضافة أيقونة أو تطبيق جديد للكارت (Add Custom Link):</span>
+                    </div>
+
+                    {/* Quick Preset Selector */}
+                    <div>
+                      <span className="text-[11px] text-white/50 block mb-1.5">اختر نموذجاً سريعاً أو حدد الإيموجي المناسب:</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { emoji: "💬", title: "واتساب الفروع", cat: "chat", url: "https://wa.me/201008038041" },
+                          { emoji: "📸", title: "إنستجرام بزار", cat: "social", url: "https://instagram.com/" },
+                          { emoji: "🎵", title: "تيك توك تريندات", cat: "video", url: "https://tiktok.com/@" },
+                          { emoji: "📘", title: "فيسبوك رسمي", cat: "social", url: "https://facebook.com/" },
+                          { emoji: "👻", title: "سناب شات", cat: "social", url: "https://snapchat.com/add/" },
+                          { emoji: "✈️", title: "قناة التليجرام", cat: "chat", url: "https://t.me/" },
+                          { emoji: "𝕏", title: "منصة إكس (تويتر)", cat: "social", url: "https://x.com/" },
+                          { emoji: "▶️", title: "قناة اليوتيوب", cat: "video", url: "https://youtube.com/" },
+                          { emoji: "🛍️", title: "الكتالوج أونلاين", cat: "store", url: "/#collection" },
+                          { emoji: "💳", title: "بوابة دفع بالفيزا", cat: "payment", url: "https://" },
+                          { emoji: "📍", title: "عنوان فرع جديد", cat: "location", url: "https://maps.app.goo.gl/" },
+                          { emoji: "📞", title: "خط ساخن إضافي", cat: "phone", url: "tel:01210520500" },
+                        ].map((preset, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              setNewIconEmoji(preset.emoji);
+                              setNewIconTitle(preset.title);
+                              setNewIconCategory(preset.cat);
+                              setNewIconUrl(preset.url);
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white/80 hover:text-white flex items-center gap-1 transition-all"
+                          >
+                            <span>{preset.emoji}</span>
+                            <span className="text-[10px]">{preset.title}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs pt-1">
+                      <div className="sm:col-span-2">
+                        <label className="block mb-1 text-white/70 font-bold">الأيقونة / الإيموجي:</label>
+                        <input
+                          type="text"
+                          value={newIconEmoji}
+                          onChange={(e) => setNewIconEmoji(e.target.value)}
+                          className="w-full bg-black border border-white/15 rounded-xl p-2.5 text-center text-lg"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-4">
+                        <label className="block mb-1 text-white/70 font-bold">اسم التطبيق / الأيقونة:</label>
+                        <input
+                          type="text"
+                          value={newIconTitle}
+                          onChange={(e) => setNewIconTitle(e.target.value)}
+                          placeholder="مثال: سناب شات بزار"
+                          className="w-full bg-black border border-white/15 rounded-xl p-2.5 text-white font-bold"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-4">
+                        <label className="block mb-1 text-white/70 font-bold">الرابط الكامل (URL):</label>
+                        <input
+                          type="text"
+                          value={newIconUrl}
+                          onChange={(e) => setNewIconUrl(e.target.value)}
+                          placeholder="https://..."
+                          className="w-full bg-black border border-white/15 rounded-xl p-2.5 text-white font-mono text-[11px]"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2 flex items-end">
+                        <button
+                          type="button"
+                          onClick={handleAddCustomIcon}
+                          className="w-full bg-[#00ff66] hover:bg-[#00dd55] text-black font-black py-2.5 px-3 rounded-xl flex items-center justify-center gap-1 shadow-md shadow-[#00ff66]/20 transition-all text-xs"
+                        >
+                          <Plus size={14} />
+                          <span>إدراج</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Save Changes Button */}
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="button"
+                    disabled={savingSmartCard}
+                    onClick={handleSaveSmartCardSettings}
+                    className="bg-gradient-to-r from-amber-500 via-amber-400 to-[#00ff66] hover:brightness-110 text-black font-black py-3 px-8 rounded-2xl flex items-center gap-2 text-sm shadow-xl shadow-amber-500/20 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {savingSmartCard ? (
+                      <>
+                        <RefreshCw size={16} className="animate-spin" />
+                        <span>جاري حفظ البيانات...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check size={18} />
+                        <span>حفظ كافة إعدادات الكارت الذكي والستاند الآن</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: Live Interactive Smartphone Simulation */}
+              <div className="space-y-4">
+                <div className="sticky top-20">
+                  <div className="flex items-center justify-between px-2 mb-2">
+                    <span className="text-xs font-bold text-white/70 flex items-center gap-1.5">
+                      <Smartphone size={14} className="text-amber-400" />
+                      <span>معاينة حية كما تظهر لهاتف العميل</span>
+                    </span>
+                    <span className="text-[10px] text-[#00ff66] font-mono font-bold bg-[#00ff66]/10 border border-[#00ff66]/30 px-2 py-0.5 rounded-full">
+                      LIVE NFC SIMULATOR
+                    </span>
+                  </div>
+
+                  {/* Phone Mockup Frame */}
+                  <div className="w-full max-w-[340px] mx-auto rounded-[40px] bg-[#000000] p-3 border-4 border-zinc-700/80 shadow-2xl relative overflow-hidden">
+                    {/* Speaker grill & camera notch */}
+                    <div className="w-24 h-4 bg-zinc-800 rounded-full mx-auto mb-2 flex items-center justify-center">
+                      <div className="w-2.5 h-2.5 bg-black rounded-full" />
+                    </div>
+
+                    {/* Screen Canvas */}
+                    <div className="rounded-[30px] bg-gradient-to-b from-[#0a0a10] via-[#0d0d16] to-[#0a0a10] p-3 text-white space-y-3 overflow-y-auto max-h-[580px] no-scrollbar border border-white/5 text-right font-['Cairo',sans-serif]">
+                      {/* Brand Header */}
+                      <div className="text-center py-2 px-1 rounded-2xl bg-white/5 border border-white/5">
+                        <div className="text-[9px] text-[#00ff66] font-mono flex items-center justify-center gap-1 mb-1">
+                          <Radio size={10} className="animate-pulse" />
+                          <span>NFC TAP READY</span>
+                        </div>
+                        <h4 className="text-xs font-black text-white">{smartCardTitleInput}</h4>
+                        <p className="text-[9px] text-white/60 mt-0.5 line-clamp-2 leading-tight">
+                          {smartCardBioInput}
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-1 mt-2.5">
+                          <div className="bg-amber-500 text-black text-[9px] font-black py-1.5 rounded-lg flex items-center justify-center gap-1">
+                            <UserPlus size={10} />
+                            <span>حفظ جهة الاتصال</span>
+                          </div>
+                          <div className="bg-white/10 text-white text-[9px] font-bold py-1.5 rounded-lg flex items-center justify-center gap-1">
+                            <Phone size={10} className="text-[#00ff66]" />
+                            <span>اتصال هاتفي</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Cashless Widget */}
+                      <div className="p-2 rounded-2xl bg-purple-950/20 border border-purple-500/30 space-y-1.5">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="font-bold text-white flex items-center gap-1">
+                            <span>⚡</span>
+                            <span>الدفع السريع (InstaPay)</span>
+                          </span>
+                          <span className="text-[8px] text-purple-300 font-mono">{smartCardInstapayInput}</span>
+                        </div>
+                        <div className="bg-purple-600/30 text-purple-200 text-[8.5px] font-bold py-1 rounded-lg text-center flex items-center justify-center gap-1">
+                          <Copy size={9} />
+                          <span>نسخ المعرف والتحويل فوراً</span>
+                        </div>
+                      </div>
+
+                      {/* Social & Dynamic Apps Grid */}
+                      <div className="space-y-1">
+                        <div className="text-[9px] font-bold text-white/60">الأيقونات والروابط النشطة:</div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {smartCardCustomLinksList
+                            .filter((item) => item.isActive !== false)
+                            .map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="p-1.5 rounded-xl bg-white/5 border border-white/5 flex flex-col items-center justify-center text-center gap-0.5"
+                              >
+                                <span className="text-base">{item.icon || "🔗"}</span>
+                                <span className="text-[8.5px] font-bold text-white truncate max-w-[65px]">
+                                  {item.title}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+
+                      {/* Bottom Note */}
+                      <div className="text-center pt-1 border-t border-white/5 text-[8px] text-white/40">
+                        كارت وستاند الـ NFC متوافق مع كافة هواتف iPhone و Android
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -5181,6 +5723,14 @@ export default function AdminDashboardPage() {
             setSelectedTagItem(null);
             setBatchTagItems(null);
           }}
+        />
+      )}
+
+      {/* Smart NFC & QR Stand / Pocket Card Print Preview */}
+      {showSmartCardModal && (
+        <PrintableCard
+          settings={settings}
+          onClose={() => setShowSmartCardModal(false)}
         />
       )}
 
