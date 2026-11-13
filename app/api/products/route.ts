@@ -182,6 +182,37 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: true, message: "تم تحديث الرصيد بنجاح" });
     }
 
+    // 1.5 Update variant image directly
+    if (action === "UPDATE_VARIANT_IMAGE") {
+      const { variantId, image } = body;
+      const updatedVariant = await prisma.productVariant.update({
+        where: { id: variantId },
+        data: { image },
+      });
+      return NextResponse.json({ success: true, variant: updatedVariant });
+    }
+
+    // 1.6 Update all variants of a product (color, image, sizes)
+    if (action === "UPDATE_VARIANTS_BATCH") {
+      const { variants } = body;
+      if (Array.isArray(variants)) {
+        for (const v of variants) {
+          if (v.id) {
+            await prisma.productVariant.update({
+              where: { id: v.id },
+              data: {
+                color: v.color || undefined,
+                colorHex: v.colorHex || undefined,
+                image: v.image || undefined,
+                size: v.size || undefined,
+              },
+            });
+          }
+        }
+      }
+      return NextResponse.json({ success: true, message: "تم تحديث ألوان وصور الموديل بنجاح" });
+    }
+
     // 2. Full product update
     const { id, nameAr, basePrice, costPrice, material, featuredImage, categoryId } = body;
     const updated = await prisma.product.update({

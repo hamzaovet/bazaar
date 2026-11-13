@@ -16,6 +16,9 @@ async function main() {
       facebookUrl2: "https://www.facebook.com/profile.php?id=100090095202108&mibextid=wwXIfr",
       tiktokUrl: "https://www.tiktok.com/@mohamed_ashraf327?_r=1&_t=ZS-9BMGDqeFbr2",
       instagramUrl: "https://www.instagram.com/bazaar_casual_wear",
+      heroBannerImage: "https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&w=1000&q=80",
+      heroTagline: "طقم الأوفر سايز والكارجو التكتيكال",
+      heroDescription: "قطن مصري 100% هيفي ويت معالج ضد الانكماش مع نسيج كارجو ووتر بروف",
       isMasterLocked: false,
     },
     create: {
@@ -28,6 +31,9 @@ async function main() {
       facebookUrl2: "https://www.facebook.com/profile.php?id=100090095202108&mibextid=wwXIfr",
       tiktokUrl: "https://www.tiktok.com/@mohamed_ashraf327?_r=1&_t=ZS-9BMGDqeFbr2",
       instagramUrl: "https://www.instagram.com/bazaar_casual_wear",
+      heroBannerImage: "https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&w=1000&q=80",
+      heroTagline: "طقم الأوفر سايز والكارجو التكتيكال",
+      heroDescription: "قطن مصري 100% هيفي ويت معالج ضد الانكماش مع نسيج كارجو ووتر بروف",
       isMasterLocked: false,
     },
   });

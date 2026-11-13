@@ -92,6 +92,19 @@ export default function AdminDashboardPage() {
   // Edit Product Modal
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
+  // Variant Image Dedicated Modal (تغيير صورة أي لون أو استايل)
+  const [variantImgModalData, setVariantImgModalData] = useState<{
+    product: any;
+    variant: any;
+    imageUrl: string;
+  } | null>(null);
+
+  // Hero Banner Customization State (صورة وبيانات الهيدر والبانر الشبابي)
+  const [heroBannerUrl, setHeroBannerUrl] = useState<string>("");
+  const [heroTaglineInput, setHeroTaglineInput] = useState<string>("");
+  const [heroDescInput, setHeroDescInput] = useState<string>("");
+  const [savingHero, setSavingHero] = useState<boolean>(false);
+
   // Stock Transfer Modal
   const [showTransferModal, setShowTransferModal] = useState<boolean>(false);
   const [transferFrom, setTransferFrom] = useState<string>("CENTRAL_WAREHOUSE");
@@ -163,7 +176,12 @@ export default function AdminDashboardPage() {
       if (t.transfers) setTransfers(t.transfers);
       if (s.shifts) setShifts(s.shifts);
       if (cust.customers) setCustomers(cust.customers);
-      if (st.settings) setSettings(st.settings);
+      if (st.settings) {
+        setSettings(st.settings);
+        setHeroBannerUrl(st.settings.heroBannerImage || "");
+        setHeroTaglineInput(st.settings.heroTagline || "");
+        setHeroDescInput(st.settings.heroDescription || "");
+      }
     } catch (e) {
       console.error("Dashboard fetch error:", e);
     } finally {
@@ -292,6 +310,59 @@ export default function AdminDashboardPage() {
       }
     } catch (e) {
       alert("حدث خطأ أثناء الحفظ");
+    }
+  };
+
+  // Save Hero Banner Settings (تحديث صورة الهيدر والبانر الشبابي)
+  const handleSaveHeroSettings = async () => {
+    try {
+      setSavingHero(true);
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          heroBannerImage: heroBannerUrl,
+          heroTagline: heroTaglineInput,
+          heroDescription: heroDescInput,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSettings(data.settings);
+        alert("✅ تم حفظ وتحديث صورة وبيانات الهيدر بنجاح! تظهر الآن في المتجر فورياً.");
+      } else {
+        alert(data.error || "فشل الحفظ");
+      }
+    } catch (e) {
+      alert("حدث خطأ في الاتصال");
+    } finally {
+      setSavingHero(false);
+    }
+  };
+
+  // Save Specific Variant Image (تحديث صورة لون محدد لموديل)
+  const handleSaveVariantImage = async () => {
+    if (!variantImgModalData) return;
+    try {
+      const res = await fetch("/api/products", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "UPDATE_VARIANT_IMAGE",
+          variantId: variantImgModalData.variant.id,
+          image: variantImgModalData.imageUrl,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setVariantImgModalData(null);
+        fetchAllData();
+        alert(`✅ تم تحديث صورة لون (${variantImgModalData.variant.color}) بنجاح!`);
+      } else {
+        alert(data.error || "فشل التحديث");
+      }
+    } catch (e) {
+      alert("خطأ أثناء الحفظ");
     }
   };
 
@@ -679,6 +750,107 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
+            {/* Dynamic Hero Banner Manager (تخصيص صورة الهيدر الشبابي) */}
+            <div className="bg-[#12121a] border border-[#00ff66]/30 rounded-3xl p-5 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <span className="p-2 bg-[#00ff66]/10 text-[#00ff66] rounded-xl text-lg">🖼️</span>
+                  <div>
+                    <h3 className="font-bold text-sm text-white">
+                      تخصيص صورة الهيدر والبانر الرئيسي (الاستايل الشبابي)
+                    </h3>
+                    <p className="text-[11px] text-white/50">
+                      يمكنك في أي وقت تغيير صورة الطقم الشبابي المعروضة بالهيدر في الصفحة الرئيسية ورفع أي صورة جديدة من جهازك
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                {/* Hero Image Preview */}
+                <div className="md:col-span-4 bg-black/60 rounded-2xl p-3 border border-white/10 text-center">
+                  <div className="aspect-[4/3] rounded-xl overflow-hidden bg-black/80 border border-white/10 mb-2">
+                    {heroBannerUrl ? (
+                      <img
+                        src={heroBannerUrl}
+                        alt="Hero Preview"
+                        className="w-full h-full object-cover object-top"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-3xl">
+                        👕
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-white/50">معاينة الصورة المعروضة بالهيدر</span>
+                </div>
+
+                {/* Form Controls */}
+                <div className="md:col-span-8 space-y-3 text-xs">
+                  <div>
+                    <label className="block mb-1 text-white/70 font-bold">
+                      رابط صورة الهيدر (أو ارفع صورة طقم شبابي من جهازك):
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={heroBannerUrl}
+                        onChange={(e) => setHeroBannerUrl(e.target.value)}
+                        placeholder="https://..."
+                        className="flex-1 bg-black/50 border border-white/15 focus:border-[#00ff66] rounded-xl p-2.5 text-white font-mono text-xs outline-none"
+                      />
+                      <label className="bg-[#00ff66] hover:bg-emerald-400 text-black px-3.5 py-2.5 rounded-xl text-xs font-black cursor-pointer flex items-center gap-1.5 shadow-md shadow-[#00ff66]/20 transition-all">
+                        <Upload size={14} />
+                        <span>{uploadingImage ? "جاري الرفع..." : "رفع صورة جديدة"}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleImageUpload(file, (url) => setHeroBannerUrl(url));
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block mb-1 text-white/70 font-bold">عنوان الطقم المميز:</label>
+                      <input
+                        type="text"
+                        value={heroTaglineInput}
+                        onChange={(e) => setHeroTaglineInput(e.target.value)}
+                        placeholder="مثال: طقم الأوفر سايز والكارجو التكتيكال"
+                        className="w-full bg-black/50 border border-white/15 focus:border-[#00ff66] rounded-xl p-2.5 text-white outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-white/70 font-bold">وصف الخامات القصير:</label>
+                      <input
+                        type="text"
+                        value={heroDescInput}
+                        onChange={(e) => setHeroDescInput(e.target.value)}
+                        placeholder="مثال: قطن مصري 100% هيفي ويت معالج ضد الانكماش"
+                        className="w-full bg-black/50 border border-white/15 focus:border-[#00ff66] rounded-xl p-2.5 text-white outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleSaveHeroSettings}
+                    disabled={savingHero}
+                    className="w-full bg-gradient-to-r from-[#ffb703] to-[#fb8500] hover:brightness-110 text-black font-black py-2.5 rounded-xl text-xs shadow-md shadow-[#ffb703]/20 active:scale-95 transition-all mt-1"
+                  >
+                    {savingHero ? "جاري حفظ التعديلات..." : "حفظ وتحديث صورة وبيانات الهيدر فورياً ⚡"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Invoices List */}
             <div className="bg-[#12121a] border border-white/10 rounded-3xl p-5 space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-white/10">
@@ -797,17 +969,32 @@ export default function AdminDashboardPage() {
                         return (
                           <tr key={v.id} className="hover:bg-white/5 transition-colors">
                             <td className="p-2.5">
-                              {img ? (
-                                <img
-                                  src={img}
-                                  alt={p.nameAr}
-                                  className="w-10 h-10 rounded-lg object-cover border border-white/10"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded-lg bg-black/40 flex items-center justify-center text-xs">
-                                  👕
-                                </div>
-                              )}
+                              <div
+                                onClick={() =>
+                                  setVariantImgModalData({
+                                    product: p,
+                                    variant: v,
+                                    imageUrl: v.image || p.featuredImage || "",
+                                  })
+                                }
+                                className="relative group/thumb cursor-pointer inline-block"
+                                title="اضغط لتغيير أو رفع صورة لهذا اللون بالذات"
+                              >
+                                {img ? (
+                                  <img
+                                    src={img}
+                                    alt={p.nameAr}
+                                    className="w-10 h-10 rounded-lg object-cover border border-white/10 group-hover/thumb:border-[#00ff66]"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-lg bg-black/40 flex items-center justify-center text-xs">
+                                    👕
+                                  </div>
+                                )}
+                                <span className="absolute inset-0 bg-black/70 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center text-[9px] text-[#00ff66] font-bold rounded-lg transition-opacity">
+                                  📷 تعديل
+                                </span>
+                              </div>
                             </td>
                             <td className="p-2.5 font-bold text-white">
                               <div>{p.nameAr}</div>
@@ -873,6 +1060,19 @@ export default function AdminDashboardPage() {
                             {/* Actions: Print Barcode, Edit Product, Delete */}
                             <td className="p-2.5 text-center">
                               <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  onClick={() =>
+                                    setVariantImgModalData({
+                                      product: p,
+                                      variant: v,
+                                      imageUrl: v.image || p.featuredImage || "",
+                                    })
+                                  }
+                                  className="p-1.5 bg-[#00ff66]/10 hover:bg-[#00ff66]/20 text-[#00ff66] border border-[#00ff66]/30 rounded-lg text-xs"
+                                  title="تغيير صورة هذا اللون بالتحديد"
+                                >
+                                  📷
+                                </button>
                                 <button
                                   onClick={() =>
                                     setSelectedTagItem({
@@ -1333,6 +1533,55 @@ export default function AdminDashboardPage() {
                   className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white"
                 />
               </div>
+
+              {/* Color Variants Image Manager inside Product Edit */}
+              <div className="pt-3 border-t border-white/10 space-y-2">
+                <label className="block text-white/80 font-bold text-xs">
+                  ألوان وصور هذا الموديل (اضغط على أي لون لرفع أو تغيير صورته بالتحديد):
+                </label>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {editingProduct.variants?.map((v: any) => (
+                    <div
+                      key={v.id}
+                      className="p-2.5 rounded-xl bg-black/50 border border-white/10 flex items-center justify-between gap-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={v.image || editingProduct.featuredImage}
+                          alt={v.color}
+                          className="w-9 h-9 rounded-lg object-cover border border-white/10"
+                        />
+                        <div>
+                          <div className="font-bold text-white flex items-center gap-1.5">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full border border-black/40"
+                              style={{ backgroundColor: v.colorHex || "#444" }}
+                            />
+                            <span>{v.color}</span>
+                            <span className="text-[10px] text-white/50 font-mono">({v.size})</span>
+                          </div>
+                          <div className="text-[10px] text-white/40 font-mono">{v.barcode}</div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVariantImgModalData({
+                            product: editingProduct,
+                            variant: v,
+                            imageUrl: v.image || editingProduct.featuredImage || "",
+                          });
+                        }}
+                        className="bg-[#00ff66]/10 hover:bg-[#00ff66]/20 border border-[#00ff66]/40 text-[#00ff66] px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1"
+                      >
+                        <Upload size={12} />
+                        <span>تغيير صورة هذا اللون</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-2 mt-6">
@@ -1348,6 +1597,101 @@ export default function AdminDashboardPage() {
               >
                 إلغاء
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dedicated Variant Color & Image Modal (رفع صورة مخصصة لأي لون) */}
+      {variantImgModalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
+          <div className="bg-[#101018] border border-[#00ff66]/40 rounded-3xl p-6 w-full max-w-md shadow-2xl text-white relative">
+            <div className="flex justify-between items-center pb-3 border-b border-white/10 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-[#00ff66]/10 text-[#00ff66] rounded-xl">📷</span>
+                <div>
+                  <h3 className="font-bold text-sm text-white">
+                    تغيير صورة لون ({variantImgModalData.variant.color})
+                  </h3>
+                  <p className="text-[10px] text-white/50">{variantImgModalData.product.nameAr}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setVariantImgModalData(null)}
+                className="p-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/70"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              {/* Preview */}
+              <div className="w-full aspect-video rounded-2xl bg-black/60 overflow-hidden border border-white/10 relative">
+                {variantImgModalData.imageUrl ? (
+                  <img
+                    src={variantImgModalData.imageUrl}
+                    alt="Variant Preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-4xl">
+                    👕
+                  </div>
+                )}
+                <div className="absolute top-2 right-2 bg-black/80 px-2.5 py-0.5 rounded-full text-[10px] text-[#00ff66] border border-[#00ff66]/30">
+                  اللون: {variantImgModalData.variant.color}
+                </div>
+              </div>
+
+              {/* Upload or URL */}
+              <div>
+                <label className="block mb-1 text-white/70 font-bold">
+                  رفع صورة جديدة مطابقة لهذا اللون (ImgBB):
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={variantImgModalData.imageUrl}
+                    onChange={(e) =>
+                      setVariantImgModalData({ ...variantImgModalData, imageUrl: e.target.value })
+                    }
+                    placeholder="https://i.ibb.co/..."
+                    className="flex-1 bg-black/50 border border-white/15 focus:border-[#00ff66] rounded-xl p-2.5 text-white font-mono text-xs outline-none"
+                  />
+                  <label className="bg-[#00ff66] hover:bg-emerald-400 text-black px-3 py-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1">
+                    <Upload size={14} />
+                    <span>{uploadingImage ? "جاري الرفع..." : "اختر صورة"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleImageUpload(file, (url) => {
+                            setVariantImgModalData({ ...variantImgModalData, imageUrl: url });
+                          });
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={handleSaveVariantImage}
+                  className="flex-1 bg-gradient-to-r from-[#00ff66] to-emerald-500 hover:brightness-110 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-[#00ff66]/20 active:scale-95 transition-all"
+                >
+                  حفظ صورة هذا اللون فورياً في السيستم ⚡
+                </button>
+                <button
+                  onClick={() => setVariantImgModalData(null)}
+                  className="bg-white/10 text-white font-bold py-3 px-4 rounded-xl text-xs"
+                >
+                  إلغاء
+                </button>
+              </div>
             </div>
           </div>
         </div>

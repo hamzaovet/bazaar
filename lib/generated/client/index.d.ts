@@ -22460,6 +22460,9 @@ export namespace Prisma {
     tiktokUrl: string | null
     instagramUrl: string | null
     receiptFooterText: string | null
+    heroBannerImage: string | null
+    heroTagline: string | null
+    heroDescription: string | null
     isMasterLocked: boolean | null
     masterLockMessage: string | null
     geminiApiKey: string | null
@@ -22481,6 +22484,9 @@ export namespace Prisma {
     tiktokUrl: string | null
     instagramUrl: string | null
     receiptFooterText: string | null
+    heroBannerImage: string | null
+    heroTagline: string | null
+    heroDescription: string | null
     isMasterLocked: boolean | null
     masterLockMessage: string | null
     geminiApiKey: string | null
@@ -22502,6 +22508,9 @@ export namespace Prisma {
     tiktokUrl: number
     instagramUrl: number
     receiptFooterText: number
+    heroBannerImage: number
+    heroTagline: number
+    heroDescription: number
     isMasterLocked: number
     masterLockMessage: number
     geminiApiKey: number
@@ -22535,6 +22544,9 @@ export namespace Prisma {
     tiktokUrl?: true
     instagramUrl?: true
     receiptFooterText?: true
+    heroBannerImage?: true
+    heroTagline?: true
+    heroDescription?: true
     isMasterLocked?: true
     masterLockMessage?: true
     geminiApiKey?: true
@@ -22556,6 +22568,9 @@ export namespace Prisma {
     tiktokUrl?: true
     instagramUrl?: true
     receiptFooterText?: true
+    heroBannerImage?: true
+    heroTagline?: true
+    heroDescription?: true
     isMasterLocked?: true
     masterLockMessage?: true
     geminiApiKey?: true
@@ -22577,6 +22592,9 @@ export namespace Prisma {
     tiktokUrl?: true
     instagramUrl?: true
     receiptFooterText?: true
+    heroBannerImage?: true
+    heroTagline?: true
+    heroDescription?: true
     isMasterLocked?: true
     masterLockMessage?: true
     geminiApiKey?: true
@@ -22685,6 +22703,9 @@ export namespace Prisma {
     tiktokUrl: string
     instagramUrl: string
     receiptFooterText: string
+    heroBannerImage: string
+    heroTagline: string
+    heroDescription: string
     isMasterLocked: boolean
     masterLockMessage: string
     geminiApiKey: string | null
@@ -22725,6 +22746,9 @@ export namespace Prisma {
     tiktokUrl?: boolean
     instagramUrl?: boolean
     receiptFooterText?: boolean
+    heroBannerImage?: boolean
+    heroTagline?: boolean
+    heroDescription?: boolean
     isMasterLocked?: boolean
     masterLockMessage?: boolean
     geminiApiKey?: boolean
@@ -22746,6 +22770,9 @@ export namespace Prisma {
     tiktokUrl?: boolean
     instagramUrl?: boolean
     receiptFooterText?: boolean
+    heroBannerImage?: boolean
+    heroTagline?: boolean
+    heroDescription?: boolean
     isMasterLocked?: boolean
     masterLockMessage?: boolean
     geminiApiKey?: boolean
@@ -22767,6 +22794,9 @@ export namespace Prisma {
     tiktokUrl?: boolean
     instagramUrl?: boolean
     receiptFooterText?: boolean
+    heroBannerImage?: boolean
+    heroTagline?: boolean
+    heroDescription?: boolean
     isMasterLocked?: boolean
     masterLockMessage?: boolean
     geminiApiKey?: boolean
@@ -22788,6 +22818,9 @@ export namespace Prisma {
     tiktokUrl?: boolean
     instagramUrl?: boolean
     receiptFooterText?: boolean
+    heroBannerImage?: boolean
+    heroTagline?: boolean
+    heroDescription?: boolean
     isMasterLocked?: boolean
     masterLockMessage?: boolean
     geminiApiKey?: boolean
@@ -22797,7 +22830,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type SystemSettingsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "brandNameAr" | "brandNameEn" | "logoUrl" | "hotline" | "whatsappNumber" | "facebookUrl" | "facebookUrl2" | "tiktokUrl" | "instagramUrl" | "receiptFooterText" | "isMasterLocked" | "masterLockMessage" | "geminiApiKey" | "loyaltyPointsPer100Egp" | "currency" | "createdAt" | "updatedAt", ExtArgs["result"]["systemSettings"]>
+  export type SystemSettingsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "brandNameAr" | "brandNameEn" | "logoUrl" | "hotline" | "whatsappNumber" | "facebookUrl" | "facebookUrl2" | "tiktokUrl" | "instagramUrl" | "receiptFooterText" | "heroBannerImage" | "heroTagline" | "heroDescription" | "isMasterLocked" | "masterLockMessage" | "geminiApiKey" | "loyaltyPointsPer100Egp" | "currency" | "createdAt" | "updatedAt", ExtArgs["result"]["systemSettings"]>
 
   export type $SystemSettingsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "SystemSettings"
@@ -22814,6 +22847,9 @@ export namespace Prisma {
       tiktokUrl: string
       instagramUrl: string
       receiptFooterText: string
+      heroBannerImage: string
+      heroTagline: string
+      heroDescription: string
       isMasterLocked: boolean
       masterLockMessage: string
       geminiApiKey: string | null
@@ -23255,6 +23291,9 @@ export namespace Prisma {
     readonly tiktokUrl: FieldRef<"SystemSettings", 'String'>
     readonly instagramUrl: FieldRef<"SystemSettings", 'String'>
     readonly receiptFooterText: FieldRef<"SystemSettings", 'String'>
+    readonly heroBannerImage: FieldRef<"SystemSettings", 'String'>
+    readonly heroTagline: FieldRef<"SystemSettings", 'String'>
+    readonly heroDescription: FieldRef<"SystemSettings", 'String'>
     readonly isMasterLocked: FieldRef<"SystemSettings", 'Boolean'>
     readonly masterLockMessage: FieldRef<"SystemSettings", 'String'>
     readonly geminiApiKey: FieldRef<"SystemSettings", 'String'>
@@ -23955,6 +23994,9 @@ export namespace Prisma {
     tiktokUrl: 'tiktokUrl',
     instagramUrl: 'instagramUrl',
     receiptFooterText: 'receiptFooterText',
+    heroBannerImage: 'heroBannerImage',
+    heroTagline: 'heroTagline',
+    heroDescription: 'heroDescription',
     isMasterLocked: 'isMasterLocked',
     masterLockMessage: 'masterLockMessage',
     geminiApiKey: 'geminiApiKey',
@@ -25653,6 +25695,9 @@ export namespace Prisma {
     tiktokUrl?: StringFilter<"SystemSettings"> | string
     instagramUrl?: StringFilter<"SystemSettings"> | string
     receiptFooterText?: StringFilter<"SystemSettings"> | string
+    heroBannerImage?: StringFilter<"SystemSettings"> | string
+    heroTagline?: StringFilter<"SystemSettings"> | string
+    heroDescription?: StringFilter<"SystemSettings"> | string
     isMasterLocked?: BoolFilter<"SystemSettings"> | boolean
     masterLockMessage?: StringFilter<"SystemSettings"> | string
     geminiApiKey?: StringNullableFilter<"SystemSettings"> | string | null
@@ -25674,6 +25719,9 @@ export namespace Prisma {
     tiktokUrl?: SortOrder
     instagramUrl?: SortOrder
     receiptFooterText?: SortOrder
+    heroBannerImage?: SortOrder
+    heroTagline?: SortOrder
+    heroDescription?: SortOrder
     isMasterLocked?: SortOrder
     masterLockMessage?: SortOrder
     geminiApiKey?: SortOrderInput | SortOrder
@@ -25698,6 +25746,9 @@ export namespace Prisma {
     tiktokUrl?: StringFilter<"SystemSettings"> | string
     instagramUrl?: StringFilter<"SystemSettings"> | string
     receiptFooterText?: StringFilter<"SystemSettings"> | string
+    heroBannerImage?: StringFilter<"SystemSettings"> | string
+    heroTagline?: StringFilter<"SystemSettings"> | string
+    heroDescription?: StringFilter<"SystemSettings"> | string
     isMasterLocked?: BoolFilter<"SystemSettings"> | boolean
     masterLockMessage?: StringFilter<"SystemSettings"> | string
     geminiApiKey?: StringNullableFilter<"SystemSettings"> | string | null
@@ -25719,6 +25770,9 @@ export namespace Prisma {
     tiktokUrl?: SortOrder
     instagramUrl?: SortOrder
     receiptFooterText?: SortOrder
+    heroBannerImage?: SortOrder
+    heroTagline?: SortOrder
+    heroDescription?: SortOrder
     isMasterLocked?: SortOrder
     masterLockMessage?: SortOrder
     geminiApiKey?: SortOrderInput | SortOrder
@@ -25748,6 +25802,9 @@ export namespace Prisma {
     tiktokUrl?: StringWithAggregatesFilter<"SystemSettings"> | string
     instagramUrl?: StringWithAggregatesFilter<"SystemSettings"> | string
     receiptFooterText?: StringWithAggregatesFilter<"SystemSettings"> | string
+    heroBannerImage?: StringWithAggregatesFilter<"SystemSettings"> | string
+    heroTagline?: StringWithAggregatesFilter<"SystemSettings"> | string
+    heroDescription?: StringWithAggregatesFilter<"SystemSettings"> | string
     isMasterLocked?: BoolWithAggregatesFilter<"SystemSettings"> | boolean
     masterLockMessage?: StringWithAggregatesFilter<"SystemSettings"> | string
     geminiApiKey?: StringNullableWithAggregatesFilter<"SystemSettings"> | string | null
@@ -27565,6 +27622,9 @@ export namespace Prisma {
     tiktokUrl?: string
     instagramUrl?: string
     receiptFooterText?: string
+    heroBannerImage?: string
+    heroTagline?: string
+    heroDescription?: string
     isMasterLocked?: boolean
     masterLockMessage?: string
     geminiApiKey?: string | null
@@ -27586,6 +27646,9 @@ export namespace Prisma {
     tiktokUrl?: string
     instagramUrl?: string
     receiptFooterText?: string
+    heroBannerImage?: string
+    heroTagline?: string
+    heroDescription?: string
     isMasterLocked?: boolean
     masterLockMessage?: string
     geminiApiKey?: string | null
@@ -27607,6 +27670,9 @@ export namespace Prisma {
     tiktokUrl?: StringFieldUpdateOperationsInput | string
     instagramUrl?: StringFieldUpdateOperationsInput | string
     receiptFooterText?: StringFieldUpdateOperationsInput | string
+    heroBannerImage?: StringFieldUpdateOperationsInput | string
+    heroTagline?: StringFieldUpdateOperationsInput | string
+    heroDescription?: StringFieldUpdateOperationsInput | string
     isMasterLocked?: BoolFieldUpdateOperationsInput | boolean
     masterLockMessage?: StringFieldUpdateOperationsInput | string
     geminiApiKey?: NullableStringFieldUpdateOperationsInput | string | null
@@ -27628,6 +27694,9 @@ export namespace Prisma {
     tiktokUrl?: StringFieldUpdateOperationsInput | string
     instagramUrl?: StringFieldUpdateOperationsInput | string
     receiptFooterText?: StringFieldUpdateOperationsInput | string
+    heroBannerImage?: StringFieldUpdateOperationsInput | string
+    heroTagline?: StringFieldUpdateOperationsInput | string
+    heroDescription?: StringFieldUpdateOperationsInput | string
     isMasterLocked?: BoolFieldUpdateOperationsInput | boolean
     masterLockMessage?: StringFieldUpdateOperationsInput | string
     geminiApiKey?: NullableStringFieldUpdateOperationsInput | string | null
@@ -27649,6 +27718,9 @@ export namespace Prisma {
     tiktokUrl?: string
     instagramUrl?: string
     receiptFooterText?: string
+    heroBannerImage?: string
+    heroTagline?: string
+    heroDescription?: string
     isMasterLocked?: boolean
     masterLockMessage?: string
     geminiApiKey?: string | null
@@ -27670,6 +27742,9 @@ export namespace Prisma {
     tiktokUrl?: StringFieldUpdateOperationsInput | string
     instagramUrl?: StringFieldUpdateOperationsInput | string
     receiptFooterText?: StringFieldUpdateOperationsInput | string
+    heroBannerImage?: StringFieldUpdateOperationsInput | string
+    heroTagline?: StringFieldUpdateOperationsInput | string
+    heroDescription?: StringFieldUpdateOperationsInput | string
     isMasterLocked?: BoolFieldUpdateOperationsInput | boolean
     masterLockMessage?: StringFieldUpdateOperationsInput | string
     geminiApiKey?: NullableStringFieldUpdateOperationsInput | string | null
@@ -27691,6 +27766,9 @@ export namespace Prisma {
     tiktokUrl?: StringFieldUpdateOperationsInput | string
     instagramUrl?: StringFieldUpdateOperationsInput | string
     receiptFooterText?: StringFieldUpdateOperationsInput | string
+    heroBannerImage?: StringFieldUpdateOperationsInput | string
+    heroTagline?: StringFieldUpdateOperationsInput | string
+    heroDescription?: StringFieldUpdateOperationsInput | string
     isMasterLocked?: BoolFieldUpdateOperationsInput | boolean
     masterLockMessage?: StringFieldUpdateOperationsInput | string
     geminiApiKey?: NullableStringFieldUpdateOperationsInput | string | null
@@ -29020,6 +29098,9 @@ export namespace Prisma {
     tiktokUrl?: SortOrder
     instagramUrl?: SortOrder
     receiptFooterText?: SortOrder
+    heroBannerImage?: SortOrder
+    heroTagline?: SortOrder
+    heroDescription?: SortOrder
     isMasterLocked?: SortOrder
     masterLockMessage?: SortOrder
     geminiApiKey?: SortOrder
@@ -29046,6 +29127,9 @@ export namespace Prisma {
     tiktokUrl?: SortOrder
     instagramUrl?: SortOrder
     receiptFooterText?: SortOrder
+    heroBannerImage?: SortOrder
+    heroTagline?: SortOrder
+    heroDescription?: SortOrder
     isMasterLocked?: SortOrder
     masterLockMessage?: SortOrder
     geminiApiKey?: SortOrder
@@ -29067,6 +29151,9 @@ export namespace Prisma {
     tiktokUrl?: SortOrder
     instagramUrl?: SortOrder
     receiptFooterText?: SortOrder
+    heroBannerImage?: SortOrder
+    heroTagline?: SortOrder
+    heroDescription?: SortOrder
     isMasterLocked?: SortOrder
     masterLockMessage?: SortOrder
     geminiApiKey?: SortOrder

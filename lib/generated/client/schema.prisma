@@ -357,6 +357,11 @@ model SystemSettings {
   instagramUrl      String @default("https://www.instagram.com/bazaar_casual_wear")
   receiptFooterText String @default("شكراً لزيارتكم بزار كاجوال وير • الاستبدال والاسترجاع خلال 14 يوماً بأصل الفاتورة والباركود")
 
+  // Hero Section Dynamic Customization (صورة الهيدر والبانر الشبابي الديناميكي)
+  heroBannerImage String @default("https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&w=1000&q=80")
+  heroTagline     String @default("طقم الأوفر سايز والكارجو التكتيكال")
+  heroDescription String @default("قطن مصري 100% هيفي ويت معالج ضد الانكماش مع نسيج كارجو ووتر بروف")
+
   // Emergency Master Lockout (زر الطوارئ الحصري للمالك Maestro لتعطيل الحسابات وضمان الملكية)
   isMasterLocked    Boolean @default(false)
   masterLockMessage String  @default("النظام في وضع الصيانة والتحديث الإداري العام. يرجى التواصل مع إدارة بزار كاجوال وير.")

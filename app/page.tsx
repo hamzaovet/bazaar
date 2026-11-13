@@ -91,7 +91,8 @@ export default function StorefrontPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [products, setProducts] = useState<Product[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>("" );
+  const [settings, setSettings] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
 
   // Mobile navigation drawer toggle
@@ -138,19 +139,22 @@ export default function StorefrontPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [bRes, cRes, pRes] = await Promise.all([
+        const [bRes, cRes, pRes, sRes] = await Promise.all([
           fetch("/api/branches"),
           fetch("/api/categories"),
           fetch("/api/products"),
+          fetch("/api/settings"),
         ]);
 
         const bData = await bRes.json();
         const cData = await cRes.json();
         const pData = await pRes.json();
+        const sData = await sRes.json();
 
         if (bData.branches) setBranches(bData.branches);
         if (cData.categories) setCategories(cData.categories);
         if (pData.products) setProducts(pData.products);
+        if (sData.settings) setSettings(sData.settings);
       } catch (err) {
         console.error("Storefront fetch error:", err);
       } finally {
@@ -608,13 +612,16 @@ export default function StorefrontPage() {
               </div>
             </div>
 
-            {/* Left Column ("الفدان الواسع"): Editorial Streetwear Outfit Card */}
+            {/* Left Column ("الفدان الواسع"): Editorial Streetwear Outfit Card (100% Dynamic & Editable from Dashboard) */}
             <div className="lg:col-span-5">
               <div className="relative rounded-2xl overflow-hidden border border-[#00ff66]/30 shadow-2xl group bg-black/40">
                 <div className="aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] w-full overflow-hidden">
                   <img
-                    src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1000&q=80"
-                    alt="Bazaar Casual Wear Streetwear Style"
+                    src={
+                      settings?.heroBannerImage ||
+                      "https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&w=1000&q=80"
+                    }
+                    alt="Bazaar Casual Wear Men Streetwear"
                     className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
@@ -630,10 +637,10 @@ export default function StorefrontPage() {
                     </span>
                   </div>
                   <h4 className="text-sm font-black text-white mt-1">
-                    طقم الأوفر سايز والكارجو التكتيكال
+                    {settings?.heroTagline || "طقم الأوفر سايز والكارجو التكتيكال"}
                   </h4>
                   <p className="text-[11px] text-white/70">
-                    قطن مصري 100% هيفي ويت معالج ضد الانكماش مع نسيج كارجو ووتر بروف
+                    {settings?.heroDescription || "قطن مصري 100% هيفي ويت معالج ضد الانكماش مع نسيج كارجو ووتر بروف"}
                   </p>
                 </div>
               </div>
@@ -642,9 +649,9 @@ export default function StorefrontPage() {
         </div>
       </section>
 
-      {/* Categories Horizontal Scroller */}
+      {/* Categories Horizontal Wrap Bar - Fully Responsive with No Cutting Off! */}
       <section className="px-4 max-w-7xl mx-auto w-full mb-4">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar py-2">
+        <div className="flex flex-wrap gap-2 py-2">
           <button
             onClick={() => setSelectedCategory("all")}
             className={`whitespace-nowrap px-4 py-2 rounded-2xl text-xs font-bold transition-all border ${
