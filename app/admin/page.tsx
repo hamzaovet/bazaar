@@ -26,7 +26,14 @@ import {
   Unlock,
   KeyRound,
   FileText,
+  ChevronLeft,
+  Edit,
+  Trash2,
+  Image as ImageIcon,
+  Check,
+  X,
 } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 import PrintBarcodeTag from "@/components/PrintBarcodeTag";
 
 interface User {
@@ -41,17 +48,17 @@ interface User {
 }
 
 export default function AdminDashboardPage() {
-  // Auth state
+  // Auth state - STRICTLY EMPTY NO DEFAULTS OR HINTS!
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loginUsername, setLoginUsername] = useState<string>("maestro");
-  const [loginPassword, setLoginPassword] = useState<string>("123456789");
+  const [loginUsername, setLoginUsername] = useState<string>("");
+  const [loginPassword, setLoginPassword] = useState<string>("");
   const [loginPin, setLoginPin] = useState<string>("");
   const [loginError, setLoginError] = useState<string>("");
   const [authLoading, setAuthLoading] = useState<boolean>(false);
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<
-    "overview" | "inventory" | "barcodes" | "ai" | "transfers" | "treasury" | "customers" | "users" | "settings"
+    "overview" | "inventory" | "barcodes" | "ai" | "transfers" | "treasury" | "customers" | "users"
   >("overview");
 
   // Dashboard Data
@@ -68,17 +75,22 @@ export default function AdminDashboardPage() {
   // Barcode Printing state
   const [selectedTagItem, setSelectedTagItem] = useState<any>(null);
 
-  // New Product Modal
+  // Add Product Modal
   const [showAddProductModal, setShowAddProductModal] = useState<boolean>(false);
   const [newProdName, setNewProdName] = useState<string>("");
   const [newProdCat, setNewProdCat] = useState<string>("");
   const [newProdPrice, setNewProdPrice] = useState<number>(450);
   const [newProdCost, setNewProdCost] = useState<number>(220);
   const [newProdMaterial, setNewProdMaterial] = useState<string>("قطن 100%");
+  const [newProdImage, setNewProdImage] = useState<string>("");
+  const [uploadingImage, setUploadingImage] = useState<boolean>(false);
   const [newProdVariants, setNewProdVariants] = useState<any[]>([
-    { size: "L", color: "أسود ملكي", barcode: "", central: 30, b1: 10, b2: 10 },
-    { size: "XL", color: "أسود ملكي", barcode: "", central: 30, b1: 10, b2: 10 },
+    { size: "L", color: "أسود ملكي", barcode: "", image: "", central: 30, b1: 10, b2: 10 },
+    { size: "XL", color: "أسود ملكي", barcode: "", image: "", central: 30, b1: 10, b2: 10 },
   ]);
+
+  // Edit Product Modal
+  const [editingProduct, setEditingProduct] = useState<any>(null);
 
   // Stock Transfer Modal
   const [showTransferModal, setShowTransferModal] = useState<boolean>(false);
@@ -159,6 +171,31 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Upload image to ImgBB
+  const handleImageUpload = async (file: File, onSuccess: (url: string) => void) => {
+    try {
+      setUploadingImage(true);
+      const fd = new FormData();
+      fd.append("image", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: fd,
+      });
+
+      const data = await res.json();
+      if (data.success && data.url) {
+        onSuccess(data.url);
+      } else {
+        alert(data.error || "فشل رفع الصورة على ImgBB");
+      }
+    } catch (e) {
+      alert("حدث خطأ أثناء رفع الصورة");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   // Login handler
   const handleLogin = async (type: "credentials" | "pin") => {
     try {
@@ -168,7 +205,7 @@ export default function AdminDashboardPage() {
       const payload =
         type === "pin"
           ? { loginType: "pin", pin: loginPin }
-          : { username: loginUsername, password: loginPassword };
+          : { username: loginUsername, password: loginPassword, pin: loginPin };
 
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -181,7 +218,7 @@ export default function AdminDashboardPage() {
         setCurrentUser(data.user);
         localStorage.setItem("bazaar_user", JSON.stringify(data.user));
       } else {
-        setLoginError(data.error || "فشل تسجيل الدخول");
+        setLoginError(data.error || "بيانات الدخول غير صحيحة");
       }
     } catch (e) {
       setLoginError("حدث خطأ في الاتصال بالسيرفر");
@@ -195,10 +232,89 @@ export default function AdminDashboardPage() {
     setCurrentUser(null);
   };
 
-  // Toggle Master Lockout (Emergency Switch)
+  // Inline Stock Update (Directly edits stock in DB!)
+  const handleInlineStockUpdate = async (variantId: string, location: string, currentQty: number) => {
+    const input = prompt("أدخل رصيد القطع الجديد في هذه الخزينة:", String(currentQty));
+    if (input === null) return;
+    const qty = parseInt(input, 10);
+    if (isNaN(qty) || qty < 0) {
+      alert("يرجى إدخال رقم صحيح");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/products", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "UPDATE_STOCK",
+          variantId,
+          location,
+          quantity: qty,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        fetchAllData();
+      } else {
+        alert(data.error || "فشل تحديث الرصيد");
+      }
+    } catch (e) {
+      alert("حدث خطأ في الاتصال");
+    }
+  };
+
+  // Save Edited Product
+  const handleSaveProductEdit = async () => {
+    if (!editingProduct) return;
+    try {
+      const res = await fetch("/api/products", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingProduct.id,
+          nameAr: editingProduct.nameAr,
+          basePrice: editingProduct.basePrice,
+          costPrice: editingProduct.costPrice,
+          material: editingProduct.material,
+          featuredImage: editingProduct.featuredImage,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setEditingProduct(null);
+        fetchAllData();
+        alert("تم تحديث بيانات الموديل بنجاح في قاعدة البيانات!");
+      } else {
+        alert(data.error || "فشل التحديث");
+      }
+    } catch (e) {
+      alert("حدث خطأ أثناء الحفظ");
+    }
+  };
+
+  // Delete Product
+  const handleDeleteProduct = async (id: string, name: string) => {
+    if (!confirm(`هل أنت متأكد من حذف الموديل (${name}) نهائياً من السيستم؟`)) return;
+    try {
+      const res = await fetch(`/api/products?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        fetchAllData();
+      } else {
+        alert(data.error || "فشل الحذف");
+      }
+    } catch (e) {
+      alert("خطأ أثناء الحذف");
+    }
+  };
+
+  // Toggle Master Lockout
   const handleToggleMasterLock = async (enableLock: boolean) => {
     if (!lockPinInput) {
-      alert("يرجى إدخال الرقم السري للمايسترو (PIN)");
+      alert("يرجى إدخال الرمز السري للمايسترو (PIN)");
       return;
     }
 
@@ -220,8 +336,8 @@ export default function AdminDashboardPage() {
         setLockPinInput("");
         alert(
           enableLock
-            ? "⚠️ تم تفعيل وضع الطوارئ بنجاح! جميع الحسابات مقفلة باستثناء المالك Maestro لضمان أمان الملكية."
-            : "✅ تم إلغاء وضع الطوارئ وفتح النظام لجميع مديري الفروع والكاشيرات بنجاح!"
+            ? "⚠️ تم تفعيل وضع الطوارئ! جميع حسابات الموظفين مقفلة حالياً لضمان الملكية."
+            : "✅ تم إلغاء وضع الطوارئ وفتح النظام لجميع الفروع."
         );
       } else {
         alert(data.error || "فشل تعديل حالة الطوارئ");
@@ -245,9 +361,11 @@ export default function AdminDashboardPage() {
         basePrice: newProdPrice,
         costPrice: newProdCost,
         material: newProdMaterial,
+        featuredImage: newProdImage || undefined,
         variants: newProdVariants.map((v, idx) => ({
           size: v.size,
           color: v.color,
+          image: v.image || newProdImage || undefined,
           barcode: v.barcode || `200${Date.now().toString().slice(-8)}${idx}`,
           stockCentral: parseInt(v.central, 10) || 0,
           branchStocks: {
@@ -266,8 +384,10 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (data.success) {
         setShowAddProductModal(false);
+        setNewProdName("");
+        setNewProdImage("");
         fetchAllData();
-        alert("تمت إضافة المنتج بنجاح وتوليد الباركود وأرصدة الفروع");
+        alert("تمت إضافة المنتج بنجاح وتوليد الباركود ورفع الصور");
       } else {
         alert(data.error || "فشل حفظ المنتج");
       }
@@ -279,7 +399,7 @@ export default function AdminDashboardPage() {
   // Stock Transfer Execute
   const handleExecuteTransfer = async () => {
     if (!transferFrom || !transferTo || !transferVariantId) {
-      alert("يرجى تحديد جهة الإرسال وجهة الاستلام والصنف");
+      alert("يرجى تحديد جهة الإرسال والاستلام والقطعة");
       return;
     }
 
@@ -338,21 +458,27 @@ export default function AdminDashboardPage() {
   };
 
   // -------------------------------------------------------------
-  // If NOT logged in, show prestigious Luxury Login screen
+  // If NOT logged in: STRICT LOGIN SCREEN (NO AUTOFILL, NO HINTS, BACK BUTTON)
   // -------------------------------------------------------------
   if (!currentUser) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-[#0a0a0f] via-[#121218] to-[#0a0a0f] text-white flex items-center justify-center p-4 font-['Cairo',sans-serif]">
-        <div className="bg-[#14141d] border border-amber-500/30 rounded-3xl p-8 w-full max-w-md shadow-2xl relative overflow-hidden">
+      <main className="min-h-screen bg-gradient-to-b from-[#07070b] via-[#101018] to-[#07070b] text-white flex items-center justify-center p-4 font-['Cairo',sans-serif]">
+        <div className="bg-[#12121a] border border-[#00ff66]/30 rounded-3xl p-8 w-full max-w-md shadow-2xl relative overflow-hidden">
+          {/* Back to Storefront Link (لمنع الحبس!) */}
+          <div className="mb-4">
+            <a
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-xl transition-all"
+            >
+              <ChevronLeft size={16} className="rotate-180" />
+              <span>الرجوع للمتجر والكتالوج الرئيسي</span>
+            </a>
+          </div>
+
           <div className="text-center pb-6">
-            <span className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black font-black text-2xl mx-auto shadow-xl shadow-amber-500/20 mb-3">
-              B
-            </span>
-            <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-100 to-amber-500 uppercase tracking-wider">
-              BAZAAR CASUAL WEAR
-            </h2>
-            <p className="text-xs text-white/50 mt-1">
-              منظومة الإدارة المركزية ونقاط البيع المتعددة الفروع
+            <BrandLogo size="lg" />
+            <p className="text-xs text-white/50 mt-2">
+              بوابة الدخول المركزية للإدارة والمايسترو ونقاط البيع
             </p>
           </div>
 
@@ -369,7 +495,8 @@ export default function AdminDashboardPage() {
                 type="text"
                 value={loginUsername}
                 onChange={(e) => setLoginUsername(e.target.value)}
-                className="w-full bg-black/50 border border-white/10 focus:border-amber-500 rounded-xl py-2.5 px-3 text-xs text-white outline-none font-mono"
+                autoComplete="off"
+                className="w-full bg-black/60 border border-white/15 focus:border-[#00ff66] rounded-xl py-2.5 px-3 text-xs text-white outline-none font-mono"
               />
             </div>
             <div>
@@ -378,36 +505,28 @@ export default function AdminDashboardPage() {
                 type="password"
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
-                className="w-full bg-black/50 border border-white/10 focus:border-amber-500 rounded-xl py-2.5 px-3 text-xs text-white outline-none font-mono"
+                autoComplete="new-password"
+                className="w-full bg-black/60 border border-white/15 focus:border-[#00ff66] rounded-xl py-2.5 px-3 text-xs text-white outline-none font-mono"
               />
             </div>
+            <div>
+              <label className="text-xs font-bold text-white/70 block mb-1">الرمز السري الخاص (PIN):</label>
+              <input
+                type="password"
+                value={loginPin}
+                onChange={(e) => setLoginPin(e.target.value)}
+                autoComplete="new-password"
+                className="w-full bg-black/60 border border-white/15 focus:border-[#00ff66] rounded-xl py-2.5 px-3 text-xs text-white outline-none font-mono text-center tracking-widest"
+              />
+            </div>
+
             <button
               onClick={() => handleLogin("credentials")}
               disabled={authLoading}
-              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+              className="w-full bg-gradient-to-r from-[#00ff66] to-emerald-500 hover:brightness-110 text-black font-black py-3.5 rounded-xl text-xs shadow-lg shadow-[#00ff66]/20 active:scale-95 transition-all"
             >
               {authLoading ? "جاري التحقق..." : "تسجيل الدخول للنظام 🔐"}
             </button>
-
-            {/* Quick PIN login for Cashiers */}
-            <div className="pt-4 border-t border-white/10 text-center">
-              <p className="text-[11px] text-white/50 mb-2">أو الدخول السريع بالرمز السري (PIN الكاشير):</p>
-              <div className="flex gap-2">
-                <input
-                  type="password"
-                  placeholder="PIN الكاشير (مثال: 157230)"
-                  value={loginPin}
-                  onChange={(e) => setLoginPin(e.target.value)}
-                  className="flex-1 bg-black/50 border border-white/10 focus:border-amber-500 rounded-xl py-2 px-3 text-xs text-white text-center font-mono outline-none"
-                />
-                <button
-                  onClick={() => handleLogin("pin")}
-                  className="bg-white/10 hover:bg-white/15 text-white px-4 rounded-xl text-xs font-bold"
-                >
-                  دخول
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </main>
@@ -425,21 +544,16 @@ export default function AdminDashboardPage() {
     .reduce((acc, inv) => acc + (inv.netTotal || 0), 0);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-gray-100 flex flex-col font-['Cairo',sans-serif]">
-      {/* Top Admin Navbar */}
-      <header className="bg-[#121218] border-b border-white/10 px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+    <div className="min-h-screen bg-[#07070b] text-gray-100 flex flex-col font-['Cairo',sans-serif]">
+      {/* Top Admin Navbar with Real Neon Brand Signage */}
+      <header className="bg-[#0c0c14] border-b border-white/10 px-4 py-3 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-3">
-          <a href="/" className="flex items-center gap-2">
-            <span className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-amber-500/20">
-              B
-            </span>
-            <div>
-              <h1 className="text-base font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-500 uppercase leading-none">
-                BAZAAR ERP
-              </h1>
-              <p className="text-[10px] text-white/50 font-bold mt-0.5">لوحة التحكم المركزية</p>
-            </div>
+          <a href="/" className="hover:opacity-90 transition-opacity">
+            <BrandLogo size="sm" showTagline={false} />
           </a>
+          <span className="text-[10px] bg-[#00ff66]/10 text-[#00ff66] border border-[#00ff66]/30 px-2 py-0.5 rounded-md font-mono font-bold">
+            ERP CENTRAL
+          </span>
 
           {/* Emergency Lock Status Indicator */}
           {settings?.isMasterLocked && (
@@ -451,7 +565,14 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* User Badge, Emergency Lock button, POS direct link, Logout */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <a
+            href="/"
+            className="hidden sm:inline-flex items-center gap-1 text-xs text-white/60 hover:text-white bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl transition-all"
+          >
+            <span>المتجر أونلاين 🛍️</span>
+          </a>
+
           {currentUser.role === "owner" && (
             <button
               onClick={() => setShowLockConfirmModal(true)}
@@ -468,14 +589,14 @@ export default function AdminDashboardPage() {
 
           <a
             href="/pos"
-            className="bg-amber-500 hover:bg-amber-400 text-black px-3.5 py-1.5 rounded-xl text-xs font-black shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition-all"
+            className="bg-[#ffb703] hover:bg-amber-400 text-black px-3.5 py-1.5 rounded-xl text-xs font-black shadow-md shadow-[#ffb703]/20 flex items-center gap-1.5 transition-all"
           >
             <span>شاشة الكاشير POS</span>
           </a>
 
-          <div className="text-right hidden sm:block">
+          <div className="text-right hidden md:block">
             <div className="text-xs font-bold text-white">{currentUser.name}</div>
-            <div className="text-[10px] text-amber-400 uppercase font-mono">{currentUser.role}</div>
+            <div className="text-[10px] text-[#00ff66] uppercase font-mono">{currentUser.role}</div>
           </div>
 
           <button
@@ -488,9 +609,9 @@ export default function AdminDashboardPage() {
         </div>
       </header>
 
-      {/* Main Nav Tabs */}
-      <div className="bg-[#0e0e15] border-b border-white/5 px-4 overflow-x-auto no-scrollbar">
-        <div className="flex gap-2 max-w-7xl mx-auto py-2">
+      {/* Responsive Horizontal Tabs Bar - NO MORE OVERFLOW OR CUTTING OFF! */}
+      <nav className="bg-[#0a0a12] border-b border-white/5 px-4 overflow-x-auto no-scrollbar">
+        <div className="flex flex-nowrap md:flex-wrap gap-2 max-w-7xl mx-auto py-2.5">
           {[
             { id: "overview", label: "نظرة عامة والتحليلات", icon: BarChart3 },
             { id: "inventory", label: "المخزون والمخزن المركزي", icon: Package },
@@ -507,9 +628,9 @@ export default function AdminDashboardPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`whitespace-nowrap px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-2 transition-all border ${
+                className={`flex-shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border ${
                   isSelected
-                    ? "bg-amber-500 text-black border-amber-500 shadow-md shadow-amber-500/20"
+                    ? "bg-[#00ff66] text-black border-[#00ff66] shadow-md shadow-[#00ff66]/30 font-black"
                     : "bg-white/5 text-white/70 border-white/5 hover:border-white/15 hover:text-white"
                 }`}
               >
@@ -519,24 +640,23 @@ export default function AdminDashboardPage() {
             );
           })}
         </div>
-      </div>
+      </nav>
 
-      {/* Main Content View */}
+      {/* Main Content Area */}
       <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full space-y-6">
         {/* TAB 1: OVERVIEW */}
         {activeTab === "overview" && (
           <div className="space-y-6">
-            {/* KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 bg-[#14141e] border border-amber-500/20 rounded-2xl space-y-1">
+              <div className="p-4 bg-[#12121a] border border-[#00ff66]/30 rounded-2xl space-y-1">
                 <span className="text-[11px] text-white/50 font-bold">إجمالي المبيعات (الفرعين)</span>
-                <div className="text-2xl font-black text-amber-400 font-mono">
+                <div className="text-2xl font-black text-[#ffb703] font-mono">
                   {totalGrossRevenue.toLocaleString("ar-EG")} <span className="text-xs text-white/60">ج.م</span>
                 </div>
-                <span className="text-[10px] text-emerald-400">منظومة مدمجة</span>
+                <span className="text-[10px] text-[#00ff66]">منظومة مدمجة</span>
               </div>
 
-              <div className="p-4 bg-[#14141e] border border-white/10 rounded-2xl space-y-1">
+              <div className="p-4 bg-[#12121a] border border-white/10 rounded-2xl space-y-1">
                 <span className="text-[11px] text-white/50 font-bold">مبيعات فرع عباس العقاد</span>
                 <div className="text-xl font-black text-white font-mono">
                   {branch1Revenue.toLocaleString("ar-EG")} <span className="text-xs text-white/60">ج.م</span>
@@ -544,7 +664,7 @@ export default function AdminDashboardPage() {
                 <span className="text-[10px] text-white/40">الفرع الرئيسي</span>
               </div>
 
-              <div className="p-4 bg-[#14141e] border border-white/10 rounded-2xl space-y-1">
+              <div className="p-4 bg-[#12121a] border border-white/10 rounded-2xl space-y-1">
                 <span className="text-[11px] text-white/50 font-bold">مبيعات فرع كشري التحرير</span>
                 <div className="text-xl font-black text-white font-mono">
                   {branch2Revenue.toLocaleString("ar-EG")} <span className="text-xs text-white/60">ج.م</span>
@@ -552,105 +672,87 @@ export default function AdminDashboardPage() {
                 <span className="text-[10px] text-white/40">الفرع الثاني</span>
               </div>
 
-              <div className="p-4 bg-[#14141e] border border-white/10 rounded-2xl space-y-1">
+              <div className="p-4 bg-[#12121a] border border-white/10 rounded-2xl space-y-1">
                 <span className="text-[11px] text-white/50 font-bold">عدد الفواتير المنفذة</span>
                 <div className="text-2xl font-black text-white font-mono">{totalInvoicesCount}</div>
-                <span className="text-[10px] text-amber-400">إجمالي شيكات البيع</span>
+                <span className="text-[10px] text-[#ffb703]">إجمالي شيكات البيع</span>
               </div>
             </div>
 
-            {/* Quick Actions & Recent Sales */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Recent Invoices */}
-              <div className="lg:col-span-2 bg-[#13131c] border border-white/10 rounded-3xl p-5 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                  <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                    <FileText size={16} className="text-amber-400" />
-                    <span>أحدث فواتير البيع الحرارية</span>
-                  </h3>
-                  <button
-                    onClick={fetchAllData}
-                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70"
-                  >
-                    <RefreshCw size={14} />
-                  </button>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-right text-xs">
-                    <thead>
-                      <tr className="border-b border-white/10 text-white/50 pb-2">
-                        <th className="py-2">رقم الفاتورة</th>
-                        <th className="py-2">الفرع</th>
-                        <th className="py-2">الكاشير</th>
-                        <th className="py-2">طريقة الدفع</th>
-                        <th className="py-2">الصافي</th>
-                        <th className="py-2">التاريخ</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {invoices.slice(0, 8).map((inv) => (
-                        <tr key={inv.id} className="py-2 hover:bg-white/5">
-                          <td className="py-2.5 font-mono text-amber-400 font-bold">{inv.invoiceNumber}</td>
-                          <td className="py-2.5">{inv.branch?.name}</td>
-                          <td className="py-2.5 text-white/70">{inv.user?.name || "كاشير"}</td>
-                          <td className="py-2.5 font-bold">
-                            {inv.paymentMethod === "cash" && "كاش"}
-                            {inv.paymentMethod === "visa" && "فيزا"}
-                            {inv.paymentMethod === "instapay" && "إنستاباي"}
-                            {inv.paymentMethod === "split" && "مقسم"}
-                          </td>
-                          <td className="py-2.5 font-black text-white font-mono">{inv.netTotal} ج</td>
-                          <td className="py-2.5 text-white/40 text-[10px]">
-                            {new Date(inv.createdAt).toLocaleTimeString("ar-EG")}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+            {/* Invoices List */}
+            <div className="bg-[#12121a] border border-white/10 rounded-3xl p-5 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                  <FileText size={16} className="text-[#00ff66]" />
+                  <span>أحدث فواتير البيع الحرارية</span>
+                </h3>
+                <button
+                  onClick={fetchAllData}
+                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70"
+                >
+                  <RefreshCw size={14} />
+                </button>
               </div>
 
-              {/* Branch Day-Off Controls */}
-              <div className="bg-[#13131c] border border-white/10 rounded-3xl p-5 space-y-4">
-                <h3 className="font-bold text-sm text-white flex items-center gap-2 pb-3 border-b border-white/10">
-                  <MapPin size={16} className="text-amber-400" />
-                  <span>حالة الفروع وأيام الإجازات</span>
-                </h3>
-
-                <div className="space-y-3">
-                  {branches.map((b) => (
-                    <div key={b.id} className="p-3 bg-white/5 rounded-2xl border border-white/5 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-xs text-white">{b.name}</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">
-                          {b.isDayOffEnabled ? "إجازة أسبوعية" : "مفتوح ويستقبل"}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-white/50">{b.address}</p>
-                    </div>
-                  ))}
-                </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-right text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-white/50 pb-2">
+                      <th className="py-2">رقم الفاتورة</th>
+                      <th className="py-2">الفرع</th>
+                      <th className="py-2">الكاشير</th>
+                      <th className="py-2">طريقة الدفع</th>
+                      <th className="py-2">الصافي</th>
+                      <th className="py-2">التاريخ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {invoices.slice(0, 8).map((inv) => (
+                      <tr key={inv.id} className="py-2 hover:bg-white/5">
+                        <td className="py-2.5 font-mono text-[#ffb703] font-bold">{inv.invoiceNumber}</td>
+                        <td className="py-2.5">{inv.branch?.name}</td>
+                        <td className="py-2.5 text-white/70">{inv.user?.name || "كاشير"}</td>
+                        <td className="py-2.5 font-bold">
+                          {inv.paymentMethod === "CASH" && "كاش"}
+                          {inv.paymentMethod === "VISA" && "فيزا"}
+                          {inv.paymentMethod === "INSTAPAY" && "إنستاباي"}
+                          {inv.paymentMethod === "SPLIT" && "مقسم"}
+                        </td>
+                        <td className="py-2.5 font-black text-white font-mono">{inv.netTotal} ج</td>
+                        <td className="py-2.5 text-white/40 text-[10px]">
+                          {new Date(inv.createdAt).toLocaleTimeString("ar-EG")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB 2: INVENTORY */}
+        {/* TAB 2: DYNAMIC INVENTORY & WAREHOUSE */}
         {activeTab === "inventory" && (
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-[#13131c] p-4 rounded-3xl border border-white/10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-[#12121a] p-4 rounded-3xl border border-white/10">
               <div>
-                <h3 className="font-bold text-sm text-white">إدارة الأصناف والمخزون المركزي وفروع البيع</h3>
-                <p className="text-xs text-white/50">توزيع القطع بين المخزن المشترك وصالات عرض الفروع</p>
+                <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                  <span>المخزون الديناميكي والمخزن المركزي المشترك</span>
+                  <span className="text-[10px] bg-[#00ff66]/10 text-[#00ff66] px-2 py-0.5 rounded-full font-bold">
+                    تعديل حي وفوري
+                  </span>
+                </h3>
+                <p className="text-xs text-white/50">
+                  اضغط على أي رقم رصيد لتعديله فورياً في قاعدة البيانات، أو اضغط تعديل لتغيير صور وأسعار الموديل
+                </p>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowAddProductModal(true)}
-                  className="bg-amber-500 hover:bg-amber-400 text-black px-4 py-2 rounded-xl text-xs font-black shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition-all"
+                  className="bg-gradient-to-r from-[#00ff66] to-emerald-500 hover:brightness-110 text-black px-4 py-2 rounded-xl text-xs font-black shadow-md shadow-[#00ff66]/20 flex items-center gap-1.5 transition-all"
                 >
                   <Plus size={16} />
-                  <span>إضافة موديل جديد</span>
+                  <span>إضافة موديل جديد + رفع صورة</span>
                 </button>
                 <button
                   onClick={() => setShowTransferModal(true)}
@@ -662,12 +764,13 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Products & Variants List */}
-            <div className="bg-[#13131c] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+            {/* Dynamic Products Table */}
+            <div className="bg-[#12121a] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-right text-xs">
                   <thead>
                     <tr className="bg-white/5 text-white/60 font-bold border-b border-white/10">
+                      <th className="p-3">صورة القطعة</th>
                       <th className="p-3">الموديل والاسم</th>
                       <th className="p-3">القسم</th>
                       <th className="p-3">المقاس واللون</th>
@@ -677,72 +780,133 @@ export default function AdminDashboardPage() {
                       <th className="p-3 text-center">المخزن المركزي</th>
                       <th className="p-3 text-center">فرع عباس</th>
                       <th className="p-3 text-center">فرع التحرير</th>
-                      <th className="p-3 text-center">تيكت الباركود</th>
+                      <th className="p-3 text-center">إجراءات</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {products.map((p) =>
-                      p.variants.map((v: any) => {
+                      p.variants.map((v: any, vIdx: number) => {
                         const b1Stock = v.branchStocks?.find(
                           (bs: any) => bs.branchId === branches[0]?.id
                         )?.quantity || 0;
                         const b2Stock = v.branchStocks?.find(
                           (bs: any) => bs.branchId === branches[1]?.id
                         )?.quantity || 0;
+                        const img = v.image || p.featuredImage;
 
                         return (
                           <tr key={v.id} className="hover:bg-white/5 transition-colors">
-                            <td className="p-3 font-bold text-white">{p.nameAr}</td>
-                            <td className="p-3 text-white/50">{p.category?.nameAr || "كاجوال"}</td>
-                            <td className="p-3">
-                              <span className="px-2 py-0.5 rounded bg-white/10 text-amber-400 font-bold">
+                            <td className="p-2.5">
+                              {img ? (
+                                <img
+                                  src={img}
+                                  alt={p.nameAr}
+                                  className="w-10 h-10 rounded-lg object-cover border border-white/10"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-lg bg-black/40 flex items-center justify-center text-xs">
+                                  👕
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-2.5 font-bold text-white">
+                              <div>{p.nameAr}</div>
+                              {p.material && (
+                                <div className="text-[10px] text-white/40">{p.material}</div>
+                              )}
+                            </td>
+                            <td className="p-2.5 text-white/50">{p.category?.nameAr || "كاجوال"}</td>
+                            <td className="p-2.5">
+                              <span className="px-2 py-0.5 rounded bg-white/10 text-[#00ff66] font-bold">
                                 {v.size} ({v.color})
                               </span>
                             </td>
-                            <td className="p-3 font-mono text-white/70">{v.barcode}</td>
-                            <td className="p-3 font-black text-amber-400 font-mono">
+                            <td className="p-2.5 font-mono text-white/70">{v.barcode}</td>
+                            <td className="p-2.5 font-black text-[#ffb703] font-mono">
                               {v.priceOverride || p.basePrice} ج
                             </td>
-                            <td className="p-3 font-mono text-white/50">
+                            <td className="p-2.5 font-mono text-white/50">
                               {v.costPriceOverride || p.costPrice} ج
                             </td>
-                            <td className="p-3 text-center font-bold text-blue-400 font-mono">
-                              {v.stockCentral}
-                            </td>
-                            <td className="p-3 text-center font-bold font-mono">
-                              <span
-                                className={`px-2 py-0.5 rounded ${
-                                  b1Stock <= 2 ? "bg-red-500/20 text-red-400" : "text-green-400"
-                                }`}
-                              >
-                                {b1Stock}
-                              </span>
-                            </td>
-                            <td className="p-3 text-center font-bold font-mono">
-                              <span
-                                className={`px-2 py-0.5 rounded ${
-                                  b2Stock <= 2 ? "bg-red-500/20 text-red-400" : "text-green-400"
-                                }`}
-                              >
-                                {b2Stock}
-                              </span>
-                            </td>
-                            <td className="p-3 text-center">
+
+                            {/* INLINE EDITABLE STOCKS */}
+                            <td className="p-2.5 text-center">
                               <button
                                 onClick={() =>
-                                  setSelectedTagItem({
-                                    productName: p.nameAr,
-                                    size: v.size,
-                                    color: v.color,
-                                    barcode: v.barcode,
-                                    price: v.priceOverride || p.basePrice,
-                                  })
+                                  handleInlineStockUpdate(v.id, "CENTRAL_WAREHOUSE", v.stockCentral)
                                 }
-                                className="p-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg text-xs"
-                                title="طباعة استيكر الباركود"
+                                className="font-bold text-blue-400 font-mono hover:underline hover:bg-blue-500/10 px-2 py-0.5 rounded"
+                                title="اضغط لتعديل رصيد المخزن المركزي"
                               >
-                                <Printer size={14} />
+                                {v.stockCentral} ✏️
                               </button>
+                            </td>
+
+                            <td className="p-2.5 text-center">
+                              <button
+                                onClick={() =>
+                                  handleInlineStockUpdate(v.id, branches[0]?.id, b1Stock)
+                                }
+                                className={`font-bold font-mono px-2 py-0.5 rounded hover:underline ${
+                                  b1Stock <= 2 ? "bg-red-500/20 text-red-400" : "text-green-400"
+                                }`}
+                                title="اضغط لتعديل رصيد فرع عباس"
+                              >
+                                {b1Stock} ✏️
+                              </button>
+                            </td>
+
+                            <td className="p-2.5 text-center">
+                              <button
+                                onClick={() =>
+                                  handleInlineStockUpdate(v.id, branches[1]?.id, b2Stock)
+                                }
+                                className={`font-bold font-mono px-2 py-0.5 rounded hover:underline ${
+                                  b2Stock <= 2 ? "bg-red-500/20 text-red-400" : "text-green-400"
+                                }`}
+                                title="اضغط لتعديل رصيد فرع التحرير"
+                              >
+                                {b2Stock} ✏️
+                              </button>
+                            </td>
+
+                            {/* Actions: Print Barcode, Edit Product, Delete */}
+                            <td className="p-2.5 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  onClick={() =>
+                                    setSelectedTagItem({
+                                      productName: p.nameAr,
+                                      size: v.size,
+                                      color: v.color,
+                                      barcode: v.barcode,
+                                      price: v.priceOverride || p.basePrice,
+                                    })
+                                  }
+                                  className="p-1.5 bg-[#ffb703]/10 hover:bg-[#ffb703]/20 text-[#ffb703] rounded-lg text-xs"
+                                  title="طباعة استيكر الباركود"
+                                >
+                                  <Printer size={13} />
+                                </button>
+                                {vIdx === 0 && (
+                                  <>
+                                    <button
+                                      onClick={() => setEditingProduct({ ...p })}
+                                      className="p-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-xs"
+                                      title="تعديل الموديل وصورته"
+                                    >
+                                      <Edit size={13} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteProduct(p.id, p.nameAr)}
+                                      className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs"
+                                      title="حذف الموديل"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );
@@ -757,9 +921,9 @@ export default function AdminDashboardPage() {
 
         {/* TAB 3: BARCODE MAKER */}
         {activeTab === "barcodes" && (
-          <div className="bg-[#13131c] border border-white/10 rounded-3xl p-6 space-y-4">
+          <div className="bg-[#12121a] border border-white/10 rounded-3xl p-6 space-y-4">
             <div className="flex items-center gap-3 pb-3 border-b border-white/10">
-              <span className="p-2.5 bg-amber-500/10 text-amber-400 rounded-xl text-xl">🏷️</span>
+              <span className="p-2.5 bg-[#ffb703]/10 text-[#ffb703] rounded-xl text-xl">🏷️</span>
               <div>
                 <h3 className="font-bold text-base text-white">
                   منظومة طباعة باركود الملابس والتيكت الحراري (50 × 25 مم)
@@ -782,7 +946,7 @@ export default function AdminDashboardPage() {
                       <p className="text-[10px] text-white/50 mt-0.5">
                         {v.color} • مقاس {v.size} • {v.priceOverride || p.basePrice} ج
                       </p>
-                      <p className="font-mono text-[9px] text-amber-400 mt-1">{v.barcode}</p>
+                      <p className="font-mono text-[9px] text-[#ffb703] mt-1">{v.barcode}</p>
                     </div>
                     <button
                       onClick={() =>
@@ -794,7 +958,7 @@ export default function AdminDashboardPage() {
                           price: v.priceOverride || p.basePrice,
                         })
                       }
-                      className="bg-amber-500 hover:bg-amber-400 text-black px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 shadow-md shadow-amber-500/20 transition-all"
+                      className="bg-[#ffb703] hover:bg-amber-400 text-black px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 shadow-md shadow-[#ffb703]/20 transition-all"
                     >
                       <Printer size={14} />
                       طباعة
@@ -806,11 +970,11 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 4: GEMINI VISION AI INGESTION */}
+        {/* TAB 4: GEMINI VISION AI */}
         {activeTab === "ai" && (
-          <div className="bg-[#13131c] border border-white/10 rounded-3xl p-6 space-y-6">
+          <div className="bg-[#12121a] border border-white/10 rounded-3xl p-6 space-y-6">
             <div className="flex items-center gap-3 pb-3 border-b border-white/10">
-              <span className="p-2.5 bg-amber-500/10 text-amber-400 rounded-xl text-xl">🤖</span>
+              <span className="p-2.5 bg-[#00ff66]/10 text-[#00ff66] rounded-xl text-xl">🤖</span>
               <div>
                 <h3 className="font-bold text-base text-white">
                   مساعد الذكاء الاصطناعي Gemini Vision لفحص الفواتير وكشوف الجرد
@@ -821,90 +985,49 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="p-8 border-2 border-dashed border-amber-500/30 rounded-3xl text-center space-y-3 bg-white/5">
-              <Upload size={36} className="mx-auto text-amber-400 opacity-60" />
+            <div className="p-8 border-2 border-dashed border-[#00ff66]/30 rounded-3xl text-center space-y-3 bg-white/5">
+              <Upload size={36} className="mx-auto text-[#00ff66] opacity-70" />
               <div className="text-sm font-bold text-white">اسحب صورة الفاتورة أو اضغط للاختيار</div>
               <p className="text-xs text-white/50">يدعم صور JPG, PNG لفواتير الموردين أو كشوف الجرد المكتوبة بخط اليد</p>
               <input
                 type="file"
                 accept="image/*"
                 onChange={(e) => setAiImageFile(e.target.files?.[0] || null)}
-                className="block mx-auto text-xs text-white/70 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-black hover:file:bg-amber-400 cursor-pointer"
+                className="block mx-auto text-xs text-white/70 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#00ff66] file:text-black hover:file:bg-emerald-400 cursor-pointer"
               />
               {aiImageFile && (
                 <div className="pt-2">
                   <button
                     onClick={handleAiIngest}
                     disabled={aiLoading}
-                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black py-3 px-6 rounded-2xl text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all inline-flex items-center gap-2"
+                    className="bg-gradient-to-r from-[#00ff66] to-emerald-500 hover:brightness-110 text-black font-black py-3 px-6 rounded-2xl text-xs shadow-lg shadow-[#00ff66]/20 active:scale-95 transition-all inline-flex items-center gap-2"
                   >
                     {aiLoading ? "جاري الفحص بالذكاء الاصطناعي..." : "فحص الفاتورة واستخراج الأصناف 🚀"}
                   </button>
                 </div>
               )}
             </div>
-
-            {/* AI Result preview */}
-            {aiExtractedData && (
-              <div className="p-5 bg-white/5 border border-white/10 rounded-2xl space-y-4">
-                <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                  <h4 className="font-bold text-sm text-amber-400">
-                    البيانات المستخرجة بنجاح ({aiExtractedData.items?.length || 0} صنف)
-                  </h4>
-                  <span className="text-xs text-white/60">المورد: {aiExtractedData.supplierName}</span>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-right text-xs">
-                    <thead>
-                      <tr className="border-b border-white/10 text-white/50">
-                        <th className="py-2">اسم الصنف</th>
-                        <th className="py-2">اللون والمقاس</th>
-                        <th className="py-2">الكمية</th>
-                        <th className="py-2">سعر التكلفة</th>
-                        <th className="py-2">سعر البيع المقترح</th>
-                        <th className="py-2">الباركود المقترح</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {aiExtractedData.items?.map((it: any, idx: number) => (
-                        <tr key={idx} className="py-2">
-                          <td className="py-2 font-bold text-white">{it.nameAr}</td>
-                          <td className="py-2 text-amber-400">
-                            {it.color} • مقاس {it.size}
-                          </td>
-                          <td className="py-2 font-mono font-bold">{it.quantity}</td>
-                          <td className="py-2 font-mono">{it.costPrice} ج</td>
-                          <td className="py-2 font-mono font-black text-amber-400">{it.sellingPrice} ج</td>
-                          <td className="py-2 font-mono text-white/60">{it.barcode}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
         {/* TAB 5: TRANSFERS */}
         {activeTab === "transfers" && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center bg-[#13131c] p-4 rounded-3xl border border-white/10">
+            <div className="flex justify-between items-center bg-[#12121a] p-4 rounded-3xl border border-white/10">
               <div>
                 <h3 className="font-bold text-sm text-white">أذون تحويل البضاعة بين المخزن المركزي والفروع</h3>
                 <p className="text-xs text-white/50">سجل حركة ونقل قطع الملابس مع التحديث الآلي للأرصدة</p>
               </div>
               <button
                 onClick={() => setShowTransferModal(true)}
-                className="bg-amber-500 hover:bg-amber-400 text-black px-4 py-2 rounded-xl text-xs font-black shadow-md shadow-amber-500/20 flex items-center gap-1.5 transition-all"
+                className="bg-[#00ff66] hover:bg-emerald-400 text-black px-4 py-2 rounded-xl text-xs font-black shadow-md shadow-[#00ff66]/20 flex items-center gap-1.5 transition-all"
               >
                 <Plus size={16} />
                 <span>إذن تحويل جديد</span>
               </button>
             </div>
 
-            <div className="bg-[#13131c] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+            <div className="bg-[#12121a] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-right text-xs">
                   <thead>
@@ -920,7 +1043,7 @@ export default function AdminDashboardPage() {
                   <tbody className="divide-y divide-white/5">
                     {transfers.map((tr) => (
                       <tr key={tr.id} className="hover:bg-white/5">
-                        <td className="p-3 font-mono font-bold text-amber-400">{tr.transferNumber}</td>
+                        <td className="p-3 font-mono font-bold text-[#ffb703]">{tr.transferNumber}</td>
                         <td className="p-3">
                           {tr.fromLocation === "CENTRAL_WAREHOUSE" ? "المخزن المركزي" : "فرع بيع"}
                         </td>
@@ -935,7 +1058,7 @@ export default function AdminDashboardPage() {
                           ))}
                         </td>
                         <td className="p-3">
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-[10px]">
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-[#00ff66] font-bold text-[10px]">
                             {tr.status}
                           </span>
                         </td>
@@ -953,9 +1076,9 @@ export default function AdminDashboardPage() {
 
         {/* TAB 6: TREASURY & SHIFTS */}
         {activeTab === "treasury" && (
-          <div className="bg-[#13131c] border border-white/10 rounded-3xl p-6 space-y-4">
+          <div className="bg-[#12121a] border border-white/10 rounded-3xl p-6 space-y-4">
             <h3 className="font-bold text-base text-white pb-3 border-b border-white/10 flex items-center gap-2">
-              <DollarSign size={18} className="text-amber-400" />
+              <DollarSign size={18} className="text-[#00ff66]" />
               <span>تقارير الخزينة وجرد الورديات (كاش vs إلكتروني)</span>
             </h3>
 
@@ -968,24 +1091,24 @@ export default function AdminDashboardPage() {
                     <th className="py-2">الفرع</th>
                     <th className="py-2">العهدة الافتتاحية</th>
                     <th className="py-2">مبيعات الكاش</th>
-                    <th className="py-2">مبيعات الفيزا وإنستاباي</th>
+                    <th className="py-2">الفيزا وإنستاباي</th>
                     <th className="py-2">الكاش المتوقع</th>
                     <th className="py-2">الكاش الفعلي</th>
-                    <th className="py-2">الفارق (عجز/زيادة)</th>
+                    <th className="py-2">الفارق</th>
                     <th className="py-2">الحالة</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {shifts.map((s) => (
                     <tr key={s.id} className="py-2.5 hover:bg-white/5">
-                      <td className="py-2.5 font-mono text-amber-400 font-bold">{s.shiftNumber}</td>
+                      <td className="py-2.5 font-mono text-[#ffb703] font-bold">{s.shiftNumber}</td>
                       <td className="py-2.5 font-bold text-white">{s.user?.name}</td>
                       <td className="py-2.5">{s.branch?.name}</td>
                       <td className="py-2.5 font-mono">{s.startCash} ج</td>
                       <td className="py-2.5 font-mono text-green-400">{s.cashSales} ج</td>
                       <td className="py-2.5 font-mono text-blue-400">{s.visaSales + s.instapaySales} ج</td>
                       <td className="py-2.5 font-mono font-bold">{s.expectedCash} ج</td>
-                      <td className="py-2.5 font-mono font-bold text-amber-400">{s.actualCash} ج</td>
+                      <td className="py-2.5 font-mono font-bold text-[#ffb703]">{s.actualCash} ج</td>
                       <td
                         className={`py-2.5 font-mono font-black ${
                           s.cashDifference < 0
@@ -1001,11 +1124,11 @@ export default function AdminDashboardPage() {
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                             s.status === "OPEN"
-                              ? "bg-emerald-500/20 text-emerald-400"
+                              ? "bg-emerald-500/20 text-[#00ff66]"
                               : "bg-white/10 text-white/50"
                           }`}
                         >
-                          {s.status === "OPEN" ? "مفتوحة الآن" : "مقفلة"}
+                          {s.status === "OPEN" ? "مفتوحة" : "مقفلة"}
                         </span>
                       </td>
                     </tr>
@@ -1018,9 +1141,9 @@ export default function AdminDashboardPage() {
 
         {/* TAB 7: CUSTOMERS CRM */}
         {activeTab === "customers" && (
-          <div className="bg-[#13131c] border border-white/10 rounded-3xl p-6 space-y-4">
+          <div className="bg-[#12121a] border border-white/10 rounded-3xl p-6 space-y-4">
             <h3 className="font-bold text-base text-white pb-3 border-b border-white/10 flex items-center gap-2">
-              <Users size={18} className="text-amber-400" />
+              <Users size={18} className="text-[#00ff66]" />
               <span>قاعدة عملاء بزار ونقاط الولاء (CRM)</span>
             </h3>
 
@@ -1039,8 +1162,8 @@ export default function AdminDashboardPage() {
                   {customers.map((c) => (
                     <tr key={c.id} className="py-2.5 hover:bg-white/5">
                       <td className="py-2.5 font-bold text-white">{c.name}</td>
-                      <td className="py-2.5 font-mono text-amber-400">{c.phone}</td>
-                      <td className="py-2.5 font-bold text-emerald-400">{c.points} نقطة 🌟</td>
+                      <td className="py-2.5 font-mono text-[#ffb703]">{c.phone}</td>
+                      <td className="py-2.5 font-bold text-[#00ff66]">{c.points} نقطة 🌟</td>
                       <td className="py-2.5 font-mono font-bold text-white">{c.totalPurchases} ج.م</td>
                       <td className="py-2.5 text-white/40 text-[10px]">
                         {new Date(c.lastVisit).toLocaleDateString("ar-EG")}
@@ -1056,8 +1179,7 @@ export default function AdminDashboardPage() {
         {/* TAB 8: USERS & MASTER LOCKOUT */}
         {activeTab === "users" && (
           <div className="space-y-6">
-            {/* Master Lockout Box */}
-            <div className="bg-gradient-to-r from-red-950/30 via-[#161214] to-red-950/30 border border-red-500/40 rounded-3xl p-6 space-y-4 shadow-2xl">
+            <div className="bg-gradient-to-r from-red-950/30 via-[#141014] to-red-950/30 border border-red-500/40 rounded-3xl p-6 space-y-4 shadow-2xl">
               <div className="flex items-center gap-3">
                 <span className="p-3 bg-red-500/20 text-red-400 rounded-2xl text-2xl">🚨</span>
                 <div>
@@ -1080,7 +1202,7 @@ export default function AdminDashboardPage() {
                         النظام مغلق للطوارئ (المايسترو فقط من يستطيع الدخول)
                       </span>
                     ) : (
-                      <span className="text-green-400 flex items-center gap-1.5">
+                      <span className="text-[#00ff66] flex items-center gap-1.5">
                         <Unlock size={14} />
                         النظام يعمل بشكل طبيعي لجميع الموظفين والفروع
                       </span>
@@ -1106,55 +1228,122 @@ export default function AdminDashboardPage() {
         )}
       </main>
 
-      {/* Emergency Lock Confirmation Modal */}
-      {showLockConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
-          <div className="bg-[#121218] border border-red-500/50 rounded-3xl p-6 w-full max-w-md shadow-2xl text-white">
-            <h3 className="font-bold text-base text-red-400 mb-2 flex items-center gap-2">
-              <ShieldAlert size={18} />
-              <span>تأكيد تغيير حالة الطوارئ العامة</span>
-            </h3>
-            <p className="text-xs text-white/60 mb-4 leading-relaxed">
-              هذا الإجراء حساس للغاية ومخصص حصرياً للمالك Maestro. يرجى تأكيد العملية بإدخال الرمز السري الخاص بك (PIN).
-            </p>
+      {/* Edit Product Modal with ImgBB Upload */}
+      {editingProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-[#101018] border border-[#00ff66]/40 rounded-3xl p-6 w-full max-w-lg shadow-2xl text-white my-8">
+            <div className="flex justify-between items-center pb-3 border-b border-white/10 mb-4">
+              <h3 className="font-bold text-base text-[#00ff66]">تعديل بيانات وصورة الموديل</h3>
+              <button
+                onClick={() => setEditingProduct(null)}
+                className="p-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/70"
+              >
+                <X size={18} />
+              </button>
+            </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 text-xs">
               <div>
-                <label className="text-xs text-white/70 block mb-1">الرمز السري للمايسترو (PIN):</label>
+                <label className="block mb-1 text-white/70 font-bold">اسم الموديل:</label>
                 <input
-                  type="password"
-                  placeholder="أدخل الرمز السري (157230)"
-                  value={lockPinInput}
-                  onChange={(e) => setLockPinInput(e.target.value)}
-                  className="w-full bg-black/50 border border-white/15 focus:border-red-500 rounded-xl p-3 font-mono text-center text-lg text-white font-bold outline-none"
+                  type="text"
+                  value={editingProduct.nameAr}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, nameAr: e.target.value })}
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white"
                 />
               </div>
 
-              {!settings?.isMasterLocked && (
+              {/* ImgBB Image Upload */}
+              <div>
+                <label className="block mb-1 text-white/70 font-bold">رابط أو رفع صورة جديدة (ImgBB):</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={editingProduct.featuredImage || ""}
+                    onChange={(e) =>
+                      setEditingProduct({ ...editingProduct, featuredImage: e.target.value })
+                    }
+                    placeholder="https://i.ibb.co/..."
+                    className="flex-1 bg-black/50 border border-white/15 rounded-xl p-2.5 text-white font-mono text-xs"
+                  />
+                  <label className="bg-amber-500 hover:bg-amber-400 text-black px-3 py-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1">
+                    <Upload size={14} />
+                    <span>{uploadingImage ? "جاري الرفع..." : "رفع صورة"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleImageUpload(file, (url) => {
+                            setEditingProduct({ ...editingProduct, featuredImage: url });
+                          });
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+                {editingProduct.featuredImage && (
+                  <img
+                    src={editingProduct.featuredImage}
+                    alt="Preview"
+                    className="w-16 h-16 rounded-xl object-cover mt-2 border border-white/10"
+                  />
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-white/70 block mb-1">رسالة الإغلاق التي ستظهر للموظفين:</label>
-                  <textarea
-                    rows={2}
-                    value={lockMessageInput}
-                    onChange={(e) => setLockMessageInput(e.target.value)}
-                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-xs text-white outline-none"
+                  <label className="block mb-1 text-white/70 font-bold">سعر البيع (ج.م):</label>
+                  <input
+                    type="number"
+                    value={editingProduct.basePrice}
+                    onChange={(e) =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        basePrice: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-[#ffb703] font-bold font-mono"
                   />
                 </div>
-              )}
+                <div>
+                  <label className="block mb-1 text-white/70 font-bold">سعر التكلفة (ج.م):</label>
+                  <input
+                    type="number"
+                    value={editingProduct.costPrice}
+                    onChange={(e) =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        costPrice: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block mb-1 text-white/70 font-bold">الخامة:</label>
+                <input
+                  type="text"
+                  value={editingProduct.material || ""}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, material: e.target.value })}
+                  className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white"
+                />
+              </div>
             </div>
 
             <div className="flex gap-2 mt-6">
               <button
-                onClick={() => handleToggleMasterLock(!settings?.isMasterLocked)}
-                className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl text-xs shadow-lg shadow-red-600/30 active:scale-95 transition-all"
+                onClick={handleSaveProductEdit}
+                className="flex-1 bg-[#00ff66] hover:bg-emerald-400 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-[#00ff66]/20 active:scale-95 transition-all"
               >
-                تأكيد التغيير الآن
+                حفظ التعديلات في قاعدة البيانات
               </button>
               <button
-                onClick={() => {
-                  setShowLockConfirmModal(false);
-                  setLockPinInput("");
-                }}
+                onClick={() => setEditingProduct(null)}
                 className="bg-white/10 text-white font-bold py-3 px-4 rounded-xl text-xs"
               >
                 إلغاء
@@ -1164,25 +1353,62 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Add Product Modal */}
+      {/* Add Product Modal with ImgBB Upload */}
       {showAddProductModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="bg-[#121218] border border-amber-500/30 rounded-3xl p-6 w-full max-w-lg shadow-2xl text-white my-8">
-            <h3 className="font-bold text-base mb-4 text-amber-400">إضافة موديل كاجوال جديد للمخزن</h3>
+          <div className="bg-[#101018] border border-[#00ff66]/30 rounded-3xl p-6 w-full max-w-lg shadow-2xl text-white my-8">
+            <h3 className="font-bold text-base mb-4 text-[#00ff66]">إضافة موديل كاجوال جديد + رفع صورة</h3>
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block mb-1 text-white/70">اسم الموديل:</label>
+                <label className="block mb-1 text-white/70 font-bold">اسم الموديل:</label>
                 <input
                   type="text"
-                  placeholder="مثال: تيشرت أوفر سايز بيسك قطن 100%"
+                  placeholder="مثال: تيشرت أوفر سايز بريميوم"
                   value={newProdName}
                   onChange={(e) => setNewProdName(e.target.value)}
                   className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white"
                 />
               </div>
+
+              {/* ImgBB Image Upload */}
+              <div>
+                <label className="block mb-1 text-white/70 font-bold">رفع صورة للموديل (ImgBB):</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newProdImage}
+                    onChange={(e) => setNewProdImage(e.target.value)}
+                    placeholder="رابط الصورة المباشر أو ارفع من جهازك..."
+                    className="flex-1 bg-black/50 border border-white/15 rounded-xl p-2.5 text-white font-mono text-xs"
+                  />
+                  <label className="bg-[#00ff66] hover:bg-emerald-400 text-black px-3 py-2.5 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1 font-mono">
+                    <Upload size={14} />
+                    <span>{uploadingImage ? "جاري الرفع..." : "اختر صورة"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleImageUpload(file, (url) => setNewProdImage(url));
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+                {newProdImage && (
+                  <img
+                    src={newProdImage}
+                    alt="Preview"
+                    className="w-16 h-16 rounded-xl object-cover mt-2 border border-white/10"
+                  />
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block mb-1 text-white/70">القسم:</label>
+                  <label className="block mb-1 text-white/70 font-bold">القسم:</label>
                   <select
                     value={newProdCat}
                     onChange={(e) => setNewProdCat(e.target.value)}
@@ -1197,7 +1423,7 @@ export default function AdminDashboardPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block mb-1 text-white/70">الخامة:</label>
+                  <label className="block mb-1 text-white/70 font-bold">الخامة:</label>
                   <input
                     type="text"
                     value={newProdMaterial}
@@ -1206,18 +1432,19 @@ export default function AdminDashboardPage() {
                   />
                 </div>
               </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block mb-1 text-white/70">سعر البيع (ج.م):</label>
+                  <label className="block mb-1 text-white/70 font-bold">سعر البيع (ج.م):</label>
                   <input
                     type="number"
                     value={newProdPrice}
                     onChange={(e) => setNewProdPrice(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-amber-400 font-bold font-mono"
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-[#ffb703] font-bold font-mono"
                   />
                 </div>
                 <div>
-                  <label className="block mb-1 text-white/70">سعر التكلفة من المصنع (ج.م):</label>
+                  <label className="block mb-1 text-white/70 font-bold">سعر التكلفة (ج.م):</label>
                   <input
                     type="number"
                     value={newProdCost}
@@ -1231,7 +1458,7 @@ export default function AdminDashboardPage() {
             <div className="flex gap-2 mt-6">
               <button
                 onClick={handleCreateProduct}
-                className="flex-1 bg-amber-500 hover:bg-amber-400 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                className="flex-1 bg-[#00ff66] hover:bg-emerald-400 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-[#00ff66]/20 active:scale-95 transition-all"
               >
                 حفظ وإصدار الباركود
               </button>
@@ -1249,8 +1476,8 @@ export default function AdminDashboardPage() {
       {/* Stock Transfer Modal */}
       {showTransferModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
-          <div className="bg-[#121218] border border-amber-500/30 rounded-3xl p-6 w-full max-w-md shadow-2xl text-white">
-            <h3 className="font-bold text-base mb-4 text-amber-400">إذن تحويل بضاعة فوري</h3>
+          <div className="bg-[#101018] border border-amber-500/30 rounded-3xl p-6 w-full max-w-md shadow-2xl text-white">
+            <h3 className="font-bold text-base mb-4 text-[#ffb703]">إذن تحويل بضاعة فوري</h3>
             <div className="space-y-3 text-xs">
               <div>
                 <label className="block mb-1 text-white/70">تحويل من:</label>
@@ -1315,12 +1542,70 @@ export default function AdminDashboardPage() {
             <div className="flex gap-2 mt-6">
               <button
                 onClick={handleExecuteTransfer}
-                className="flex-1 bg-amber-500 hover:bg-amber-400 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                className="flex-1 bg-[#ffb703] hover:bg-amber-400 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-[#ffb703]/20 active:scale-95 transition-all"
               >
                 تأكيد وتنفيذ النقل الفوري
               </button>
               <button
                 onClick={() => setShowTransferModal(false)}
+                className="bg-white/10 text-white font-bold py-3 px-4 rounded-xl text-xs"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Emergency Lock Confirmation Modal */}
+      {showLockConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
+          <div className="bg-[#121218] border border-red-500/50 rounded-3xl p-6 w-full max-w-md shadow-2xl text-white">
+            <h3 className="font-bold text-base text-red-400 mb-2 flex items-center gap-2">
+              <ShieldAlert size={18} />
+              <span>تأكيد تغيير حالة الطوارئ العامة</span>
+            </h3>
+            <p className="text-xs text-white/60 mb-4 leading-relaxed">
+              هذا الإجراء حساس للغاية ومخصص حصرياً للمالك Maestro. يرجى تأكيد العملية بإدخال الرمز السري الخاص بك (PIN).
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-white/70 block mb-1">الرمز السري للمايسترو (PIN):</label>
+                <input
+                  type="password"
+                  value={lockPinInput}
+                  onChange={(e) => setLockPinInput(e.target.value)}
+                  autoComplete="new-password"
+                  className="w-full bg-black/50 border border-white/15 focus:border-red-500 rounded-xl p-3 font-mono text-center text-lg text-white font-bold outline-none"
+                />
+              </div>
+
+              {!settings?.isMasterLocked && (
+                <div>
+                  <label className="text-xs text-white/70 block mb-1">رسالة الإغلاق التي ستظهر للموظفين:</label>
+                  <textarea
+                    rows={2}
+                    value={lockMessageInput}
+                    onChange={(e) => setLockMessageInput(e.target.value)}
+                    className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-xs text-white outline-none"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => handleToggleMasterLock(!settings?.isMasterLocked)}
+                className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl text-xs shadow-lg shadow-red-600/30 active:scale-95 transition-all"
+              >
+                تأكيد التغيير الآن
+              </button>
+              <button
+                onClick={() => {
+                  setShowLockConfirmModal(false);
+                  setLockPinInput("");
+                }}
                 className="bg-white/10 text-white font-bold py-3 px-4 rounded-xl text-xs"
               >
                 إلغاء

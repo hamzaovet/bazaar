@@ -7,7 +7,6 @@ export async function GET(request: Request) {
     const categorySlug = searchParams.get("category");
     const search = searchParams.get("search");
     const barcode = searchParams.get("barcode");
-    const branchId = searchParams.get("branchId");
     const isFeatured = searchParams.get("featured");
 
     // Quick Barcode / Scanner lookup (Exact match for POS)
@@ -68,6 +67,7 @@ export async function GET(request: Request) {
           include: {
             branchStocks: true,
           },
+          orderBy: { size: "asc" },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -90,32 +90,36 @@ export async function POST(request: Request) {
       basePrice,
       costPrice,
       material,
-      variants, // array of { size, color, colorHex, barcode, centralStock, branchStock1, branchStock2 }
+      featuredImage,
+      variants, // array of { size, color, colorHex, image, barcode, centralStock, branchStocks }
     } = body;
 
     const newProduct = await prisma.product.create({
       data: {
         nameAr,
-        sku,
+        sku: sku || `BAZ-${Date.now().toString().slice(-6)}`,
         categoryId: categoryId || null,
         basePrice: parseFloat(basePrice) || 0,
         costPrice: parseFloat(costPrice) || 0,
         material,
+        featuredImage: featuredImage || null,
       },
     });
 
     if (Array.isArray(variants)) {
-      for (const v of variants) {
+      for (let i = 0; i < variants.length; i++) {
+        const v = variants[i];
         const variant = await prisma.productVariant.create({
           data: {
             productId: newProduct.id,
-            size: v.size,
-            color: v.color,
+            size: v.size || "FREE",
+            color: v.color || "أسود",
             colorHex: v.colorHex || "#111111",
-            barcode: v.barcode || `200${Date.now().toString().slice(-8)}`,
+            image: v.image || featuredImage || null,
+            barcode: v.barcode || `200${Date.now().toString().slice(-8)}${i}`,
             priceOverride: v.price ? parseFloat(v.price) : newProduct.basePrice,
             costPriceOverride: v.costPrice ? parseFloat(v.costPrice) : newProduct.costPrice,
-            stockCentral: parseInt(v.stockCentral || v.centralStock || "0", 10),
+            stockCentral: parseInt(v.stockCentral || v.central || "0", 10),
           },
         });
 
@@ -138,5 +142,80 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Product POST error:", error);
     return NextResponse.json({ error: "فشل حفظ المنتج الجديد" }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+    const { action } = body;
+
+    // 1. Quick inline stock update for a variant in Central or Branch
+    if (action === "UPDATE_STOCK") {
+      const { variantId, location, quantity } = body;
+      const q = parseInt(quantity, 10) || 0;
+
+      if (location === "CENTRAL_WAREHOUSE") {
+        await prisma.productVariant.update({
+          where: { id: variantId },
+          data: { stockCentral: q },
+        });
+      } else {
+        // location is a branchId
+        await prisma.branchStock.upsert({
+          where: {
+            variantId_branchId: {
+              variantId,
+              branchId: location,
+            },
+          },
+          update: { quantity: q },
+          create: {
+            variantId,
+            branchId: location,
+            quantity: q,
+            alertLowQuantity: 2,
+          },
+        });
+      }
+
+      return NextResponse.json({ success: true, message: "تم تحديث الرصيد بنجاح" });
+    }
+
+    // 2. Full product update
+    const { id, nameAr, basePrice, costPrice, material, featuredImage, categoryId } = body;
+    const updated = await prisma.product.update({
+      where: { id },
+      data: {
+        nameAr: nameAr || undefined,
+        basePrice: basePrice !== undefined ? parseFloat(basePrice) : undefined,
+        costPrice: costPrice !== undefined ? parseFloat(costPrice) : undefined,
+        material: material || undefined,
+        featuredImage: featuredImage || undefined,
+        categoryId: categoryId || undefined,
+      },
+    });
+
+    return NextResponse.json({ success: true, product: updated });
+  } catch (error) {
+    console.error("Product PUT error:", error);
+    return NextResponse.json({ error: "فشل تحديث بيانات المنتج" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "معرف المنتج مطلوب" }, { status: 400 });
+    }
+
+    await prisma.product.delete({ where: { id } });
+    return NextResponse.json({ success: true, message: "تم حذف المنتج بنجاح" });
+  } catch (error) {
+    console.error("Product DELETE error:", error);
+    return NextResponse.json({ error: "فشل حذف المنتج" }, { status: 500 });
   }
 }

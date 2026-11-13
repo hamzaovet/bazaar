@@ -7833,6 +7833,7 @@ export namespace Prisma {
     productId: string | null
     color: string | null
     colorHex: string | null
+    image: string | null
     size: string | null
     barcode: string | null
     sku: string | null
@@ -7848,6 +7849,7 @@ export namespace Prisma {
     productId: string | null
     color: string | null
     colorHex: string | null
+    image: string | null
     size: string | null
     barcode: string | null
     sku: string | null
@@ -7863,6 +7865,7 @@ export namespace Prisma {
     productId: number
     color: number
     colorHex: number
+    image: number
     size: number
     barcode: number
     sku: number
@@ -7892,6 +7895,7 @@ export namespace Prisma {
     productId?: true
     color?: true
     colorHex?: true
+    image?: true
     size?: true
     barcode?: true
     sku?: true
@@ -7907,6 +7911,7 @@ export namespace Prisma {
     productId?: true
     color?: true
     colorHex?: true
+    image?: true
     size?: true
     barcode?: true
     sku?: true
@@ -7922,6 +7927,7 @@ export namespace Prisma {
     productId?: true
     color?: true
     colorHex?: true
+    image?: true
     size?: true
     barcode?: true
     sku?: true
@@ -8024,6 +8030,7 @@ export namespace Prisma {
     productId: string
     color: string
     colorHex: string | null
+    image: string | null
     size: string
     barcode: string
     sku: string | null
@@ -8058,6 +8065,7 @@ export namespace Prisma {
     productId?: boolean
     color?: boolean
     colorHex?: boolean
+    image?: boolean
     size?: boolean
     barcode?: boolean
     sku?: boolean
@@ -8078,6 +8086,7 @@ export namespace Prisma {
     productId?: boolean
     color?: boolean
     colorHex?: boolean
+    image?: boolean
     size?: boolean
     barcode?: boolean
     sku?: boolean
@@ -8094,6 +8103,7 @@ export namespace Prisma {
     productId?: boolean
     color?: boolean
     colorHex?: boolean
+    image?: boolean
     size?: boolean
     barcode?: boolean
     sku?: boolean
@@ -8110,6 +8120,7 @@ export namespace Prisma {
     productId?: boolean
     color?: boolean
     colorHex?: boolean
+    image?: boolean
     size?: boolean
     barcode?: boolean
     sku?: boolean
@@ -8120,7 +8131,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type ProductVariantOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "productId" | "color" | "colorHex" | "size" | "barcode" | "sku" | "priceOverride" | "costPriceOverride" | "stockCentral" | "createdAt" | "updatedAt", ExtArgs["result"]["productVariant"]>
+  export type ProductVariantOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "productId" | "color" | "colorHex" | "image" | "size" | "barcode" | "sku" | "priceOverride" | "costPriceOverride" | "stockCentral" | "createdAt" | "updatedAt", ExtArgs["result"]["productVariant"]>
   export type ProductVariantInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     product?: boolean | ProductDefaultArgs<ExtArgs>
     branchStocks?: boolean | ProductVariant$branchStocksArgs<ExtArgs>
@@ -8148,6 +8159,7 @@ export namespace Prisma {
       productId: string
       color: string
       colorHex: string | null
+      image: string | null
       size: string
       barcode: string
       sku: string | null
@@ -8587,6 +8599,7 @@ export namespace Prisma {
     readonly productId: FieldRef<"ProductVariant", 'String'>
     readonly color: FieldRef<"ProductVariant", 'String'>
     readonly colorHex: FieldRef<"ProductVariant", 'String'>
+    readonly image: FieldRef<"ProductVariant", 'String'>
     readonly size: FieldRef<"ProductVariant", 'String'>
     readonly barcode: FieldRef<"ProductVariant", 'String'>
     readonly sku: FieldRef<"ProductVariant", 'String'>
@@ -23714,6 +23727,7 @@ export namespace Prisma {
     productId: 'productId',
     color: 'color',
     colorHex: 'colorHex',
+    image: 'image',
     size: 'size',
     barcode: 'barcode',
     sku: 'sku',
@@ -24465,6 +24479,7 @@ export namespace Prisma {
     productId?: StringFilter<"ProductVariant"> | string
     color?: StringFilter<"ProductVariant"> | string
     colorHex?: StringNullableFilter<"ProductVariant"> | string | null
+    image?: StringNullableFilter<"ProductVariant"> | string | null
     size?: StringFilter<"ProductVariant"> | string
     barcode?: StringFilter<"ProductVariant"> | string
     sku?: StringNullableFilter<"ProductVariant"> | string | null
@@ -24484,6 +24499,7 @@ export namespace Prisma {
     productId?: SortOrder
     color?: SortOrder
     colorHex?: SortOrderInput | SortOrder
+    image?: SortOrderInput | SortOrder
     size?: SortOrder
     barcode?: SortOrder
     sku?: SortOrderInput | SortOrder
@@ -24508,6 +24524,7 @@ export namespace Prisma {
     productId?: StringFilter<"ProductVariant"> | string
     color?: StringFilter<"ProductVariant"> | string
     colorHex?: StringNullableFilter<"ProductVariant"> | string | null
+    image?: StringNullableFilter<"ProductVariant"> | string | null
     size?: StringFilter<"ProductVariant"> | string
     sku?: StringNullableFilter<"ProductVariant"> | string | null
     priceOverride?: FloatNullableFilter<"ProductVariant"> | number | null
@@ -24526,6 +24543,7 @@ export namespace Prisma {
     productId?: SortOrder
     color?: SortOrder
     colorHex?: SortOrderInput | SortOrder
+    image?: SortOrderInput | SortOrder
     size?: SortOrder
     barcode?: SortOrder
     sku?: SortOrderInput | SortOrder
@@ -24549,6 +24567,7 @@ export namespace Prisma {
     productId?: StringWithAggregatesFilter<"ProductVariant"> | string
     color?: StringWithAggregatesFilter<"ProductVariant"> | string
     colorHex?: StringNullableWithAggregatesFilter<"ProductVariant"> | string | null
+    image?: StringNullableWithAggregatesFilter<"ProductVariant"> | string | null
     size?: StringWithAggregatesFilter<"ProductVariant"> | string
     barcode?: StringWithAggregatesFilter<"ProductVariant"> | string
     sku?: StringNullableWithAggregatesFilter<"ProductVariant"> | string | null
@@ -26229,6 +26248,7 @@ export namespace Prisma {
     id?: string
     color: string
     colorHex?: string | null
+    image?: string | null
     size: string
     barcode: string
     sku?: string | null
@@ -26248,6 +26268,7 @@ export namespace Prisma {
     productId: string
     color: string
     colorHex?: string | null
+    image?: string | null
     size: string
     barcode: string
     sku?: string | null
@@ -26265,6 +26286,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     color?: StringFieldUpdateOperationsInput | string
     colorHex?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     size?: StringFieldUpdateOperationsInput | string
     barcode?: StringFieldUpdateOperationsInput | string
     sku?: NullableStringFieldUpdateOperationsInput | string | null
@@ -26284,6 +26306,7 @@ export namespace Prisma {
     productId?: StringFieldUpdateOperationsInput | string
     color?: StringFieldUpdateOperationsInput | string
     colorHex?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     size?: StringFieldUpdateOperationsInput | string
     barcode?: StringFieldUpdateOperationsInput | string
     sku?: NullableStringFieldUpdateOperationsInput | string | null
@@ -26302,6 +26325,7 @@ export namespace Prisma {
     productId: string
     color: string
     colorHex?: string | null
+    image?: string | null
     size: string
     barcode: string
     sku?: string | null
@@ -26316,6 +26340,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     color?: StringFieldUpdateOperationsInput | string
     colorHex?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     size?: StringFieldUpdateOperationsInput | string
     barcode?: StringFieldUpdateOperationsInput | string
     sku?: NullableStringFieldUpdateOperationsInput | string | null
@@ -26331,6 +26356,7 @@ export namespace Prisma {
     productId?: StringFieldUpdateOperationsInput | string
     color?: StringFieldUpdateOperationsInput | string
     colorHex?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     size?: StringFieldUpdateOperationsInput | string
     barcode?: StringFieldUpdateOperationsInput | string
     sku?: NullableStringFieldUpdateOperationsInput | string | null
@@ -28209,6 +28235,7 @@ export namespace Prisma {
     productId?: SortOrder
     color?: SortOrder
     colorHex?: SortOrder
+    image?: SortOrder
     size?: SortOrder
     barcode?: SortOrder
     sku?: SortOrder
@@ -28230,6 +28257,7 @@ export namespace Prisma {
     productId?: SortOrder
     color?: SortOrder
     colorHex?: SortOrder
+    image?: SortOrder
     size?: SortOrder
     barcode?: SortOrder
     sku?: SortOrder
@@ -28245,6 +28273,7 @@ export namespace Prisma {
     productId?: SortOrder
     color?: SortOrder
     colorHex?: SortOrder
+    image?: SortOrder
     size?: SortOrder
     barcode?: SortOrder
     sku?: SortOrder
@@ -31502,6 +31531,7 @@ export namespace Prisma {
     id?: string
     color: string
     colorHex?: string | null
+    image?: string | null
     size: string
     barcode: string
     sku?: string | null
@@ -31519,6 +31549,7 @@ export namespace Prisma {
     id?: string
     color: string
     colorHex?: string | null
+    image?: string | null
     size: string
     barcode: string
     sku?: string | null
@@ -31603,6 +31634,7 @@ export namespace Prisma {
     productId?: StringFilter<"ProductVariant"> | string
     color?: StringFilter<"ProductVariant"> | string
     colorHex?: StringNullableFilter<"ProductVariant"> | string | null
+    image?: StringNullableFilter<"ProductVariant"> | string | null
     size?: StringFilter<"ProductVariant"> | string
     barcode?: StringFilter<"ProductVariant"> | string
     sku?: StringNullableFilter<"ProductVariant"> | string | null
@@ -31880,6 +31912,7 @@ export namespace Prisma {
     id?: string
     color: string
     colorHex?: string | null
+    image?: string | null
     size: string
     barcode: string
     sku?: string | null
@@ -31898,6 +31931,7 @@ export namespace Prisma {
     productId: string
     color: string
     colorHex?: string | null
+    image?: string | null
     size: string
     barcode: string
     sku?: string | null
@@ -31979,6 +32013,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     color?: StringFieldUpdateOperationsInput | string
     colorHex?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     size?: StringFieldUpdateOperationsInput | string
     barcode?: StringFieldUpdateOperationsInput | string
     sku?: NullableStringFieldUpdateOperationsInput | string | null
@@ -31997,6 +32032,7 @@ export namespace Prisma {
     productId?: StringFieldUpdateOperationsInput | string
     color?: StringFieldUpdateOperationsInput | string
     colorHex?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     size?: StringFieldUpdateOperationsInput | string
     barcode?: StringFieldUpdateOperationsInput | string
     sku?: NullableStringFieldUpdateOperationsInput | string | null
@@ -32139,6 +32175,7 @@ export namespace Prisma {
     id?: string
     color: string
     colorHex?: string | null
+    image?: string | null
     size: string
     barcode: string
     sku?: string | null
@@ -32157,6 +32194,7 @@ export namespace Prisma {
     productId: string
     color: string
     colorHex?: string | null
+    image?: string | null
     size: string
     barcode: string
     sku?: string | null
@@ -32226,6 +32264,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     color?: StringFieldUpdateOperationsInput | string
     colorHex?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     size?: StringFieldUpdateOperationsInput | string
     barcode?: StringFieldUpdateOperationsInput | string
     sku?: NullableStringFieldUpdateOperationsInput | string | null
@@ -32244,6 +32283,7 @@ export namespace Prisma {
     productId?: StringFieldUpdateOperationsInput | string
     color?: StringFieldUpdateOperationsInput | string
     colorHex?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     size?: StringFieldUpdateOperationsInput | string
     barcode?: StringFieldUpdateOperationsInput | string
     sku?: NullableStringFieldUpdateOperationsInput | string | null
@@ -32933,6 +32973,7 @@ export namespace Prisma {
     id?: string
     color: string
     colorHex?: string | null
+    image?: string | null
     size: string
     barcode: string
     sku?: string | null
@@ -32951,6 +32992,7 @@ export namespace Prisma {
     productId: string
     color: string
     colorHex?: string | null
+    image?: string | null
     size: string
     barcode: string
     sku?: string | null
@@ -33042,6 +33084,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     color?: StringFieldUpdateOperationsInput | string
     colorHex?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     size?: StringFieldUpdateOperationsInput | string
     barcode?: StringFieldUpdateOperationsInput | string
     sku?: NullableStringFieldUpdateOperationsInput | string | null
@@ -33060,6 +33103,7 @@ export namespace Prisma {
     productId?: StringFieldUpdateOperationsInput | string
     color?: StringFieldUpdateOperationsInput | string
     colorHex?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     size?: StringFieldUpdateOperationsInput | string
     barcode?: StringFieldUpdateOperationsInput | string
     sku?: NullableStringFieldUpdateOperationsInput | string | null
@@ -34638,6 +34682,7 @@ export namespace Prisma {
     id?: string
     color: string
     colorHex?: string | null
+    image?: string | null
     size: string
     barcode: string
     sku?: string | null
@@ -34652,6 +34697,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     color?: StringFieldUpdateOperationsInput | string
     colorHex?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     size?: StringFieldUpdateOperationsInput | string
     barcode?: StringFieldUpdateOperationsInput | string
     sku?: NullableStringFieldUpdateOperationsInput | string | null
@@ -34669,6 +34715,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     color?: StringFieldUpdateOperationsInput | string
     colorHex?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     size?: StringFieldUpdateOperationsInput | string
     barcode?: StringFieldUpdateOperationsInput | string
     sku?: NullableStringFieldUpdateOperationsInput | string | null
@@ -34686,6 +34733,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     color?: StringFieldUpdateOperationsInput | string
     colorHex?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     size?: StringFieldUpdateOperationsInput | string
     barcode?: StringFieldUpdateOperationsInput | string
     sku?: NullableStringFieldUpdateOperationsInput | string | null

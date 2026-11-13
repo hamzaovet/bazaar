@@ -370,22 +370,24 @@ export default function POSPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-gray-100 flex flex-col font-['Cairo',sans-serif]">
       {/* Top POS Header */}
-      <header className="bg-[#121218] border-b border-white/10 px-4 py-2.5 flex items-center justify-between">
+      <header className="bg-[#0c0c14] border-b border-white/10 px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <a href="/" className="flex items-center gap-2">
-            <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black font-black text-lg shadow-md shadow-amber-500/20">
+          <a href="/" className="flex items-center gap-2 hover:opacity-90">
+            <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#ffb703] to-[#fb8500] flex items-center justify-center text-black font-black text-lg shadow-md shadow-[#ffb703]/20">
               B
             </span>
             <div>
-              <h1 className="text-base font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-500 uppercase leading-none">
-                BAZAAR POS
-              </h1>
-              <p className="text-[10px] text-white/50 font-bold mt-0.5">نقطة البيع السريعة</p>
+              <div className="text-base font-black tracking-wider neon-bazaar-text leading-none">
+                Bazaar
+              </div>
+              <p className="text-[9px] text-[#00ff66] font-black uppercase font-mono mt-0.5">
+                POS CASHIER
+              </p>
             </div>
           </a>
 
           {/* Active Branch Badge */}
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-amber-400">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-[#ffb703]">
             <span>🏬</span>
             <span>{session?.branch?.name || "فرع عباس العقاد الرئيسي"}</span>
           </div>

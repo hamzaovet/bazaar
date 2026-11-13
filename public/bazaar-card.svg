@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a10"/>
+      <stop offset="50%" stop-color="#141420"/>
+      <stop offset="100%" stop-color="#07070b"/>
+    </linearGradient>
+    <filter id="neonGlowGold" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="neonGlowGreen" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Card Background -->
+  <rect x="10" y="10" width="980" height="580" rx="36" fill="url(#bgGrad)" stroke="#ffb703" stroke-width="3" stroke-opacity="0.8"/>
+  <rect x="25" y="25" width="950" height="550" rx="26" fill="none" stroke="#00ff66" stroke-width="1.5" stroke-opacity="0.4"/>
+
+  <!-- Brand Neon Sign Header -->
+  <g transform="translate(500, 150)" text-anchor="middle">
+    <!-- Bazaar in Neon Warm Gold -->
+    <text y="0" font-family="'Cairo', sans-serif" font-weight="900" font-size="78" fill="#ffb703" filter="url(#neonGlowGold)" letter-spacing="2">Bazaar</text>
+    <!-- CASUAL WEAR in Neon Green -->
+    <text y="50" font-family="'Cairo', sans-serif" font-weight="900" font-size="28" fill="#00ff66" filter="url(#neonGlowGreen)" letter-spacing="8">CASUAL WEAR</text>
+    <!-- Horizontal Neon Slash Line -->
+    <rect x="-180" y="70" width="360" height="5" rx="2.5" fill="#00ff66" filter="url(#neonGlowGreen)"/>
+  </g>
+
+  <!-- Tagline -->
+  <text x="500" y="275" text-anchor="middle" font-family="'Cairo', sans-serif" font-weight="700" font-size="22" fill="#ffffff" opacity="0.9">
+    براند الشارع المصري الفاخر • خامات قطنية تركي وأوفر سايز عصري
+  </text>
+
+  <!-- Branches Info Boxes -->
+  <g transform="translate(100, 320)">
+    <!-- Branch 1 Box -->
+    <rect x="0" y="0" width="370" height="150" rx="20" fill="#181826" stroke="#ffb703" stroke-width="1.5" stroke-opacity="0.5"/>
+    <text x="185" y="40" text-anchor="middle" font-family="'Cairo', sans-serif" font-weight="900" font-size="19" fill="#ffb703">📍 فرع عباس العقاد الرئيسي</text>
+    <text x="185" y="75" text-anchor="middle" font-family="'Cairo', sans-serif" font-size="14" fill="#dddddd">بجوار أبو العز السوري وسنتر علم الدين</text>
+    <text x="185" y="115" text-anchor="middle" font-family="'Cairo', sans-serif" font-weight="700" font-size="15" fill="#00ff66">01008038041 • 01210520500</text>
+  </g>
+
+  <g transform="translate(530, 320)">
+    <!-- Branch 2 Box -->
+    <rect x="0" y="0" width="370" height="150" rx="20" fill="#181826" stroke="#00ff66" stroke-width="1.5" stroke-opacity="0.5"/>
+    <text x="185" y="40" text-anchor="middle" font-family="'Cairo', sans-serif" font-weight="900" font-size="19" fill="#00ff66">📍 فرع أول عباس - كشري التحرير</text>
+    <text x="185" y="75" text-anchor="middle" font-family="'Cairo', sans-serif" font-size="14" fill="#dddddd">شارع كشري التحرير بجوار كافيه طاولة</text>
+    <text x="185" y="115" text-anchor="middle" font-family="'Cairo', sans-serif" font-weight="700" font-size="15" fill="#ffb703">01008038041 • 01008183647</text>
+  </g>
+
+  <!-- Bottom Bar: Social Channels & Scan for Smart Profile -->
+  <text x="500" y="525" text-anchor="middle" font-family="'Cairo', sans-serif" font-weight="800" font-size="16" fill="#00ff66" letter-spacing="1">
+    📱 شات واتساب 01008038041 • فيسبوك • انستجرام • تيك توك: @bazaar_casual_wear
+  </text>
+  <text x="500" y="555" text-anchor="middle" font-family="monospace" font-size="12" fill="#888888">
+    SCAN 1-QR CODE FOR SMART INTERACTIVE PROFILE &amp; LIVE STORE
+  </text>
+</svg>

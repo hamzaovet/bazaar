@@ -103,6 +103,7 @@ model ProductVariant {
   product           Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
   color             String            // e.g. "أسود", "أبيض", "كحلي", "بيج", "زيتي"
   colorHex          String?           // "#000000", "#FFFFFF", etc.
+  image             String?           // صورة القطعة بهذا اللون والموديل
   size              String            // "S", "M", "L", "XL", "2XL", "3XL", "4XL"
   barcode           String            @unique // Unique Barcode string e.g. "6221001001"
   sku               String?           // e.g. "BAZ-TSH-001-BLK-XL"

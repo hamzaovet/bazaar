@@ -19,8 +19,15 @@ import {
   QrCode,
   ShieldCheck,
   Heart,
+  User,
+  Mail,
+  KeyRound,
+  ArrowRight,
+  LogOut,
+  ExternalLink,
 } from "lucide-react";
-import CardQRModal from "@/components/CardQRModal";
+import BrandLogo from "@/components/BrandLogo";
+import PrintableCard from "@/components/PrintableCard";
 
 interface Branch {
   id: string;
@@ -44,6 +51,7 @@ interface ProductVariant {
   id: string;
   color: string;
   colorHex?: string;
+  image?: string;
   size: string;
   barcode: string;
   priceOverride?: number;
@@ -59,6 +67,7 @@ interface Product {
   basePrice: number;
   costPrice: number;
   discountPrice?: number;
+  featuredImage?: string;
   material?: string;
   category?: Category;
   variants: ProductVariant[];
@@ -70,6 +79,7 @@ interface CartItem {
   name: string;
   color: string;
   size: string;
+  image?: string;
   price: number;
   quantity: number;
 }
@@ -84,20 +94,27 @@ export default function StorefrontPage() {
   const [loading, setLoading] = useState<boolean>(true);
 
   // Modals
-  const [showQRModal, setShowQRModal] = useState<boolean>(false);
+  const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [chosenColor, setChosenColor] = useState<string>("");
   const [chosenSize, setChosenSize] = useState<string>("");
+  const [activeImage, setActiveImage] = useState<string>("");
 
   // Cart
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState<boolean>(false);
 
-  // Customer Loyalty Lookup Modal
-  const [showLoyaltyModal, setShowLoyaltyModal] = useState<boolean>(false);
-  const [customerPhone, setCustomerPhone] = useState<string>("");
-  const [customerData, setCustomerData] = useState<any>(null);
-  const [loyaltyLoading, setLoyaltyLoading] = useState<boolean>(false);
+  // Customer Auth (OTP + Registration)
+  const [customer, setCustomer] = useState<any>(null);
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+  const [authStep, setAuthStep] = useState<"DETAILS" | "OTP">("DETAILS");
+  const [authName, setAuthName] = useState<string>("");
+  const [authPhone, setAuthPhone] = useState<string>("");
+  const [authEmail, setAuthEmail] = useState<string>("");
+  const [otpInput, setOtpInput] = useState<string>("");
+  const [otpLoading, setOtpLoading] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<string>("");
+  const [authSuccessMsg, setAuthSuccessMsg] = useState<string>("");
 
   // Fetch initial data
   useEffect(() => {
@@ -124,6 +141,16 @@ export default function StorefrontPage() {
       }
     }
     loadData();
+
+    // Check logged in customer from localStorage
+    const savedCustomer = localStorage.getItem("bazaar_customer");
+    if (savedCustomer) {
+      try {
+        setCustomer(JSON.parse(savedCustomer));
+      } catch (e) {
+        // Ignored
+      }
+    }
   }, []);
 
   // Filtered Products
@@ -143,12 +170,34 @@ export default function StorefrontPage() {
     return matchesCategory && matchesSearch;
   });
 
-  // Open Product Variant Selection
+  // Open Product Variant Selection Modal
   const openProductModal = (product: Product) => {
     setSelectedProduct(product);
     if (product.variants && product.variants.length > 0) {
-      setChosenColor(product.variants[0].color);
-      setChosenSize(product.variants[0].size);
+      const first = product.variants[0];
+      setChosenColor(first.color);
+      setChosenSize(first.size);
+      setActiveImage(first.image || product.featuredImage || "");
+    } else {
+      setActiveImage(product.featuredImage || "");
+    }
+  };
+
+  // Change Color and update picture dynamically
+  const handleColorChange = (color: string) => {
+    setChosenColor(color);
+    if (selectedProduct) {
+      const match = selectedProduct.variants.find((v) => v.color === color);
+      if (match?.image) {
+        setActiveImage(match.image);
+      }
+      // Also adjust size if current chosen size isn't in this color
+      const availableSizes = selectedProduct.variants
+        .filter((v) => v.color === color)
+        .map((v) => v.size);
+      if (!availableSizes.includes(chosenSize) && availableSizes.length > 0) {
+        setChosenSize(availableSizes[0]);
+      }
     }
   };
 
@@ -179,6 +228,7 @@ export default function StorefrontPage() {
           name: selectedProduct.nameAr,
           color: chosenColor,
           size: chosenSize,
+          image: variant.image || selectedProduct.featuredImage,
           price,
           quantity: 1,
         },
@@ -214,64 +264,130 @@ export default function StorefrontPage() {
     cart.forEach((item, idx) => {
       text += `${idx + 1}. ${item.name} - لون: ${item.color} - مقاس: ${item.size} - عدد: ${item.quantity} (السعر: ${item.price * item.quantity} ج.م)\n`;
     });
-    text += `\nإجمالي الأوردر: ${cartTotal} ج.م\nيرجى تأكيد التوافر وتفاصيل الاستلام أو الدليفري.`;
+    text += `\nإجمالي الأوردر: ${cartTotal} ج.م`;
+    if (customer?.name) {
+      text += `\nاسم العميل: ${customer.name} (${customer.phone || ""})`;
+    }
+    text += `\nيرجى تأكيد التوافر وتفاصيل الاستلام أو الدليفري.`;
 
     const encoded = encodeURIComponent(text);
     window.open(`https://wa.me/201008038041?text=${encoded}`, "_blank");
   };
 
-  // Customer Loyalty Lookup
-  const handleLoyaltyLookup = async () => {
-    if (!customerPhone) return;
+  // Customer Send OTP
+  const handleSendOtp = async () => {
+    if (!authPhone || !authEmail || !authEmail.includes("@")) {
+      setAuthError("يرجى إدخال رقم الهاتف وبريد إلكتروني صحيح لاستلام كود التفعيل");
+      return;
+    }
+
     try {
-      setLoyaltyLoading(true);
-      const res = await fetch(`/api/customers?phone=${customerPhone.trim()}`);
+      setOtpLoading(true);
+      setAuthError("");
+      const res = await fetch("/api/auth/otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "SEND",
+          email: authEmail,
+          phone: authPhone,
+        }),
+      });
+
       const data = await res.json();
-      if (data.customer) {
-        setCustomerData(data.customer);
+      if (data.success) {
+        setAuthStep("OTP");
+        setAuthSuccessMsg(`تم إرسال كود التفعيل المكون من 6 أرقام إلى بريدك: ${authEmail}`);
       } else {
-        setCustomerData({ notFound: true });
+        setAuthError(data.error || "فشل إرسال كود التفعيل");
       }
     } catch (e) {
-      console.error(e);
+      setAuthError("حدث خطأ في الاتصال بالخادم");
     } finally {
-      setLoyaltyLoading(false);
+      setOtpLoading(false);
     }
   };
 
+  // Customer Verify OTP
+  const handleVerifyOtp = async () => {
+    if (!otpInput || otpInput.length < 4) {
+      setAuthError("يرجى إدخال كود التفعيل المستلم");
+      return;
+    }
+
+    try {
+      setOtpLoading(true);
+      setAuthError("");
+      const res = await fetch("/api/auth/otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "VERIFY",
+          email: authEmail,
+          phone: authPhone,
+          code: otpInput,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        // Register or lookup customer in DB
+        const cRes = await fetch(`/api/customers?phone=${authPhone}`);
+        const cData = await cRes.json();
+        const customerProfile = cData.customer || {
+          name: authName || "عميل بزار كاجوال",
+          phone: authPhone,
+          email: authEmail,
+          points: 50,
+          totalPurchases: 0,
+        };
+
+        setCustomer(customerProfile);
+        localStorage.setItem("bazaar_customer", JSON.stringify(customerProfile));
+        setShowAuthModal(false);
+        setAuthStep("DETAILS");
+        setOtpInput("");
+        alert(`أهلاً بك يا ${customerProfile.name} في بزار كاجوال وير 👑! تم تفعيل حسابك بنجاح.`);
+      } else {
+        setAuthError(data.error || "كود التفعيل غير صحيح");
+      }
+    } catch (e) {
+      setAuthError("حدث خطأ أثناء فحص الكود");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleCustomerLogout = () => {
+    localStorage.removeItem("bazaar_customer");
+    setCustomer(null);
+  };
+
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-gray-100 flex flex-col selection:bg-amber-500 selection:text-black">
-      {/* Top Banner Ticker */}
-      <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 text-black py-1.5 px-4 text-xs font-black text-center flex items-center justify-center gap-2 tracking-wide">
+    <div className="min-h-screen bg-[#07070b] text-gray-100 flex flex-col selection:bg-[#00ff66] selection:text-black">
+      {/* Top Banner Ticker with Neon Accents */}
+      <div className="bg-gradient-to-r from-[#ffb703] via-[#fb8500] to-[#00ff66] text-black py-1.5 px-4 text-xs font-black text-center flex items-center justify-center gap-2 tracking-wide">
         <Sparkles size={14} />
-        <span>عرض الافتتاح الملكي: خامات قطنية تركي وأوفر سايز عصري بجميع الفروع | خدمة التوصيل متاحة 🚀</span>
+        <span>كولكشن الشارع المصري الجديد • قطن تركي وأوفر سايز عصري بجميع الفروع | خدمة التوصيل متاحة 🚀</span>
       </div>
 
       {/* Main Navbar */}
-      <header className="sticky top-0 z-40 bg-[#0d0d14]/90 backdrop-blur-md border-b border-white/10 px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          {/* Brand Logo */}
+      <header className="sticky top-0 z-40 bg-[#0a0a10]/95 backdrop-blur-md border-b border-white/10 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          {/* Brand Logo matching Image 1 */}
           <div className="flex items-center gap-3">
-            <a href="/" className="flex items-center gap-2 group">
-              <span className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
-                B
-              </span>
-              <div>
-                <h1 className="text-xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-500 uppercase">
-                  BAZAAR
-                </h1>
-                <p className="text-[10px] text-white/50 -mt-1 font-semibold">CASUAL WEAR</p>
-              </div>
+            <a href="/" className="hover:opacity-95 transition-opacity">
+              <BrandLogo size="md" />
             </a>
           </div>
 
           {/* Branch Picker (عباس العقاد / كشري التحرير / الكل) */}
-          <div className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-2xl border border-white/10 text-xs font-bold">
+          <div className="hidden lg:flex items-center gap-1 bg-black/60 p-1 rounded-2xl border border-white/10 text-xs font-bold">
             <button
               onClick={() => setSelectedBranchId("all")}
               className={`px-3 py-1.5 rounded-xl transition-all ${
                 selectedBranchId === "all"
-                  ? "bg-amber-500 text-black shadow-md shadow-amber-500/20"
+                  ? "bg-[#ffb703] text-black shadow-lg shadow-[#ffb703]/30"
                   : "text-white/70 hover:text-white"
               }`}
             >
@@ -283,7 +399,7 @@ export default function StorefrontPage() {
                 onClick={() => setSelectedBranchId(b.id)}
                 className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 ${
                   selectedBranchId === b.id
-                    ? "bg-amber-500 text-black shadow-md shadow-amber-500/20"
+                    ? "bg-[#00ff66] text-black shadow-lg shadow-[#00ff66]/30 font-black"
                     : "text-white/70 hover:text-white"
                 }`}
               >
@@ -295,34 +411,64 @@ export default function StorefrontPage() {
 
           {/* Nav Actions */}
           <div className="flex items-center gap-2">
+            {/* Direct Admin Access Button - PROMINENT IN HEADER */}
+            <a
+              href="/admin"
+              className="bg-white/5 hover:bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:text-amber-300 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+              title="دخول الإدارة ونقاط البيع POS"
+            >
+              <ShieldCheck size={16} />
+              <span className="hidden sm:inline">لوحة الإدارة</span>
+              <span>POS</span>
+            </a>
+
             {/* The Royal 1-QR Card Button */}
-            <button
-              onClick={() => setShowQRModal(true)}
-              className="bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+            <a
+              href="/card"
+              className="bg-[#00ff66]/10 hover:bg-[#00ff66]/20 border border-[#00ff66]/40 text-[#00ff66] px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
             >
               <QrCode size={16} />
               <span className="hidden sm:inline">كارت العلامة</span>
               <span>1-QR</span>
-            </button>
+            </a>
 
-            {/* Customer Loyalty Account */}
-            <button
-              onClick={() => setShowLoyaltyModal(true)}
-              className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
-            >
-              <Sparkles size={16} className="text-amber-400" />
-              <span className="hidden sm:inline">نقاطك الملكية</span>
-            </button>
+            {/* Customer Login / Loyalty Account */}
+            {customer ? (
+              <div className="relative group">
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="bg-white/10 border border-[#ffb703]/40 text-[#ffb703] px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+                >
+                  <User size={15} />
+                  <span className="max-w-[80px] truncate">{customer.name}</span>
+                  <span className="text-[10px] bg-black/40 px-1.5 py-0.2 rounded-full text-[#00ff66]">
+                    {customer.points || 0}🌟
+                  </span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setAuthStep("DETAILS");
+                  setShowAuthModal(true);
+                }}
+                className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+              >
+                <User size={15} className="text-[#00ff66]" />
+                <span className="hidden sm:inline">تسجيل العميل</span>
+                <span>(OTP)</span>
+              </button>
+            )}
 
             {/* Cart Button */}
             <button
               onClick={() => setShowCart(true)}
-              className="relative bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+              className="relative bg-gradient-to-r from-[#ffb703] to-[#fb8500] hover:brightness-110 text-black px-3.5 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-lg shadow-[#ffb703]/20 active:scale-95 transition-all"
             >
               <ShoppingBag size={16} />
               <span>السلة</span>
               {cart.length > 0 && (
-                <span className="w-5 h-5 bg-black text-amber-400 rounded-full flex items-center justify-center text-[10px] font-black -mr-1">
+                <span className="w-5 h-5 bg-black text-[#00ff66] rounded-full flex items-center justify-center text-[10px] font-black -mr-1">
                   {cart.reduce((a, b) => a + b.quantity, 0)}
                 </span>
               )}
@@ -331,12 +477,12 @@ export default function StorefrontPage() {
         </div>
 
         {/* Mobile Branch Selector */}
-        <div className="flex md:hidden gap-1 mt-2.5 overflow-x-auto no-scrollbar pt-1 border-t border-white/5">
+        <div className="flex lg:hidden gap-1 mt-2.5 overflow-x-auto no-scrollbar pt-1 border-t border-white/5">
           <button
             onClick={() => setSelectedBranchId("all")}
             className={`whitespace-nowrap px-3 py-1 text-xs font-bold rounded-lg border ${
               selectedBranchId === "all"
-                ? "bg-amber-500 text-black border-amber-500"
+                ? "bg-[#ffb703] text-black border-[#ffb703]"
                 : "bg-white/5 text-white/70 border-white/10"
             }`}
           >
@@ -348,7 +494,7 @@ export default function StorefrontPage() {
               onClick={() => setSelectedBranchId(b.id)}
               className={`whitespace-nowrap px-3 py-1 text-xs font-bold rounded-lg border ${
                 selectedBranchId === b.id
-                  ? "bg-amber-500 text-black border-amber-500"
+                  ? "bg-[#00ff66] text-black border-[#00ff66] font-black"
                   : "bg-white/5 text-white/70 border-white/10"
               }`}
             >
@@ -358,33 +504,35 @@ export default function StorefrontPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section with Vibrant Neon Glow */}
       <section className="relative px-4 py-8 md:py-12 max-w-7xl mx-auto w-full">
-        <div className="bg-gradient-to-r from-[#161622] via-[#1a1a28] to-[#161622] border border-amber-500/20 rounded-3xl p-6 md:p-10 relative overflow-hidden shadow-2xl">
+        <div className="bg-gradient-to-r from-[#12121c] via-[#161626] to-[#12121c] border border-[#00ff66]/20 rounded-3xl p-6 md:p-10 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#ffb703]/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#00ff66]/10 rounded-full blur-3xl pointer-events-none" />
+
           <div className="max-w-2xl relative z-10 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#00ff66]/10 border border-[#00ff66]/30 text-[#00ff66] text-xs font-black">
               <Flame size={14} />
-              <span>كولكشن الشارع المصري • صيف وشتاء 2026</span>
+              <span>THE ROYAL STREETWEAR COLLECTION • 2026</span>
             </div>
-            <h2 className="text-3xl md:text-5xl font-black leading-tight tracking-wide text-white">
-              براند الشارع المصري الفاخر <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-200 to-amber-500">
-                BAZAAR CASUAL WEAR
-              </span>
-            </h2>
-            <p className="text-white/70 text-sm md:text-base leading-relaxed">
-              تيشرتات أوفر سايز هيفي ويت، بناطيل كارجو وجينز تركي، هوديز ميلتون مبطن، وبليزرات سليم فيت. خامات قطنية معالجة لا تنكمش وتدوم طويلاً.
+
+            <div className="text-right">
+              <BrandLogo size="xl" />
+            </div>
+
+            <p className="text-white/80 text-sm md:text-base leading-relaxed font-medium">
+              تيشرتات أوفر سايز هيفي ويت، بناطيل كارجو وجينز تركي، هوديز ميلتون مبطن، وبليزرات سليم فيت. خامات قطنية معالجة لا تنكمش وتدوم طويلاً بفرعي عباس العقاد وأول عباس.
             </p>
 
             {/* Search Input */}
             <div className="relative pt-2 max-w-lg">
-              <Search className="absolute right-3.5 top-5 text-white/40" size={18} />
+              <Search className="absolute right-3.5 top-5 text-[#00ff66]" size={18} />
               <input
                 type="text"
                 placeholder="ابحث بالاسم، الموديل، اللون (أسود، زيتي...) أو المقاس (XL, 34)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-black/60 border border-white/15 focus:border-amber-500 rounded-2xl py-3 pr-11 pl-4 text-xs md:text-sm text-white placeholder-white/40 outline-none transition-all shadow-inner"
+                className="w-full bg-black/60 border border-white/15 focus:border-[#00ff66] rounded-2xl py-3 pr-11 pl-4 text-xs md:text-sm text-white placeholder-white/40 outline-none transition-all shadow-inner"
               />
             </div>
           </div>
@@ -398,7 +546,7 @@ export default function StorefrontPage() {
             onClick={() => setSelectedCategory("all")}
             className={`whitespace-nowrap px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border ${
               selectedCategory === "all"
-                ? "bg-amber-500 text-black border-amber-500 shadow-lg shadow-amber-500/20"
+                ? "bg-gradient-to-r from-[#ffb703] to-[#fb8500] text-black border-[#ffb703] shadow-lg shadow-[#ffb703]/20 font-black"
                 : "bg-white/5 text-white/70 border-white/10 hover:border-white/20"
             }`}
           >
@@ -410,7 +558,7 @@ export default function StorefrontPage() {
               onClick={() => setSelectedCategory(c.slug)}
               className={`whitespace-nowrap px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border ${
                 selectedCategory === c.slug
-                  ? "bg-amber-500 text-black border-amber-500 shadow-lg shadow-amber-500/20"
+                  ? "bg-[#00ff66] text-black border-[#00ff66] shadow-lg shadow-[#00ff66]/20 font-black"
                   : "bg-white/5 text-white/70 border-white/10 hover:border-white/20"
               }`}
             >
@@ -420,12 +568,12 @@ export default function StorefrontPage() {
         </div>
       </section>
 
-      {/* Products Grid */}
+      {/* Products Grid with Real Images & Color Preview */}
       <section className="px-4 max-w-7xl mx-auto w-full flex-1 mb-12">
         {loading ? (
           <div className="text-center py-20 text-white/60">
             <div className="animate-spin text-4xl mb-3">👑</div>
-            <p className="font-bold text-sm">جاري تحميل أحدث موديلات بزار كاجوال وير...</p>
+            <p className="font-bold text-sm">جاري تحميل تشكيلة بزار كاجوال وير...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10 p-8">
@@ -435,42 +583,49 @@ export default function StorefrontPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {filteredProducts.map((p) => {
-              // Extract unique colors and sizes
               const colors = Array.from(new Set(p.variants.map((v) => v.color)));
               const sizes = Array.from(new Set(p.variants.map((v) => v.size)));
+              const displayImg = p.featuredImage || p.variants[0]?.image;
 
               return (
                 <div
                   key={p.id}
-                  className="bg-[#14141d] border border-white/10 hover:border-amber-500/50 rounded-2xl p-3.5 flex flex-col justify-between transition-all group hover:shadow-xl hover:shadow-amber-500/5"
+                  className="bg-[#12121a] border border-white/10 hover:border-[#00ff66]/50 rounded-2xl p-3 flex flex-col justify-between transition-all group hover:shadow-2xl hover:shadow-[#00ff66]/10"
                 >
                   <div>
                     {/* Badge & Category */}
                     <div className="flex items-center justify-between text-[10px] text-white/50 mb-2 font-bold">
-                      <span className="bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
+                      <span className="bg-white/5 px-2 py-0.5 rounded-md border border-white/5 text-[#00ff66]">
                         {p.category?.nameAr || "كاجوال"}
                       </span>
-                      {p.sku && <span className="font-mono text-amber-400">{p.sku}</span>}
+                      {p.sku && <span className="font-mono text-[#ffb703]">{p.sku}</span>}
                     </div>
 
-                    {/* Product Mock Visual / Graphic */}
+                    {/* Product Image with Hover Zoom */}
                     <div
                       onClick={() => openProductModal(p)}
-                      className="w-full aspect-[4/3] rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/5 flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group-hover:scale-[1.02] transition-transform"
+                      className="w-full aspect-[4/3] rounded-xl bg-black/60 border border-white/5 overflow-hidden cursor-pointer relative group-hover:scale-[1.02] transition-transform"
                     >
-                      <div className="text-4xl">👕</div>
-                      <span className="text-[10px] font-black tracking-widest text-white/40 uppercase mt-2">
-                        BAZAAR CASUAL
-                      </span>
-                      <div className="absolute inset-x-0 bottom-0 py-1 bg-black/60 backdrop-blur-sm text-center text-[10px] text-amber-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                        معاينة واختيار المقاس
+                      {displayImg ? (
+                        <img
+                          src={displayImg}
+                          alt={p.nameAr}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-4xl">
+                          👕
+                        </div>
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 py-1.5 bg-black/75 backdrop-blur-sm text-center text-[10px] text-[#00ff66] font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                        معاينة واختيار المقاس واللون
                       </div>
                     </div>
 
                     {/* Title */}
                     <h3
                       onClick={() => openProductModal(p)}
-                      className="font-bold text-sm text-white mt-3 line-clamp-2 hover:text-amber-400 cursor-pointer transition-colors leading-snug"
+                      className="font-bold text-sm text-white mt-3 line-clamp-2 hover:text-[#ffb703] cursor-pointer transition-colors leading-snug"
                     >
                       {p.nameAr}
                     </h3>
@@ -480,8 +635,23 @@ export default function StorefrontPage() {
                       <p className="text-[11px] text-white/50 line-clamp-1 mt-1">{p.material}</p>
                     )}
 
+                    {/* Color Dots Preview */}
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <span className="text-[10px] text-white/40">الألوان:</span>
+                      <div className="flex gap-1">
+                        {p.variants.slice(0, 4).map((v, idx) => (
+                          <span
+                            key={idx}
+                            className="w-3 h-3 rounded-full border border-black/40 shadow-sm"
+                            style={{ backgroundColor: v.colorHex || "#444" }}
+                            title={v.color}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
                     {/* Available Sizes preview */}
-                    <div className="flex flex-wrap gap-1 mt-2.5">
+                    <div className="flex flex-wrap gap-1 mt-2">
                       {sizes.slice(0, 4).map((s) => (
                         <span
                           key={s}
@@ -490,24 +660,19 @@ export default function StorefrontPage() {
                           {s}
                         </span>
                       ))}
-                      {sizes.length > 4 && (
-                        <span className="text-[9px] font-mono px-1 py-0.5 text-white/40">
-                          +{sizes.length - 4}
-                        </span>
-                      )}
                     </div>
                   </div>
 
                   {/* Price & Action Button */}
                   <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
                     <div>
-                      <div className="text-base font-black text-amber-400">
+                      <div className="text-base font-black text-[#ffb703]">
                         {p.basePrice} <span className="text-[10px] text-white/70 font-normal">ج.م</span>
                       </div>
                     </div>
                     <button
                       onClick={() => openProductModal(p)}
-                      className="bg-amber-500 hover:bg-amber-400 text-black px-3 py-1.5 rounded-xl text-xs font-black shadow-md shadow-amber-500/20 active:scale-95 transition-all"
+                      className="bg-gradient-to-r from-[#00ff66] to-emerald-500 hover:brightness-110 text-black px-3.5 py-1.5 rounded-xl text-xs font-black shadow-md shadow-[#00ff66]/20 active:scale-95 transition-all"
                     >
                       اختيار
                     </button>
@@ -519,10 +684,10 @@ export default function StorefrontPage() {
         )}
       </section>
 
-      {/* Product Selection Modal */}
+      {/* Dynamic Product Variant Selection Modal (الصورة والمقاسات تتغير مع اللون!) */}
       {selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="bg-[#121218] border border-amber-500/30 rounded-3xl p-6 w-full max-w-lg shadow-2xl text-white my-8 relative">
+          <div className="bg-[#101018] border border-[#00ff66]/30 rounded-3xl p-6 w-full max-w-lg shadow-2xl text-white my-8 relative">
             <button
               onClick={() => setSelectedProduct(null)}
               className="absolute top-5 left-5 p-2 rounded-2xl bg-white/5 hover:bg-white/10 text-white/70"
@@ -530,8 +695,26 @@ export default function StorefrontPage() {
               <X size={20} />
             </button>
 
+            {/* Product Image switches when color changes! */}
+            <div className="w-full aspect-video rounded-2xl bg-black/60 overflow-hidden mb-4 border border-white/10 relative">
+              {activeImage ? (
+                <img
+                  src={activeImage}
+                  alt={selectedProduct.nameAr}
+                  className="w-full h-full object-cover transition-all duration-300"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-5xl">
+                  👕
+                </div>
+              )}
+              <div className="absolute top-3 right-3 bg-black/75 px-3 py-1 rounded-full text-xs font-bold text-[#00ff66] border border-[#00ff66]/30">
+                اللون الحالي: {chosenColor}
+              </div>
+            </div>
+
             <div className="text-right">
-              <span className="text-xs bg-amber-500/10 text-amber-400 px-3 py-1 rounded-full border border-amber-500/20 font-bold">
+              <span className="text-xs bg-[#ffb703]/10 text-[#ffb703] px-3 py-1 rounded-full border border-[#ffb703]/30 font-bold">
                 {selectedProduct.category?.nameAr || "كاجوال"}
               </span>
               <h3 className="text-xl font-black text-white mt-2 leading-snug">
@@ -540,15 +723,15 @@ export default function StorefrontPage() {
               {selectedProduct.material && (
                 <p className="text-xs text-white/60 mt-1 font-medium">{selectedProduct.material}</p>
               )}
-              <div className="text-2xl font-black text-amber-400 mt-2">
+              <div className="text-2xl font-black text-[#ffb703] mt-2">
                 {selectedProduct.basePrice} <span className="text-xs text-white/70 font-normal">ج.م</span>
               </div>
             </div>
 
             {/* Color Selector */}
-            <div className="mt-6 text-right">
+            <div className="mt-5 text-right">
               <label className="text-xs font-bold text-white/70 block mb-2">
-                اختر اللون: <strong className="text-amber-400">{chosenColor}</strong>
+                اضغط على اللون لتغيير الصورة والمقاس: <strong className="text-[#00ff66]">{chosenColor}</strong>
               </label>
               <div className="flex flex-wrap gap-2">
                 {Array.from(new Set(selectedProduct.variants.map((v) => v.color))).map((c) => {
@@ -557,15 +740,15 @@ export default function StorefrontPage() {
                   return (
                     <button
                       key={c}
-                      onClick={() => setChosenColor(c)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
+                      onClick={() => handleColorChange(c)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
                         isSelected
-                          ? "bg-amber-500 text-black border-amber-500 shadow-md shadow-amber-500/20"
+                          ? "bg-[#00ff66] text-black border-[#00ff66] shadow-lg shadow-[#00ff66]/30 font-black"
                           : "bg-white/5 text-white/80 border-white/10 hover:border-white/20"
                       }`}
                     >
                       <span
-                        className="w-3 h-3 rounded-full border border-black/40"
+                        className="w-3.5 h-3.5 rounded-full border border-black/40 shadow"
                         style={{ backgroundColor: variant?.colorHex || "#333" }}
                       />
                       <span>{c}</span>
@@ -575,10 +758,10 @@ export default function StorefrontPage() {
               </div>
             </div>
 
-            {/* Size Selector */}
+            {/* Size Selector for this specific color */}
             <div className="mt-4 text-right">
               <label className="text-xs font-bold text-white/70 block mb-2">
-                اختر المقاس: <strong className="text-amber-400">{chosenSize}</strong>
+                المقاسات المتوفرة للون ({chosenColor}): <strong className="text-[#ffb703]">{chosenSize}</strong>
               </label>
               <div className="flex flex-wrap gap-2">
                 {Array.from(
@@ -595,7 +778,7 @@ export default function StorefrontPage() {
                       onClick={() => setChosenSize(s)}
                       className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
                         isSelected
-                          ? "bg-amber-500 text-black border-amber-500 shadow-md shadow-amber-500/20"
+                          ? "bg-[#ffb703] text-black border-[#ffb703] shadow-lg shadow-[#ffb703]/30 font-black"
                           : "bg-white/5 text-white/80 border-white/10 hover:border-white/20"
                       }`}
                     >
@@ -607,10 +790,10 @@ export default function StorefrontPage() {
             </div>
 
             {/* Branch Stock Availability */}
-            <div className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
-              <div className="font-bold text-amber-400 flex items-center gap-1.5">
+            <div className="mt-5 p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
+              <div className="font-bold text-[#00ff66] flex items-center gap-1.5">
                 <MapPin size={14} />
-                <span>توافر هذا المقاس واللون في الفروع:</span>
+                <span>رصيد القطعة بالمقاس ({chosenSize}) واللون ({chosenColor}) بالفروع:</span>
               </div>
               {branches.map((b) => {
                 const variant = selectedProduct.variants.find(
@@ -624,24 +807,24 @@ export default function StorefrontPage() {
                     <span
                       className={`font-bold px-2 py-0.5 rounded ${
                         qty > 2
-                          ? "bg-emerald-500/20 text-emerald-400"
+                          ? "bg-emerald-500/20 text-[#00ff66]"
                           : qty > 0
                           ? "bg-amber-500/20 text-amber-400"
                           : "bg-red-500/20 text-red-400"
                       }`}
                     >
-                      {qty > 0 ? `متوفر (${qty} قطع)` : "نفد من هذا الفرع"}
+                      {qty > 0 ? `متوفر (${qty} قطع بالصالة)` : "نفد من صالة هذا الفرع"}
                     </span>
                   </div>
                 );
               })}
             </div>
 
-            {/* Actions */}
+            {/* Add to Cart Action */}
             <div className="flex gap-3 mt-6">
               <button
                 onClick={addToCart}
-                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all text-sm"
+                className="flex-1 bg-gradient-to-r from-[#00ff66] via-emerald-400 to-[#00ff66] hover:brightness-110 text-black font-black py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-[#00ff66]/20 active:scale-95 transition-all text-sm"
               >
                 <ShoppingBag size={18} />
                 <span>إضافة إلى سلة الشراء</span>
@@ -651,13 +834,159 @@ export default function StorefrontPage() {
         </div>
       )}
 
+      {/* Customer Registration & OTP Verification Modal */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
+          <div className="bg-[#101018] border border-[#00ff66]/40 rounded-3xl p-6 w-full max-w-md shadow-2xl text-white relative">
+            <button
+              onClick={() => {
+                setShowAuthModal(false);
+                setAuthError("");
+                setAuthSuccessMsg("");
+              }}
+              className="absolute top-5 left-5 p-2 rounded-2xl bg-white/5 hover:bg-white/10 text-white/70"
+            >
+              <X size={20} />
+            </button>
+
+            {/* If Customer is already logged in, show Profile and Loyalty status */}
+            {customer ? (
+              <div className="text-center space-y-4 py-2">
+                <span className="p-3 bg-[#00ff66]/10 text-[#00ff66] rounded-2xl inline-block text-3xl">
+                  👑
+                </span>
+                <h3 className="text-xl font-black text-white">{customer.name}</h3>
+                <p className="text-xs text-white/50">{customer.email} • {customer.phone}</p>
+
+                <div className="p-4 bg-white/5 border border-white/10 rounded-2xl text-center space-y-2">
+                  <div className="text-xs text-white/70">رصيد نقاط الولاء الملكية:</div>
+                  <div className="text-3xl font-black text-[#ffb703] font-mono">
+                    {customer.points || 0} <span className="text-sm font-normal text-white">نقطة 🌟</span>
+                  </div>
+                  <p className="text-[10px] text-white/50">
+                    تحصل على 1 نقطة مقابل كل 20 ج.م مشتريات من فروع بزار كاجوال وير
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleCustomerLogout}
+                  className="w-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 py-2.5 rounded-xl text-xs font-bold transition-all"
+                >
+                  تسجيل الخروج من الحساب
+                </button>
+              </div>
+            ) : (
+              /* OTP Registration / Login Form */
+              <div>
+                <div className="text-center pb-4">
+                  <span className="p-3 bg-[#00ff66]/10 text-[#00ff66] rounded-2xl inline-block text-2xl mb-2">
+                    🔐
+                  </span>
+                  <h3 className="text-xl font-black text-white">تسجيل حساب عميل بالـ OTP</h3>
+                  <p className="text-xs text-white/50 mt-1">
+                    أدخل بياناتك لتصلك رسالة كود التفعيل السري على بريدك الإلكتروني
+                  </p>
+                </div>
+
+                {authError && (
+                  <div className="p-3 bg-red-500/15 border border-red-500/30 rounded-xl text-xs text-red-300 mb-3 text-center font-bold">
+                    {authError}
+                  </div>
+                )}
+
+                {authSuccessMsg && (
+                  <div className="p-3 bg-[#00ff66]/15 border border-[#00ff66]/30 rounded-xl text-xs text-[#00ff66] mb-3 text-center font-bold">
+                    {authSuccessMsg}
+                  </div>
+                )}
+
+                {authStep === "DETAILS" ? (
+                  <div className="space-y-3 text-xs">
+                    <div>
+                      <label className="block mb-1 text-white/70 font-bold">اسم العميل:</label>
+                      <input
+                        type="text"
+                        placeholder="مثال: أحمد مصطفى"
+                        value={authName}
+                        onChange={(e) => setAuthName(e.target.value)}
+                        className="w-full bg-black/50 border border-white/15 focus:border-[#00ff66] rounded-xl p-2.5 text-white outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-white/70 font-bold">رقم الموبايل:</label>
+                      <input
+                        type="tel"
+                        placeholder="010XXXXXXXX"
+                        value={authPhone}
+                        onChange={(e) => setAuthPhone(e.target.value)}
+                        className="w-full bg-black/50 border border-white/15 focus:border-[#00ff66] rounded-xl p-2.5 text-white outline-none font-mono text-center"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-white/70 font-bold">البريد الإلكتروني (لاستلام كود الـ OTP):</label>
+                      <input
+                        type="email"
+                        placeholder="yourname@gmail.com"
+                        value={authEmail}
+                        onChange={(e) => setAuthEmail(e.target.value)}
+                        className="w-full bg-black/50 border border-white/15 focus:border-[#00ff66] rounded-xl p-2.5 text-white outline-none font-mono text-center"
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleSendOtp}
+                      disabled={otpLoading}
+                      className="w-full mt-2 bg-gradient-to-r from-[#00ff66] to-emerald-500 hover:brightness-110 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-[#00ff66]/20 active:scale-95 transition-all"
+                    >
+                      {otpLoading ? "جاري إرسال كود التفعيل..." : "إرسال كود التفعيل (Send OTP) ✉️"}
+                    </button>
+                  </div>
+                ) : (
+                  /* OTP Entry Step */
+                  <div className="space-y-4 text-xs">
+                    <div>
+                      <label className="block mb-2 text-white/70 text-center font-bold">
+                        أدخل كود التفعيل المكون من 6 أرقام:
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        placeholder="••••••"
+                        value={otpInput}
+                        onChange={(e) => setOtpInput(e.target.value)}
+                        className="w-full bg-black/60 border border-[#00ff66]/50 rounded-2xl py-3 px-4 text-center font-mono text-2xl font-black text-[#00ff66] tracking-[8px] outline-none"
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleVerifyOtp}
+                      disabled={otpLoading}
+                      className="w-full bg-gradient-to-r from-[#00ff66] to-emerald-500 hover:brightness-110 text-black font-black py-3 rounded-xl text-xs shadow-lg shadow-[#00ff66]/20 active:scale-95 transition-all"
+                    >
+                      {otpLoading ? "جاري التحقق..." : "تأكيد وتفعيل الحساب الآن 🚀"}
+                    </button>
+
+                    <button
+                      onClick={() => setAuthStep("DETAILS")}
+                      className="w-full text-center text-white/50 hover:text-white py-1 text-xs"
+                    >
+                      تغيير البريد الإلكتروني أو إعادة الإرسال
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Shopping Cart Drawer */}
       {showCart && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-[#111118] border-l border-white/10 h-full flex flex-col p-6 shadow-2xl">
+          <div className="w-full max-w-md bg-[#101018] border-l border-white/10 h-full flex flex-col p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-white/10">
               <div className="flex items-center gap-2">
-                <span className="p-2 bg-amber-500/10 text-amber-400 rounded-xl">🛍️</span>
+                <span className="p-2 bg-[#00ff66]/10 text-[#00ff66] rounded-xl">🛍️</span>
                 <h3 className="font-bold text-lg text-white">سلة المشتريات ({cart.length})</h3>
               </div>
               <button
@@ -681,13 +1010,22 @@ export default function StorefrontPage() {
                     key={item.variantId}
                     className="p-3 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between gap-3"
                   >
-                    <div>
-                      <h4 className="font-bold text-xs text-white line-clamp-1">{item.name}</h4>
-                      <p className="text-[10px] text-white/50">
-                        {item.color} • مقاس {item.size} • {item.price} ج
-                      </p>
-                      <div className="font-black text-amber-400 text-xs mt-1">
-                        {item.price * item.quantity} ج.م
+                    <div className="flex items-center gap-2.5">
+                      {item.image && (
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-12 h-12 rounded-xl object-cover border border-white/10"
+                        />
+                      )}
+                      <div>
+                        <h4 className="font-bold text-xs text-white line-clamp-1">{item.name}</h4>
+                        <p className="text-[10px] text-white/50">
+                          {item.color} • مقاس {item.size} • {item.price} ج
+                        </p>
+                        <div className="font-black text-[#ffb703] text-xs mt-1">
+                          {item.price * item.quantity} ج.م
+                        </div>
                       </div>
                     </div>
 
@@ -715,11 +1053,11 @@ export default function StorefrontPage() {
               <div className="pt-4 border-t border-white/10 space-y-3">
                 <div className="flex justify-between text-sm font-bold">
                   <span>إجمالي الطلب:</span>
-                  <span className="text-lg font-black text-amber-400">{cartTotal} ج.م</span>
+                  <span className="text-lg font-black text-[#ffb703]">{cartTotal} ج.م</span>
                 </div>
                 <button
                   onClick={handleWhatsAppCheckout}
-                  className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-black py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95 transition-all text-sm"
+                  className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:brightness-110 text-white font-black py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95 transition-all text-sm"
                 >
                   <MessageCircle size={18} />
                   <span>تأكيد الطلب عبر واتساب المباشر</span>
@@ -730,87 +1068,21 @@ export default function StorefrontPage() {
         </div>
       )}
 
-      {/* Customer Loyalty Points Lookup Modal */}
-      {showLoyaltyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
-          <div className="bg-[#121218] border border-amber-500/30 rounded-3xl p-6 w-full max-w-md shadow-2xl text-white relative">
-            <button
-              onClick={() => {
-                setShowLoyaltyModal(false);
-                setCustomerData(null);
-              }}
-              className="absolute top-5 left-5 p-2 rounded-2xl bg-white/5 hover:bg-white/10 text-white/70"
-            >
-              <X size={20} />
-            </button>
-
-            <div className="text-center pb-4">
-              <span className="p-3 bg-amber-500/10 text-amber-400 rounded-2xl inline-block text-2xl mb-2">
-                👑
-              </span>
-              <h3 className="text-xl font-black text-white">بوابة عملاء بزار الملكية</h3>
-              <p className="text-xs text-white/50 mt-1">
-                استعلم عن رصيد نقاط الولاء، الهدايا، وسجل مشترياتك برقم هاتفك
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="relative">
-                <input
-                  type="tel"
-                  placeholder="أدخل رقم الموبايل (مثال: 01008038041)"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full bg-black/60 border border-white/15 focus:border-amber-500 rounded-2xl py-3 px-4 text-sm text-white placeholder-white/40 outline-none transition-all text-center font-mono"
-                />
-              </div>
-              <button
-                onClick={handleLoyaltyLookup}
-                disabled={loyaltyLoading}
-                className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black py-3 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all text-xs"
-              >
-                {loyaltyLoading ? "جاري الاستعلام..." : "استعلام عن حسابي ونقاطي"}
-              </button>
-            </div>
-
-            {/* Result */}
-            {customerData && (
-              <div className="mt-5 p-4 rounded-2xl bg-white/5 border border-white/10 text-center">
-                {customerData.notFound ? (
-                  <p className="text-xs text-white/60">
-                    لم نجد حساباً مسجلاً بهذا الرقم حتى الآن. سيتم إنشاء حسابك وتجميع نقاطك تلقائياً عند أول عملية شراء من فروعنا!
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    <h4 className="font-bold text-white text-base">{customerData.name}</h4>
-                    <div className="inline-block px-3 py-1 bg-amber-500/20 text-amber-400 rounded-full font-black text-xs">
-                      رصيد نقاطك: {customerData.points} نقطة 🌟
-                    </div>
-                    <div className="text-xs text-white/70">
-                      إجمالي المشتريات: <strong>{customerData.totalPurchases} ج.م</strong>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 1-QR Smart Brand Modal */}
-      {showQRModal && <CardQRModal onClose={() => setShowQRModal(false)} />}
+      {/* Printable VIP Card Modal */}
+      {showPrintModal && <PrintableCard onClose={() => setShowPrintModal(false)} />}
 
       {/* Footer */}
-      <footer className="bg-[#09090d] border-t border-white/10 py-8 px-4 text-center text-xs text-white/50">
+      <footer className="bg-[#050508] border-t border-white/10 py-8 px-4 text-center text-xs text-white/50">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <BrandLogo size="sm" showTagline={false} />
           <p>© {new Date().getFullYear()} بزار كاجوال وير - BAZAAR Casual Wear. جميع الحقوق محفوظة.</p>
           <div className="flex items-center gap-4">
-            <a href="/card" className="hover:text-amber-400 font-bold">
+            <a href="/card" className="hover:text-[#00ff66] font-bold">
               كارت العلامة الذكي 1-QR
             </a>
             <a href="/admin" className="text-amber-400 hover:underline flex items-center gap-1 font-bold">
               <ShieldCheck size={14} />
-              <span>دخول الإدارة ونقاط البيع POS</span>
+              <span>لوحة الإدارة ونقاط البيع POS</span>
             </a>
           </div>
         </div>
