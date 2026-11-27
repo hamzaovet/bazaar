@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         },
         create: {
           phone: cleanPhone,
-          name: customerName || "عميل بزار كاجوال",
+          name: customerName || "عميل بازار كاجوال",
           branchId,
           totalSpent: finalTotal,
           loyaltyPoints: Math.floor(finalTotal / 20),
@@ -134,7 +134,7 @@ export async function POST(request: Request) {
           // Check low stock trigger
           if (newQty <= branchStock.alertLowQuantity) {
             sendWebPushNotification({
-              title: "⚠️ تنبيه مخزون منخفض - بزار كاجوال وير",
+              title: "⚠️ تنبيه مخزون منخفض - بازار كاجوال وير",
               body: `القطعة (${item.name || ""} - مقاس ${item.size || ""}) أوشكت على النفاد في ${invoice.branch?.name || "الفرع"} (المتبقي: ${newQty} فقط!)`,
               role: "storekeeper",
               url: "/admin?tab=inventory",

@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     if (action === "BROADCAST") {
       const res = await sendWebPushNotification({
-        title: title || "بزار كاجوال وير",
+        title: title || "بازار كاجوال وير",
         body: message || "تنبيه جديد من المتجر",
         role,
         branchId,

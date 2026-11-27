@@ -88,7 +88,7 @@ export default function PrintThermalReceipt({ invoice, onClose }: ReceiptProps) 
 
       const totalVal = invoice.netTotal || 0;
       const text = encodeURIComponent(
-        `مرحباً بك في بزار كاجوال وير (BAZAAR)! 🛍️✨\nتم تجهيز فاتورة مشترياتك رقم (${invoice.invoiceNumber}) بإجمالي: ${totalVal} ج.م.\nتم حفظ وتنزيل صورة الفاتورة الرسمية، ويمكنك الاحتفاظ بها لسياسة الاستبدال والاسترجاع (14 يوماً).\nسعدنا بزيارتكم!`
+        `مرحباً بك في بازار كاجوال وير (BAZAAR)! 🛍️✨\nتم تجهيز فاتورة مشترياتك رقم (${invoice.invoiceNumber}) بإجمالي: ${totalVal} ج.م.\nتم حفظ وتنزيل صورة الفاتورة الرسمية، ويمكنك الاحتفاظ بها لسياسة الاستبدال والاسترجاع (14 يوماً).\nسعدنا بزيارتكم!`
       );
 
       window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
@@ -337,7 +337,7 @@ export default function PrintThermalReceipt({ invoice, onClose }: ReceiptProps) 
                       <h2 className="text-base font-black tracking-wider uppercase font-sans">
                         BAZAAR CASUAL WEAR
                       </h2>
-                      <p className="text-[11px] font-bold font-sans">بزار كاجوال وير • ملابس شبابي عصرية</p>
+                      <p className="text-[11px] font-bold font-sans">بازار كاجوال وير • ملابس شبابي عصرية</p>
                     </div>
                   )}
 

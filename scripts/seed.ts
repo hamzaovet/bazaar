@@ -8,7 +8,7 @@ async function main() {
   await prisma.systemSettings.upsert({
     where: { id: 1 },
     update: {
-      brandNameAr: "بزار كاجوال وير",
+      brandNameAr: "بازار كاجوال وير",
       brandNameEn: "BAZAAR Casual Wear",
       hotline: "01008038041",
       whatsappNumber: "01008038041",
@@ -23,7 +23,7 @@ async function main() {
     },
     create: {
       id: 1,
-      brandNameAr: "بزار كاجوال وير",
+      brandNameAr: "بازار كاجوال وير",
       brandNameEn: "BAZAAR Casual Wear",
       hotline: "01008038041",
       whatsappNumber: "01008038041",

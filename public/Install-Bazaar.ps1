@@ -5,6 +5,14 @@ $ws = New-Object -ComObject WScript.Shell
 $desktop = [Environment]::GetFolderPath('Desktop')
 $programs = [Environment]::GetFolderPath('Programs')
 
+# Clean up any old duplicate or mistyped shortcuts
+foreach ($folder in @($desktop, $programs)) {
+    if (Test-Path $folder) {
+        Get-ChildItem $folder -Filter "*بزار*" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+        Get-ChildItem $folder -Filter "*BAZAAR Casual Wear*" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+    }
+}
+
 # Find Browser
 $browser = ''
 $paths = @(
@@ -37,9 +45,9 @@ if (Test-Path $localIco) {
 
 # The main application shortcut opens the Landing Page!
 $apps = @(
-    @{ tempName = "Bazaar_VIP.lnk"; finalName = "بزار كاجوال وير VIP.lnk"; url = "http://localhost:3099/"; desc = "BAZAAR Casual Wear VIP - المتجر والسيستم المتكامل" },
-    @{ tempName = "Bazaar_POS.lnk"; finalName = "بزار - كاشير ونقطة البيع.lnk"; url = "http://localhost:3099/pos"; desc = "BAZAAR POS Cashier" },
-    @{ tempName = "Bazaar_Admin.lnk"; finalName = "بزار - لوحة الإدارة والمخزن.lnk"; url = "http://localhost:3099/admin"; desc = "BAZAAR Admin & Inventory" }
+    @{ tempName = "Bazaar_VIP.lnk"; finalName = "بازار كاجوال وير VIP.lnk"; url = "http://localhost:3099/"; desc = "BAZAAR Casual Wear VIP - المتجر والسيستم المتكامل" },
+    @{ tempName = "Bazaar_POS.lnk"; finalName = "بازار - كاشير ونقطة البيع.lnk"; url = "http://localhost:3099/pos"; desc = "BAZAAR POS Cashier" },
+    @{ tempName = "Bazaar_Admin.lnk"; finalName = "بازار - لوحة الإدارة والمخزن.lnk"; url = "http://localhost:3099/admin"; desc = "BAZAAR Admin & Inventory" }
 )
 
 foreach ($app in $apps) {
@@ -69,7 +77,7 @@ foreach ($app in $apps) {
 
 Write-Host ""
 Write-Host "==========================================================" -ForegroundColor Yellow
-Write-Host "  [OK] تم بنجاح تثبيت تطبيق بزار كاجوال وير VIP على سطح المكتب!" -ForegroundColor Green
+Write-Host "  [OK] تم بنجاح تثبيت تطبيق بازار كاجوال وير VIP على سطح المكتب!" -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Yellow
 Write-Host ""
 

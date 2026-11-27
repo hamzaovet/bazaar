@@ -32,7 +32,7 @@ export default function CardQRModal({ onClose }: CardQRModalProps) {
   const fb2 = "https://www.facebook.com/profile.php?id=100090095202108&mibextid=wwXIfr";
   const tiktok = "https://www.tiktok.com/@mohamed_ashraf327?_r=1&_t=ZS-9BMGDqeFbr2";
   const instagram = "https://www.instagram.com/bazaar_casual_wear";
-  const whatsapp = "https://wa.me/201008038041?text=مرحباً%20بزار%20كاجوال%20وير";
+  const whatsapp = "https://wa.me/201008038041?text=مرحباً%20بازار%20كاجوال%20وير";
 
   useEffect(() => {
     const cardUrl = typeof window !== "undefined" ? `${window.location.origin}/card` : "https://bazaar.vercel.app/card";
@@ -60,8 +60,8 @@ export default function CardQRModal({ onClose }: CardQRModalProps) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "بزار كاجوال وير | BAZAAR Casual Wear",
-          text: "كارت بزار كاجوال وير الذكي 1-QR • الفروع، العناوين، والكتالوج العصري",
+          title: "بازار كاجوال وير | BAZAAR Casual Wear",
+          text: "كارت بازار كاجوال وير الذكي 1-QR • الفروع، العناوين، والكتالوج العصري",
           url: cardUrl,
         });
       } catch (e) {
@@ -92,7 +92,7 @@ export default function CardQRModal({ onClose }: CardQRModalProps) {
           <h2 className="text-2xl font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-200 to-amber-500">
             BAZAAR CASUAL WEAR
           </h2>
-          <p className="text-xs text-white/60 mt-1">بزار كاجوال وير • براند ملابس الشارع الفاخر</p>
+          <p className="text-xs text-white/60 mt-1">بازار كاجوال وير • براند ملابس الشارع الفاخر</p>
         </div>
 
         {/* Tab switch */}
@@ -152,7 +152,7 @@ export default function CardQRModal({ onClose }: CardQRModalProps) {
             </div>
 
             <p className="text-xs text-white/60 text-center mt-5 mb-5 px-4 leading-relaxed">
-              وجّه كاميرا أي هاتف لمسح الرمز ضوئياً وفتح بطاقة بزار الرقمية الذكية فورياً مع إمكانية تثبيت التطبيق والوصول المباشر للفروع.
+              وجّه كاميرا أي هاتف لمسح الرمز ضوئياً وفتح بطاقة بازار الرقمية الذكية فورياً مع إمكانية تثبيت التطبيق والوصول المباشر للفروع.
             </p>
 
             <div className="flex gap-2 w-full">
@@ -261,7 +261,7 @@ export default function CardQRModal({ onClose }: CardQRModalProps) {
               className="p-3 rounded-2xl bg-[#1877F2]/20 hover:bg-[#1877F2]/30 border border-[#1877F2]/40 text-blue-300 text-xs font-bold flex flex-col items-center justify-center gap-1.5 text-center transition-all"
             >
               <span className="text-xl">📘</span>
-              <span>فيسبوك - بزار 1</span>
+              <span>فيسبوك - بازار 1</span>
             </a>
 
             <a

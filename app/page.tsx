@@ -330,7 +330,7 @@ export default function StorefrontPage() {
     const selectedBranch = branches.find((b) => b.id === selectedBranchId);
     const branchName = selectedBranch ? selectedBranch.name : "الفرع الأقرب لي (عباس العقاد)";
 
-    let text = `مرحباً بزار كاجوال وير، أود طلب الأصناف التالية من (${branchName}):\n\n`;
+    let text = `مرحباً بازار كاجوال وير، أود طلب الأصناف التالية من (${branchName}):\n\n`;
     cart.forEach((item, idx) => {
       text += `${idx + 1}. ${item.name} - لون: ${item.color} - مقاس: ${item.size} - عدد: ${item.quantity} (السعر: ${item.price * item.quantity} ج.م)\n`;
     });
@@ -404,7 +404,7 @@ export default function StorefrontPage() {
         const cRes = await fetch(`/api/customers?phone=${authPhone}`);
         const cData = await cRes.json();
         const customerProfile = cData.customer || {
-          name: authName || "عميل بزار كاجوال",
+          name: authName || "عميل بازار كاجوال",
           phone: authPhone,
           email: authEmail,
           points: 50,
@@ -416,7 +416,7 @@ export default function StorefrontPage() {
         setShowAuthModal(false);
         setAuthStep("DETAILS");
         setOtpInput("");
-        showToast(`أهلاً بك يا ${customerProfile.name} في بزار كاجوال وير 👑! تم تفعيل حسابك بنجاح.`, "success");
+        showToast(`أهلاً بك يا ${customerProfile.name} في بازار كاجوال وير 👑! تم تفعيل حسابك بنجاح.`, "success");
       } else {
         setAuthError(data.error || "كود التفعيل غير صحيح");
       }
@@ -854,7 +854,7 @@ export default function StorefrontPage() {
         {loading ? (
           <div className="text-center py-20 text-white/60">
             <div className="animate-spin text-4xl mb-3">👑</div>
-            <p className="font-bold text-sm">جاري تحميل تشكيلة بزار كاجوال وير...</p>
+            <p className="font-bold text-sm">جاري تحميل تشكيلة بازار كاجوال وير...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-16 bg-white/5 rounded-3xl border border-white/10 p-8">
@@ -1170,7 +1170,7 @@ export default function StorefrontPage() {
                     {customer.points || 0} <span className="text-sm font-normal text-white">نقطة 🌟</span>
                   </div>
                   <p className="text-[10px] text-white/50">
-                    تحصل على 1 نقطة مقابل كل 20 ج.م مشتريات من فروع بزار كاجوال وير
+                    تحصل على 1 نقطة مقابل كل 20 ج.م مشتريات من فروع بازار كاجوال وير
                   </p>
                 </div>
 
@@ -1381,7 +1381,7 @@ export default function StorefrontPage() {
       <footer className="bg-[#050508] border-t border-white/10 pt-8 pb-4 px-4 text-xs text-white/50">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 pb-6">
           <BrandLogo size="sm" showTagline={false} />
-          <p>© {new Date().getFullYear()} بزار كاجوال وير - BAZAAR Casual Wear. جميع الحقوق محفوظة.</p>
+          <p>© {new Date().getFullYear()} بازار كاجوال وير - BAZAAR Casual Wear. جميع الحقوق محفوظة.</p>
           <div className="flex items-center gap-4">
             <a href="/card" className="hover:text-[#00ff66] font-bold">
               كارت العلامة الذكي 1-QR
@@ -1396,7 +1396,7 @@ export default function StorefrontPage() {
         {/* Orca Tech Signature Bottom Bar (Direct from Saddam system) */}
         <div className="border-t border-amber-500/20 bg-black/60 py-5 px-4 sm:px-8 text-center space-y-2 rounded-2xl max-w-7xl mx-auto">
           <p className="text-xs text-slate-400 font-bold">
-            جميع الحقوق محفوظة © {new Date().getFullYear()} لـ <span className="text-[#ffb703]">بزار كاجوال وير • BAZAAR Casual Wear</span>
+            جميع الحقوق محفوظة © {new Date().getFullYear()} لـ <span className="text-[#ffb703]">بازار كاجوال وير • BAZAAR Casual Wear</span>
           </p>
 
           <p className="text-[11px] text-amber-300/90 font-medium">

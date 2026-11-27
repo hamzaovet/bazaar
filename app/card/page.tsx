@@ -63,8 +63,8 @@ export default function SmartCardLandingPage() {
     if (typeof window !== "undefined" && navigator.share) {
       try {
         await navigator.share({
-          title: "بزار كاجوال وير | BAZAAR Casual Wear - كارت التواصل والمدفوعات NFC",
-          text: "الملف الرقمي الذكي لماركة بزار كاجوال وير • الدفع السريع، الفروع، السوشيال ميديا، والكتالوج",
+          title: "بازار كاجوال وير | BAZAAR Casual Wear - كارت التواصل والمدفوعات NFC",
+          text: "الملف الرقمي الذكي لماركة بازار كاجوال وير • الدفع السريع، الفروع، السوشيال ميديا، والكتالوج",
           url,
         });
       } catch (e) {
@@ -79,8 +79,8 @@ export default function SmartCardLandingPage() {
   const handleDownloadVCard = () => {
     const vcard = `BEGIN:VCARD
 VERSION:3.0
-N:كاجوال وير;بزار;;;
-FN:بزار كاجوال وير - BAZAAR
+N:كاجوال وير;بازار;;;
+FN:بازار كاجوال وير - BAZAAR
 ORG:BAZAAR Casual Wear
 TITLE:ملابس شبابي كاجوال وأوفر سايز
 TEL;TYPE=WORK,VOICE:01008038041
@@ -175,7 +175,7 @@ END:VCARD`;
           <BrandLogo size="xl" />
 
           <h2 className="text-sm font-black text-white mt-3">
-            {settings?.smartCardTitle || "بزار كاجوال وير • BAZAAR Casual Wear"}
+            {settings?.smartCardTitle || "بازار كاجوال وير • BAZAAR Casual Wear"}
           </h2>
           <p className="text-xs text-white/70 mt-1 max-w-xs mx-auto leading-relaxed">
             {settings?.smartCardBio ||
@@ -323,7 +323,7 @@ END:VCARD`;
           <div className="grid grid-cols-3 gap-2.5">
             {/* WhatsApp */}
             <a
-              href={`https://wa.me/2${whatsapp}?text=مرحباً%20بزار%20كاجوال%20وير`}
+              href={`https://wa.me/2${whatsapp}?text=مرحباً%20بازار%20كاجوال%20وير`}
               target="_blank"
               rel="noreferrer"
               className="p-3 rounded-2xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 flex flex-col items-center justify-center text-center gap-1.5 group transition-all"
@@ -442,7 +442,7 @@ END:VCARD`;
         <div className="space-y-2.5">
           <h3 className="text-xs font-bold text-amber-400 flex items-center gap-2 px-1">
             <MapPin size={14} />
-            <span>فروع بزار كاجوال وير الرسمية بالقاهرة</span>
+            <span>فروع بازار كاجوال وير الرسمية بالقاهرة</span>
           </h3>
 
           {/* Branch 1 */}

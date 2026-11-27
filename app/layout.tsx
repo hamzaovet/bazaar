@@ -3,7 +3,7 @@ import "./globals.css";
 import { ToastProvider } from "@/components/Toast";
 
 export const metadata: Metadata = {
-  title: "بزار كاجوال وير | BAZAAR Casual Wear VIP",
+  title: "بازار كاجوال وير | BAZAAR Casual Wear VIP",
   description: "براند الشارع المصري الفاخر - خامات قطنية تركي وأوفر سايز عصري - فروع عباس العقاد وأول عباس",
   manifest: "/manifest.json",
   icons: {

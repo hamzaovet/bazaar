@@ -283,7 +283,7 @@ export default function PrintableCard({ settings, onClose }: PrintableCardProps)
                 </div>
 
                 <div className="flex-1 pr-3 space-y-1 text-white">
-                  <h4 className="text-xs font-black text-[#ffb703]">فروع بزار كاجوال وير:</h4>
+                  <h4 className="text-xs font-black text-[#ffb703]">فروع بازار كاجوال وير:</h4>
                   <div className="text-[9px] text-white/80 space-y-0.5 leading-tight">
                     <p>📍 <strong>فرع 1:</strong> عباس العقاد بجوار أبو العز وسنتر علم الدين</p>
                     <p>📍 <strong>فرع 2:</strong> أول عباس شارع كشري التحرير بجوار طاولة</p>

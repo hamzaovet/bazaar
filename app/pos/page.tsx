@@ -23,7 +23,9 @@ import {
   AlertTriangle,
   Receipt,
   Eye,
+  Home,
 } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 import PrintThermalReceipt from "@/components/PrintThermalReceipt";
 import PrintBarcodeTag from "@/components/PrintBarcodeTag";
 import { useToast } from "@/components/Toast";
@@ -58,6 +60,60 @@ export default function POSPage() {
   const [activeBranchId, setActiveBranchId] = useState<string>("");
   const [shift, setShift] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Cashier Auth Inputs
+  const [posUsername, setPosUsername] = useState<string>("");
+  const [posPassword, setPosPassword] = useState<string>("");
+  const [posPin, setPosPin] = useState<string>("");
+  const [posAuthLoading, setPosAuthLoading] = useState<boolean>(false);
+  const [posAuthError, setPosAuthError] = useState<string>("");
+
+  const handlePosLogin = async () => {
+    try {
+      setPosAuthLoading(true);
+      setPosAuthError("");
+      const payload: any = { branchId: activeBranchId };
+      if (posPin && !posUsername) {
+        payload.loginType = "pin";
+        payload.pin = posPin;
+      } else {
+        payload.username = posUsername.trim();
+        payload.password = posPassword;
+        if (posPin) payload.pin = posPin;
+      }
+
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (data.user) {
+        setSession(data.user);
+        localStorage.setItem("bazaar_user", JSON.stringify(data.user));
+        const initialBranchId = data.user.branchId || activeBranchId || branches[0]?.id || "";
+        setActiveBranchId(initialBranchId);
+        loadCurrentShift(data.user.id, initialBranchId);
+        showToast(`مرحباً بك يا ${data.user.name} في نقطة البيع 🛒`, "success");
+      } else {
+        setPosAuthError(data.error || "بيانات الدخول غير صحيحة");
+      }
+    } catch (e) {
+      setPosAuthError("فشل الاتصال بسيرفر تسجيل الدخول");
+    } finally {
+      setPosAuthLoading(false);
+    }
+  };
+
+  const handlePosLogout = () => {
+    localStorage.removeItem("bazaar_user");
+    setSession(null);
+    setPosUsername("");
+    setPosPassword("");
+    setPosPin("");
+    showToast("تم تسجيل خروج الكاشير بنجاح", "info");
+  };
 
   // POS Scanner & Search
   const [barcodeInput, setBarcodeInput] = useState<string>("");
@@ -344,7 +400,7 @@ export default function POSPage() {
       user: session || { name: "الكاشير المسؤول" },
       cashierUser: session || { name: "الكاشير المسؤول" },
       customer: {
-        name: customerName || (customerPhone ? "عميل بزار كاجوال" : "عميل كاشير مباشر"),
+        name: customerName || (customerPhone ? "عميل بازار كاجوال" : "عميل كاشير مباشر"),
         phone: customerPhone || "010XXXXXXXX",
         points: customerPoints ?? 0,
       },
@@ -488,6 +544,111 @@ export default function POSPage() {
     }
   };
 
+  // -------------------------------------------------------------
+  // If NOT logged in: CASHIER AUTH SCREEN
+  // -------------------------------------------------------------
+  if (!session) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-[#07070b] via-[#101018] to-[#07070b] text-white flex items-center justify-center p-4 font-['Cairo',sans-serif]" dir="rtl">
+        <div className="bg-[#12121a] border border-amber-500/30 rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl relative overflow-hidden">
+          <div className="mb-4 flex items-center justify-between">
+            <a
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-xl transition-all"
+            >
+              <Home size={15} className="text-amber-400" />
+              <span>الرجوع لصفحة المتجر</span>
+            </a>
+            <a
+              href="/admin"
+              className="text-xs text-amber-400 hover:text-amber-300 font-bold"
+            >
+              لوحة الإدارة 🔐
+            </a>
+          </div>
+
+          <div className="text-center pb-5">
+            <BrandLogo size="lg" />
+            <h2 className="text-base font-black text-white mt-3">نقطة البيع والكاشير | BAZAAR POS</h2>
+            <p className="text-xs text-white/50 mt-1">بوابة تسجيل دخول مسؤولي الكاشير والورديات</p>
+          </div>
+
+          {posAuthError && (
+            <div className="p-3 bg-red-500/15 border border-red-500/40 rounded-2xl text-xs text-red-300 mb-4 text-center font-bold">
+              {posAuthError}
+            </div>
+          )}
+
+          <div className="space-y-3.5">
+            {branches.length > 0 && (
+              <div>
+                <label className="text-xs font-bold text-white/70 block mb-1">الفرع الحالي:</label>
+                <select
+                  value={activeBranchId}
+                  onChange={(e) => setActiveBranchId(e.target.value)}
+                  className="w-full bg-black/60 border border-white/15 focus:border-amber-400 rounded-xl py-2.5 px-3 text-xs text-amber-300 outline-none font-bold cursor-pointer"
+                >
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id} className="bg-[#12121a] text-white">
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="text-xs font-bold text-white/70 block mb-1">اسم مستخدم الكاشير:</label>
+              <input
+                type="text"
+                value={posUsername}
+                onChange={(e) => setPosUsername(e.target.value)}
+                autoComplete="off"
+                placeholder="اسم المستخدم (مثال: maestro أو mohamed_ashraf)"
+                className="w-full bg-black/60 border border-white/15 focus:border-amber-400 rounded-xl py-2.5 px-3 text-xs text-white outline-none font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-white/70 block mb-1">كلمة المرور:</label>
+              <input
+                type="password"
+                value={posPassword}
+                onChange={(e) => setPosPassword(e.target.value)}
+                autoComplete="new-password"
+                placeholder="••••••••"
+                className="w-full bg-black/60 border border-white/15 focus:border-amber-400 rounded-xl py-2.5 px-3 text-xs text-white outline-none font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-white/70 block mb-1">أو الرمز السري السريع (PIN):</label>
+              <input
+                type="password"
+                value={posPin}
+                onChange={(e) => setPosPin(e.target.value)}
+                autoComplete="new-password"
+                placeholder="الرمز السري الخاص للكاشير"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handlePosLogin();
+                }}
+                className="w-full bg-black/60 border border-white/15 focus:border-amber-400 rounded-xl py-2.5 px-3 text-xs text-white outline-none font-mono text-center tracking-widest"
+              />
+            </div>
+
+            <button
+              onClick={handlePosLogin}
+              disabled={posAuthLoading}
+              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black py-3.5 rounded-xl text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all mt-2 cursor-pointer"
+            >
+              {posAuthLoading ? "جاري الدخول..." : "دخول نقطة البيع (الكاشير) 🛒"}
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-gray-100 flex flex-col font-['Cairo',sans-serif]">
       {/* Top POS Header */}
@@ -583,29 +744,40 @@ export default function POSPage() {
             <span className="hidden sm:inline">سجل الفواتير</span>
           </button>
 
-          {/* Desktop App Installer Button */}
-          <a
-            href="/api/desktop-installer"
-            download="Install-Bazaar-POS.bat"
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 hover:border-amber-400 text-amber-300 rounded-xl text-xs font-bold transition-all shadow-md"
-            title="تثبيت أيقونة كاشير بزار على سطح المكتب"
-          >
-            <span>📲</span>
-            <span>أيقونة الديسكتوب</span>
-          </a>
-
-          <div className="text-right hidden sm:block">
-            <div className="text-xs font-bold text-white">{session?.name || "الكاشير"}</div>
-            <div className="text-[10px] text-white/50">{session?.role || "كاشير"}</div>
+          {/* Cashier User Info */}
+          <div className="text-right hidden sm:block border-r border-white/10 pr-3 mr-1">
+            <div className="text-xs font-bold text-amber-300">👤 {session?.name}</div>
+            <div className="text-[10px] text-white/50">{session?.role}</div>
           </div>
 
+          {/* Home Link */}
+          <a
+            href="/"
+            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 border border-white/10 flex items-center gap-1 text-xs font-bold transition-all"
+            title="الرجوع لصفحة المتجر الرئيسية"
+          >
+            <Home size={15} className="text-amber-400" />
+            <span className="hidden sm:inline">المتجر</span>
+          </a>
+
+          {/* Admin Link */}
           <a
             href="/admin"
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70"
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 border border-white/10"
             title="لوحة الإدارة"
           >
-            <Layers size={18} />
+            <Layers size={16} />
           </a>
+
+          {/* Cashier Logout Button */}
+          <button
+            onClick={handlePosLogout}
+            className="px-2.5 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1 text-xs font-bold transition-all cursor-pointer active:scale-95"
+            title="تسجيل خروج الكاشير"
+          >
+            <LogOut size={15} />
+            <span className="hidden sm:inline">خروج</span>
+          </button>
         </div>
       </header>
 

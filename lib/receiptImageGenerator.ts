@@ -87,7 +87,7 @@ export async function generateReceiptImageBlob(invoice: ReceiptData, customPolic
 
   ctx.fillStyle = "#ffb703";
   ctx.font = "bold 16px 'Cairo', 'Segoe UI', Arial, sans-serif";
-  ctx.fillText("بزار كاجوال وير • ملابس شبابية وكاجوال راقية", width / 2, 80);
+  ctx.fillText("بازار كاجوال وير • ملابس شبابية وكاجوال راقية", width / 2, 80);
 
   ctx.fillStyle = "#999999";
   ctx.font = "12px 'Cairo', 'Segoe UI', Arial, sans-serif";
@@ -299,7 +299,7 @@ export async function generateReceiptImageBlob(invoice: ReceiptData, customPolic
   curY += 22;
   ctx.fillStyle = "#ffb703";
   ctx.font = "bold 12px 'Cairo', 'Segoe UI', Arial, sans-serif";
-  ctx.fillText("سعدنا بزيارتكم • بزار كاجوال وير • خيارك الأول للأناقة", width / 2, curY);
+  ctx.fillText("سعدنا بزيارتكم • بازار كاجوال وير • خيارك الأول للأناقة", width / 2, curY);
 
   // Return Blob and Data URL
   return new Promise((resolve, reject) => {

@@ -190,18 +190,18 @@ export default function AdminDashboardPage() {
   const [savingOffers, setSavingOffers] = useState<boolean>(false);
 
   // Smart NFC & QR Card Management State
-  const [smartCardTitleInput, setSmartCardTitleInput] = useState<string>("بزار كاجوال وير • BAZAAR");
+  const [smartCardTitleInput, setSmartCardTitleInput] = useState<string>("بازار كاجوال وير • BAZAAR");
   const [smartCardBioInput, setSmartCardBioInput] = useState<string>("براند الشارع المصري الفاخر • خامات قطنية تركي وأوفر سايز عصري بفروع عباس العقاد");
   const [smartCardInstapayInput, setSmartCardInstapayInput] = useState<string>("bazaar@instapay");
   const [smartCardVodafoneCashInput, setSmartCardVodafoneCashInput] = useState<string>("01008038041");
   const [smartCardGoogleReviewsInput, setSmartCardGoogleReviewsInput] = useState<string>("https://maps.app.goo.gl/MzCnj5n3mP29uurK6");
   const [smartCardCustomLinksList, setSmartCardCustomLinksList] = useState<any[]>([
-    { id: "whatsapp", title: "واتساب الفروع والطلبات", icon: "💬", url: "https://wa.me/201008038041?text=مرحباً%20بزار%20كاجوال%20وير", category: "chat", isActive: true },
+    { id: "whatsapp", title: "واتساب الفروع والطلبات", icon: "💬", url: "https://wa.me/201008038041?text=مرحباً%20بازار%20كاجوال%20وير", category: "chat", isActive: true },
     { id: "instagram", title: "إنستجرام الرسمي", icon: "📸", url: "https://www.instagram.com/bazaar_casual_wear", category: "social", isActive: true },
     { id: "tiktok", title: "تيك توك تريندات الموديلات", icon: "🎵", url: "https://www.tiktok.com/@mohamed_ashraf327?_r=1&_t=ZS-9BMGDqeFbr2", category: "video", isActive: true },
     { id: "fb1", title: "فيسبوك - الصفحة الرسمية 1", icon: "📘", url: "https://www.facebook.com/share/1Dq8mYkoij/", category: "social", isActive: true },
     { id: "fb2", title: "فيسبوك - كوليكشن كاجوال 2", icon: "👔", url: "https://www.facebook.com/profile.php?id=100090095202108&mibextid=wwXIfr", category: "social", isActive: true },
-    { id: "catalog", title: "متجر بزار الإلكتروني والكتالوج", icon: "🛍️", url: "/#collection", category: "store", isActive: true },
+    { id: "catalog", title: "متجر بازار الإلكتروني والكتالوج", icon: "🛍️", url: "/#collection", category: "store", isActive: true },
   ]);
   const [newIconTitle, setNewIconTitle] = useState<string>("");
   const [newIconUrl, setNewIconUrl] = useState<string>("");
@@ -1049,7 +1049,7 @@ export default function AdminDashboardPage() {
   // Helper to trigger batch print for all products in a branch
   const handleBatchPrintEntireBranch = (branchId: string = selectedBarcodeBranch) => {
     const targetBranch = branches.find((b) => b.id === branchId);
-    const bName = targetBranch ? targetBranch.name : "بزار كاجوال";
+    const bName = targetBranch ? targetBranch.name : "بازار كاجوال";
 
     const allItems: any[] = [];
     products.forEach((prod) => {
@@ -1498,21 +1498,6 @@ export default function AdminDashboardPage() {
             >
               {authLoading ? "جاري التحقق..." : "تسجيل الدخول للنظام 🔐"}
             </button>
-
-            {/* Quick Demo Fill for Maestro */}
-            <div className="pt-2 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginUsername("maestro");
-                  setLoginPassword("Maestro@Bazaar2026");
-                  setLoginPin("157230");
-                }}
-                className="text-[11px] text-amber-400/80 hover:text-amber-300 underline font-mono"
-              >
-                ⚡ تعبئة بيانات المدير العام (Maestro: maestro / 157230)
-              </button>
-            </div>
           </div>
         </div>
       </main>
@@ -2397,7 +2382,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-white flex items-center gap-2">
-                    <span>قاعدة عملاء بزار والمديونيات ونقاط الولاء (CRM)</span>
+                    <span>قاعدة عملاء بازار والمديونيات ونقاط الولاء (CRM)</span>
                     <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-white/10 text-[#ffb703] border border-[#ffb703]/30">
                       {customers.length} عملاء
                     </span>
@@ -3267,7 +3252,7 @@ export default function AdminDashboardPage() {
                         value={smartCardTitleInput}
                         onChange={(e) => setSmartCardTitleInput(e.target.value)}
                         className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-black text-sm focus:border-amber-400 focus:outline-none"
-                        placeholder="بزار كاجوال وير • BAZAAR"
+                        placeholder="بازار كاجوال وير • BAZAAR"
                       />
                     </div>
 
@@ -3437,7 +3422,7 @@ export default function AdminDashboardPage() {
                       <div className="flex flex-wrap gap-1.5">
                         {[
                           { emoji: "💬", title: "واتساب الفروع", cat: "chat", url: "https://wa.me/201008038041" },
-                          { emoji: "📸", title: "إنستجرام بزار", cat: "social", url: "https://instagram.com/" },
+                          { emoji: "📸", title: "إنستجرام بازار", cat: "social", url: "https://instagram.com/" },
                           { emoji: "🎵", title: "تيك توك تريندات", cat: "video", url: "https://tiktok.com/@" },
                           { emoji: "📘", title: "فيسبوك رسمي", cat: "social", url: "https://facebook.com/" },
                           { emoji: "👻", title: "سناب شات", cat: "social", url: "https://snapchat.com/add/" },
@@ -3484,7 +3469,7 @@ export default function AdminDashboardPage() {
                           type="text"
                           value={newIconTitle}
                           onChange={(e) => setNewIconTitle(e.target.value)}
-                          placeholder="مثال: سناب شات بزار"
+                          placeholder="مثال: سناب شات بازار"
                           className="w-full bg-black border border-white/15 rounded-xl p-2.5 text-white font-bold"
                         />
                       </div>
@@ -5823,7 +5808,7 @@ export default function AdminDashboardPage() {
       <footer className="mt-auto border-t border-white/10 bg-[#050508] py-5 px-4 text-center">
         <div className="max-w-7xl mx-auto space-y-2">
           <p className="text-xs text-slate-400 font-bold">
-            جميع الحقوق محفوظة © {new Date().getFullYear()} لـ <span className="text-[#ffb703]">بزار كاجوال وير • BAZAAR Casual Wear</span>
+            جميع الحقوق محفوظة © {new Date().getFullYear()} لـ <span className="text-[#ffb703]">بازار كاجوال وير • BAZAAR Casual Wear</span>
           </p>
 
           <p className="text-[11px] text-amber-300/90 font-medium">
