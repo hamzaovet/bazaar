@@ -33,6 +33,7 @@ import {
 import BrandLogo from "@/components/BrandLogo";
 import PrintableCard from "@/components/PrintableCard";
 import { useToast } from "@/components/Toast";
+import PwaInstallButton from "@/components/PwaInstallButton";
 
 const defaultOffersCards = [
   {
@@ -450,31 +451,44 @@ export default function StorefrontPage() {
           </div>
 
           {/* Desktop Nav Actions */}
-          <div className="hidden md:flex items-center gap-2.5">
+          <div className="hidden md:flex items-center gap-2">
+            {/* PWA / Desktop App Install Button */}
+            <PwaInstallButton variant="compact" />
+
+            {/* Direct POS Cashier Access */}
+            <a
+              href="/pos"
+              className="bg-[#00ff66]/10 hover:bg-[#00ff66]/20 border border-[#00ff66]/40 text-[#00ff66] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+              title="نقطة البيع والكاشير المباشر"
+            >
+              <ShoppingBag size={15} />
+              <span>الكاشير POS</span>
+            </a>
+
             {/* Direct Admin Access Button */}
             <a
               href="/admin"
-              className="bg-white/5 hover:bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:text-amber-300 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
-              title="دخول الإدارة ونقاط البيع POS"
+              className="bg-white/5 hover:bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:text-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+              title="لوحة إدارة المنتجات والمخزن"
             >
-              <ShieldCheck size={16} />
-              <span>لوحة الإدارة POS</span>
+              <ShieldCheck size={15} />
+              <span>لوحة الإدارة</span>
             </a>
 
             {/* The Royal 1-QR Card Button */}
             <a
               href="/card"
-              className="bg-[#00ff66]/10 hover:bg-[#00ff66]/20 border border-[#00ff66]/40 text-[#00ff66] px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+              className="bg-white/5 hover:bg-white/10 border border-white/15 text-white/80 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
             >
-              <QrCode size={16} />
-              <span>كارت العلامة 1-QR</span>
+              <QrCode size={15} />
+              <span>كارت 1-QR</span>
             </a>
 
             {/* Customer Login / Loyalty Account */}
             {customer ? (
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="bg-white/10 border border-[#ffb703]/40 text-[#ffb703] px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+                className="bg-white/10 border border-[#ffb703]/40 text-[#ffb703] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
               >
                 <User size={15} />
                 <span className="max-w-[80px] truncate">{customer.name}</span>
@@ -488,7 +502,7 @@ export default function StorefrontPage() {
                   setAuthStep("DETAILS");
                   setShowAuthModal(true);
                 }}
-                className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+                className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
               >
                 <User size={15} className="text-[#00ff66]" />
                 <span>حساب العميل (OTP)</span>
@@ -498,7 +512,7 @@ export default function StorefrontPage() {
             {/* Desktop Cart Button */}
             <button
               onClick={() => setShowCart(true)}
-              className="relative bg-gradient-to-r from-[#ffb703] to-[#fb8500] hover:brightness-110 text-black px-4 py-2 rounded-xl font-black text-xs flex items-center gap-2 shadow-lg shadow-[#ffb703]/20 active:scale-95 transition-all"
+              className="relative bg-gradient-to-r from-[#ffb703] to-[#fb8500] hover:brightness-110 text-black px-3.5 py-1.5 rounded-xl font-black text-xs flex items-center gap-2 shadow-lg shadow-[#ffb703]/20 active:scale-95 transition-all"
             >
               <ShoppingBag size={16} />
               <span>السلة</span>
@@ -537,23 +551,32 @@ export default function StorefrontPage() {
 
         {/* Mobile Dropdown Menu Sheet */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-3 pt-3 border-t border-white/10 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="grid grid-cols-3 gap-2">
+          <div className="md:hidden mt-3 pt-3 border-t border-white/10 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="grid grid-cols-4 gap-2">
+              <a
+                href="/pos"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 rounded-xl bg-[#00ff66]/10 border border-[#00ff66]/30 text-[#00ff66] text-[10px] font-bold flex flex-col items-center justify-center gap-1 text-center"
+              >
+                <ShoppingBag size={16} />
+                <span>الكاشير</span>
+              </a>
+
               <a
                 href="/admin"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold flex flex-col items-center justify-center gap-1 text-center"
+                className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold flex flex-col items-center justify-center gap-1 text-center"
               >
-                <ShieldCheck size={18} />
-                <span>لوحة الإدارة POS</span>
+                <ShieldCheck size={16} />
+                <span>الإدارة</span>
               </a>
 
               <a
                 href="/card"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2.5 rounded-xl bg-[#00ff66]/10 border border-[#00ff66]/30 text-[#00ff66] text-[11px] font-bold flex flex-col items-center justify-center gap-1 text-center"
+                className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/80 text-[10px] font-bold flex flex-col items-center justify-center gap-1 text-center"
               >
-                <QrCode size={18} />
+                <QrCode size={16} />
                 <span>كارت 1-QR</span>
               </a>
 
@@ -563,12 +586,14 @@ export default function StorefrontPage() {
                   setAuthStep("DETAILS");
                   setShowAuthModal(true);
                 }}
-                className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-[11px] font-bold flex flex-col items-center justify-center gap-1 text-center"
+                className="p-2 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] font-bold flex flex-col items-center justify-center gap-1 text-center"
               >
-                <User size={18} className="text-[#00ff66]" />
-                <span>{customer ? customer.name.slice(0, 8) : "دخول OTP"}</span>
+                <User size={16} className="text-[#00ff66]" />
+                <span className="truncate max-w-[50px]">{customer ? customer.name.slice(0, 6) : "حسابي"}</span>
               </button>
             </div>
+
+            <PwaInstallButton variant="banner" />
           </div>
         )}
       </header>
@@ -604,6 +629,11 @@ export default function StorefrontPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* PWA / Desktop App Install Banner */}
+      <div className="max-w-7xl mx-auto px-4 mt-3">
+        <PwaInstallButton variant="banner" />
       </div>
 
       {/* Hero Section: Minimalist & Stylish Streetwear Visual */}

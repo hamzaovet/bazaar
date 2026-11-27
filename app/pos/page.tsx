@@ -64,6 +64,12 @@ export default function POSPage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
 
+  // Categories & Quick Catalog
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCatSlug, setSelectedCatSlug] = useState<string>("all");
+  const [catalogProducts, setCatalogProducts] = useState<any[]>([]);
+  const [showCatalogGrid, setShowCatalogGrid] = useState<boolean>(false);
+
   // Cart
   const [cart, setCart] = useState<CartLine[]>([]);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
@@ -139,6 +145,16 @@ export default function POSPage() {
         } else if (branchList.length > 0) {
           setActiveBranchId(branchList[0].id);
         }
+        // Load categories
+        try {
+          const cRes = await fetch("/api/categories");
+          const cData = await cRes.json();
+          if (cData.categories) setCategories(cData.categories);
+        } catch (cErr) {
+          console.error("Categories fetch error:", cErr);
+        }
+
+        loadCatalog("all");
       } catch (e) {
         console.error("POS init error:", e);
       } finally {
@@ -147,6 +163,17 @@ export default function POSPage() {
     }
     initPOS();
   }, []);
+
+  const loadCatalog = async (catSlug = "all") => {
+    try {
+      const url = catSlug === "all" ? "/api/products" : `/api/products?category=${catSlug}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.products) setCatalogProducts(data.products);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const loadCurrentShift = async (userId: string, branchId?: string) => {
     try {
@@ -556,6 +583,17 @@ export default function POSPage() {
             <span className="hidden sm:inline">سجل الفواتير</span>
           </button>
 
+          {/* Desktop App Installer Button */}
+          <a
+            href="/api/desktop-installer"
+            download="Install-Bazaar-POS.bat"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 hover:border-amber-400 text-amber-300 rounded-xl text-xs font-bold transition-all shadow-md"
+            title="تثبيت أيقونة كاشير بزار على سطح المكتب"
+          >
+            <span>📲</span>
+            <span>أيقونة الديسكتوب</span>
+          </a>
+
           <div className="text-right hidden sm:block">
             <div className="text-xs font-bold text-white">{session?.name || "الكاشير"}</div>
             <div className="text-[10px] text-white/50">{session?.role || "كاشير"}</div>
@@ -575,14 +613,14 @@ export default function POSPage() {
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* Left Side: Barcode Scanner / Product Lookup */}
         <div className="flex-1 p-4 flex flex-col overflow-y-auto border-b lg:border-b-0 lg:border-l border-white/10">
-          {/* Barcode Fast Input */}
-          <div className="flex gap-2 mb-4">
+          {/* Barcode / Smart Item Code Fast Input */}
+          <div className="flex gap-2 mb-3">
             <div className="relative flex-1">
               <Barcode className="absolute right-3.5 top-3.5 text-amber-400" size={20} />
               <input
                 id="scanner-input"
                 type="text"
-                placeholder="امسح بالباركود أو اكتب اسم الموديل / المقاس / الكود..."
+                placeholder="اكتب كود الصنف (مثلاً PNT-101 أو 101)، الاسم، أو امسح الباركود..."
                 value={barcodeInput}
                 onChange={(e) => handleManualSearch(e.target.value)}
                 onKeyDown={(e) => {
@@ -604,9 +642,110 @@ export default function POSPage() {
               className="bg-amber-500 hover:bg-amber-400 text-black px-5 font-black rounded-2xl text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 transition-all"
             >
               <Search size={16} />
-              بحث
+              بحث بالكود أو الاسم
             </button>
           </div>
+
+          {/* Category Quick Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 scrollbar-none">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCatSlug("all");
+                loadCatalog("all");
+                setShowCatalogGrid(true);
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                selectedCatSlug === "all"
+                  ? "bg-amber-500 text-black border-amber-500 shadow-md shadow-amber-500/20 font-black"
+                  : "bg-white/5 text-white/70 border-white/10 hover:border-white/20 hover:text-white"
+              }`}
+            >
+              🌟 الكل
+            </button>
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => {
+                  setSelectedCatSlug(c.slug);
+                  loadCatalog(c.slug);
+                  setShowCatalogGrid(true);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                  selectedCatSlug === c.slug
+                    ? "bg-amber-500 text-black border-amber-500 shadow-md shadow-amber-500/20 font-black"
+                    : "bg-white/5 text-white/70 border-white/10 hover:border-white/20 hover:text-white"
+                }`}
+              >
+                {c.nameAr}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setShowCatalogGrid(!showCatalogGrid)}
+              className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white/5 hover:bg-white/10 text-amber-300/80 hover:text-amber-300 border border-amber-500/20 whitespace-nowrap mr-auto"
+            >
+              {showCatalogGrid ? "إخفاء الأصناف 🔼" : "تصفح الأصناف بالصور 🔽"}
+            </button>
+          </div>
+
+          {/* Quick Catalog Grid for Category Browsing */}
+          {showCatalogGrid && catalogProducts.length > 0 && (
+            <div className="bg-[#12121b] border border-white/10 rounded-2xl p-3 mb-4 shadow-xl animate-in fade-in duration-150">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10">
+                <span className="text-xs font-bold text-amber-400">
+                  أصناف {selectedCatSlug === "all" ? "جميع الأقسام" : categories.find((c) => c.slug === selectedCatSlug)?.nameAr || ""} ({catalogProducts.length} صنف):
+                </span>
+                <span className="text-[10px] text-white/40">اضغط على المقاس لإضافته فوراً للسلة</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto pr-1">
+                {catalogProducts.map((p) => (
+                  <div
+                    key={p.id}
+                    className="p-2.5 bg-[#171724] border border-white/10 hover:border-amber-500/40 rounded-xl flex flex-col justify-between transition-all"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-1">
+                        <h4 className="font-bold text-xs text-white truncate" title={p.nameAr}>{p.nameAr}</h4>
+                        <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 px-1 rounded">
+                          {p.sku || "—"}
+                        </span>
+                      </div>
+                      <div className="text-xs font-black text-emerald-400 mt-1 font-mono">{p.basePrice} ج.م</div>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-2 pt-1 border-t border-white/10">
+                      {p.variants?.map((v: any) => (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => {
+                            addVariantToCart({
+                              variantId: v.id,
+                              productId: p.id,
+                              name: p.nameAr,
+                              color: v.color,
+                              size: v.size,
+                              barcode: v.barcode,
+                              unitPrice: v.priceOverride || p.basePrice,
+                              unitCost: v.costPriceOverride || p.costPrice,
+                              quantity: 1,
+                            });
+                            playBeep(880, 0.1);
+                            showToast(`تمت إضافة: ${p.nameAr} (${v.size})`, "success");
+                          }}
+                          className="px-1.5 py-0.5 rounded bg-black/60 hover:bg-amber-500 hover:text-black border border-white/15 text-[10px] font-bold transition-colors"
+                          title={`كود: ${v.sku || v.barcode} | رصيد: ${v.stockCentral}`}
+                        >
+                          {v.size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Quick Search Dropdown / Results */}
           {searchResults.length > 0 && (
@@ -618,8 +757,15 @@ export default function POSPage() {
                   className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-between cursor-pointer transition-all"
                 >
                   <div>
-                    <h4 className="font-bold text-xs text-white">{p.nameAr}</h4>
-                    <p className="text-[10px] text-white/50">{p.material}</p>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-xs text-white">{p.nameAr}</h4>
+                      {p.sku && (
+                        <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20">
+                          كود: {p.sku}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-white/50">{p.category?.nameAr || p.material || ""}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-black text-amber-400 text-xs">{p.basePrice} ج.م</span>

@@ -1,30 +1,129 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// Map category names or slugs to smart prefixes
+function getCategoryPrefix(catNameOrSlug = ""): string {
+  const norm = catNameOrSlug.toLowerCase();
+  if (norm.includes("بنطلون") || norm.includes("pants") || norm.includes("jeans") || norm.includes("جينز") || norm.includes("كارجو") || norm.includes("جبردين")) {
+    return "PNT";
+  }
+  if (norm.includes("جاكيت") || norm.includes("jacket") || norm.includes("بليزر") || norm.includes("blazer")) {
+    return "JKT";
+  }
+  if (norm.includes("هودي") || norm.includes("hoodie") || norm.includes("سويت شيرت") || norm.includes("sweat")) {
+    return "HOD";
+  }
+  if (norm.includes("اندر") || norm.includes("under")) {
+    return "UND";
+  }
+  if (norm.includes("بوكليت") || norm.includes("pullover") || norm.includes("بلوفر")) {
+    return "BOK";
+  }
+  if (norm.includes("فيست") || norm.includes("vest")) {
+    return "VST";
+  }
+  if (norm.includes("ترينينج") || norm.includes("tracksuit") || norm.includes("ترنج")) {
+    return "TRN";
+  }
+  if (norm.includes("شوز") || norm.includes("shoe") || norm.includes("سنيكرز") || norm.includes("حذاء")) {
+    return "SHZ";
+  }
+  if (norm.includes("تيشرت") || norm.includes("tee") || norm.includes("t-shirt")) {
+    return "TEE";
+  }
+  if (norm.includes("قميص") || norm.includes("shirt")) {
+    return "SHR";
+  }
+  return "BAZ";
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const categorySlug = searchParams.get("category");
+    const categoryId = searchParams.get("categoryId");
     const search = searchParams.get("search");
-    const barcode = searchParams.get("barcode");
+    const barcode = searchParams.get("barcode") || searchParams.get("code");
     const isFeatured = searchParams.get("featured");
+    const action = searchParams.get("action");
 
-    // Quick Barcode / Scanner lookup (Exact match for POS)
-    if (barcode) {
-      const variant = await prisma.productVariant.findUnique({
-        where: { barcode },
-        include: {
-          product: {
-            include: { category: true },
-          },
-          branchStocks: {
-            include: { branch: true },
+    // 1. Smart Code Generator Endpoint: /api/products?action=next-code&categoryId=...
+    if (action === "next-code") {
+      let prefix = "BAZ";
+      let baseNumber = 100;
+
+      if (categoryId) {
+        const cat = await prisma.category.findUnique({ where: { id: categoryId } });
+        if (cat) {
+          prefix = getCategoryPrefix(cat.nameAr + " " + cat.slug);
+        }
+      }
+
+      // Count existing products with this prefix to get sequential number
+      const count = await prisma.product.count({
+        where: {
+          sku: {
+            startsWith: prefix,
           },
         },
       });
 
+      const nextNum = baseNumber + count + 1;
+      const nextCode = `${prefix}-${nextNum}`;
+
+      return NextResponse.json({
+        prefix,
+        nextCode,
+        numericCode: String(nextNum),
+      });
+    }
+
+    // 2. Quick Barcode / Item Code / Scanner lookup (Exact match for POS)
+    if (barcode) {
+      const trimmedCode = barcode.trim();
+
+      // A. Try exact match on variant barcode
+      let variant = await prisma.productVariant.findUnique({
+        where: { barcode: trimmedCode },
+        include: {
+          product: { include: { category: true } },
+          branchStocks: { include: { branch: true } },
+        },
+      });
+
+      // B. Try match on variant SKU or product SKU (Item Code)
       if (!variant) {
-        return NextResponse.json({ error: "لم يتم العثور على أي قطعة بهذا الباركود" }, { status: 404 });
+        variant = await prisma.productVariant.findFirst({
+          where: {
+            OR: [
+              { sku: { equals: trimmedCode, mode: "insensitive" } },
+              { product: { sku: { equals: trimmedCode, mode: "insensitive" } } },
+            ],
+          },
+          include: {
+            product: { include: { category: true } },
+            branchStocks: { include: { branch: true } },
+          },
+        });
+      }
+
+      // C. Try match on product name (if exact name entered)
+      if (!variant) {
+        variant = await prisma.productVariant.findFirst({
+          where: {
+            product: {
+              nameAr: { equals: trimmedCode, mode: "insensitive" },
+            },
+          },
+          include: {
+            product: { include: { category: true } },
+            branchStocks: { include: { branch: true } },
+          },
+        });
+      }
+
+      if (!variant) {
+        return NextResponse.json({ error: "لم يتم العثور على أي قطعة بهذا الباركود أو الكود" }, { status: 404 });
       }
 
       return NextResponse.json({ variant });
@@ -36,22 +135,29 @@ export async function GET(request: Request) {
       where.category = { slug: categorySlug };
     }
 
+    if (categoryId && categoryId !== "all") {
+      where.categoryId = categoryId;
+    }
+
     if (isFeatured === "true") {
       where.isFeatured = true;
     }
 
     if (search) {
+      const cleanSearch = search.trim();
       where.OR = [
-        { nameAr: { contains: search, mode: "insensitive" } },
-        { sku: { contains: search, mode: "insensitive" } },
-        { description: { contains: search, mode: "insensitive" } },
+        { nameAr: { contains: cleanSearch, mode: "insensitive" } },
+        { sku: { contains: cleanSearch, mode: "insensitive" } },
+        { description: { contains: cleanSearch, mode: "insensitive" } },
+        { category: { nameAr: { contains: cleanSearch, mode: "insensitive" } } },
         {
           variants: {
             some: {
               OR: [
-                { barcode: { contains: search } },
-                { color: { contains: search, mode: "insensitive" } },
-                { size: { contains: search, mode: "insensitive" } },
+                { barcode: { contains: cleanSearch } },
+                { sku: { contains: cleanSearch, mode: "insensitive" } },
+                { color: { contains: cleanSearch, mode: "insensitive" } },
+                { size: { contains: cleanSearch, mode: "insensitive" } },
               ],
             },
           },
@@ -94,10 +200,22 @@ export async function POST(request: Request) {
       variants, // array of { size, color, colorHex, image, barcode, centralStock, branchStocks }
     } = body;
 
+    // Generate smart SKU if not explicitly provided
+    let finalSku = sku?.trim();
+    if (!finalSku) {
+      let prefix = "BAZ";
+      if (categoryId) {
+        const cat = await prisma.category.findUnique({ where: { id: categoryId } });
+        if (cat) prefix = getCategoryPrefix(cat.nameAr + " " + cat.slug);
+      }
+      const count = await prisma.product.count({ where: { sku: { startsWith: prefix } } });
+      finalSku = `${prefix}-${100 + count + 1}`;
+    }
+
     const newProduct = await prisma.product.create({
       data: {
         nameAr,
-        sku: sku || `BAZ-${Date.now().toString().slice(-6)}`,
+        sku: finalSku,
         categoryId: categoryId || null,
         basePrice: parseFloat(basePrice) || 0,
         costPrice: parseFloat(costPrice) || 0,
@@ -106,9 +224,11 @@ export async function POST(request: Request) {
       },
     });
 
-    if (Array.isArray(variants)) {
+    if (Array.isArray(variants) && variants.length > 0) {
       for (let i = 0; i < variants.length; i++) {
         const v = variants[i];
+        const variantBarcode = v.barcode?.trim() || `${finalSku}-${v.size || "FREE"}-${i + 1}`;
+
         const variant = await prisma.productVariant.create({
           data: {
             productId: newProduct.id,
@@ -116,7 +236,8 @@ export async function POST(request: Request) {
             color: v.color || "أسود",
             colorHex: v.colorHex || "#111111",
             image: v.image || featuredImage || null,
-            barcode: v.barcode || `200${Date.now().toString().slice(-8)}${i}`,
+            barcode: variantBarcode,
+            sku: `${finalSku}-${v.size || "F"}`,
             priceOverride: v.price ? parseFloat(v.price) : newProduct.basePrice,
             costPriceOverride: v.costPrice ? parseFloat(v.costPrice) : newProduct.costPrice,
             stockCentral: parseInt(v.stockCentral || v.central || "0", 10),
@@ -136,6 +257,22 @@ export async function POST(request: Request) {
           }
         }
       }
+    } else {
+      // Create a default single variant so the product is immediately sellable in POS
+      await prisma.productVariant.create({
+        data: {
+          productId: newProduct.id,
+          size: "FREE",
+          color: "افتراضي",
+          colorHex: "#111111",
+          image: featuredImage || null,
+          barcode: finalSku,
+          sku: finalSku,
+          priceOverride: newProduct.basePrice,
+          costPriceOverride: newProduct.costPrice,
+          stockCentral: 50,
+        },
+      });
     }
 
     return NextResponse.json({ success: true, product: newProduct });
@@ -161,7 +298,6 @@ export async function PUT(request: Request) {
           data: { stockCentral: q },
         });
       } else {
-        // location is a branchId
         await prisma.branchStock.upsert({
           where: {
             variantId_branchId: {
@@ -182,74 +318,13 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: true, message: "تم تحديث الرصيد بنجاح" });
     }
 
-    // 1.5 Update variant image directly
-    if (action === "UPDATE_VARIANT_IMAGE") {
-      const { variantId, image } = body;
-      const updatedVariant = await prisma.productVariant.update({
-        where: { id: variantId },
-        data: { image },
-      });
-      return NextResponse.json({ success: true, variant: updatedVariant });
-    }
-
-    // 1.6 Update all variants of a product (color, image, sizes)
-    if (action === "UPDATE_VARIANTS_BATCH") {
-      const { variants } = body;
-      if (Array.isArray(variants)) {
-        for (const v of variants) {
-          if (v.id) {
-            await prisma.productVariant.update({
-              where: { id: v.id },
-              data: {
-                color: v.color || undefined,
-                colorHex: v.colorHex || undefined,
-                image: v.image || undefined,
-                size: v.size || undefined,
-              },
-            });
-          }
-        }
-      }
-      return NextResponse.json({ success: true, message: "تم تحديث ألوان وصور الموديل بنجاح" });
-    }
-
-    // 1.7 Add new color/size variant to existing product
-    if (action === "ADD_VARIANT") {
-      const { productId, size, color, colorHex, image, barcode, stockCentral, branchStocks } = body;
-      const newVar = await prisma.productVariant.create({
-        data: {
-          productId,
-          size: size || "FREE",
-          color: color || "أسود",
-          colorHex: colorHex || "#111111",
-          image: image || null,
-          barcode: barcode || `200${Date.now().toString().slice(-8)}`,
-          stockCentral: parseInt(stockCentral, 10) || 0,
-        },
-      });
-
-      if (branchStocks && typeof branchStocks === "object") {
-        for (const [bId, qty] of Object.entries(branchStocks)) {
-          await prisma.branchStock.create({
-            data: {
-              variantId: newVar.id,
-              branchId: bId,
-              quantity: parseInt(String(qty), 10) || 0,
-              alertLowQuantity: 2,
-            },
-          });
-        }
-      }
-
-      return NextResponse.json({ success: true, variant: newVar });
-    }
-
     // 2. Full product update
-    const { id, nameAr, basePrice, costPrice, material, featuredImage, categoryId } = body;
+    const { id, nameAr, sku, basePrice, costPrice, material, featuredImage, categoryId } = body;
     const updated = await prisma.product.update({
       where: { id },
       data: {
         nameAr: nameAr || undefined,
+        sku: sku !== undefined ? sku.trim() : undefined,
         basePrice: basePrice !== undefined ? parseFloat(basePrice) : undefined,
         costPrice: costPrice !== undefined ? parseFloat(costPrice) : undefined,
         material: material || undefined,

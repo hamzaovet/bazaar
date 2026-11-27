@@ -233,6 +233,8 @@ export default function AdminDashboardPage() {
   // Add Product Modal
   const [showAddProductModal, setShowAddProductModal] = useState<boolean>(false);
   const [newProdName, setNewProdName] = useState<string>("");
+  const [newProdSku, setNewProdSku] = useState<string>("");
+  const [isGeneratingSku, setIsGeneratingSku] = useState<boolean>(false);
   const [newProdCat, setNewProdCat] = useState<string>("");
   const [newProdPrice, setNewProdPrice] = useState<number>(450);
   const [newProdCost, setNewProdCost] = useState<number>(220);
@@ -1167,6 +1169,7 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({
           id: editingProduct.id,
           nameAr: editingProduct.nameAr,
+          sku: editingProduct.sku,
           basePrice: editingProduct.basePrice,
           costPrice: editingProduct.costPrice,
           material: editingProduct.material,
@@ -1293,6 +1296,24 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Generate Smart Code based on Category
+  const handleGenerateSmartSku = async (catId?: string) => {
+    const targetCat = catId || newProdCat;
+    try {
+      setIsGeneratingSku(true);
+      const res = await fetch(`/api/products?action=next-code&categoryId=${targetCat || ""}`);
+      const data = await res.json();
+      if (data.nextCode) {
+        setNewProdSku(data.nextCode);
+        showToast(`تم توليد كود ذكي: ${data.nextCode} ⚡`, "info");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGeneratingSku(false);
+    }
+  };
+
   // Create Product
   const handleCreateProduct = async () => {
     if (!newProdName) {
@@ -1303,6 +1324,7 @@ export default function AdminDashboardPage() {
     try {
       const payload = {
         nameAr: newProdName,
+        sku: newProdSku.trim() || undefined,
         categoryId: newProdCat || undefined,
         basePrice: newProdPrice,
         costPrice: newProdCost,
@@ -1313,7 +1335,7 @@ export default function AdminDashboardPage() {
           color: v.color,
           colorHex: v.colorHex || "#111111",
           image: v.image || newProdImage || undefined,
-          barcode: v.barcode || `200${Date.now().toString().slice(-8)}${idx}`,
+          barcode: v.barcode || (newProdSku ? `${newProdSku}-${v.size}-${idx + 1}` : `200${Date.now().toString().slice(-8)}${idx}`),
           stockCentral: parseInt(v.central, 10) || 0,
           branchStocks: {
             [branches[0]?.id]: parseInt(v.b1, 10) || 0,
@@ -1332,9 +1354,10 @@ export default function AdminDashboardPage() {
       if (data.success) {
         setShowAddProductModal(false);
         setNewProdName("");
+        setNewProdSku("");
         setNewProdImage("");
         fetchAllData();
-        showToast("تمت إضافة المنتج بنجاح وتوليد الباركود ورفع الصور بنجاح! 👑", "success");
+        showToast("تمت إضافة المنتج بنجاح وتوليد الباركود والكود الذكي! 👑", "success");
       } else {
         showToast(data.error || "فشل حفظ المنتج", "error");
       }
@@ -1475,6 +1498,21 @@ export default function AdminDashboardPage() {
             >
               {authLoading ? "جاري التحقق..." : "تسجيل الدخول للنظام 🔐"}
             </button>
+
+            {/* Quick Demo Fill for Maestro */}
+            <div className="pt-2 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginUsername("maestro");
+                  setLoginPassword("Maestro@Bazaar2026");
+                  setLoginPin("157230");
+                }}
+                className="text-[11px] text-amber-400/80 hover:text-amber-300 underline font-mono"
+              >
+                ⚡ تعبئة بيانات المدير العام (Maestro: maestro / 157230)
+              </button>
+            </div>
           </div>
         </div>
       </main>
@@ -3834,6 +3872,17 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
+              <div>
+                <label className="block mb-1 text-white/70 font-bold">كود الصنف (SKU / الكود الذكي للكاشير):</label>
+                <input
+                  type="text"
+                  value={editingProduct.sku || ""}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, sku: e.target.value })}
+                  placeholder="مثال: PNT-101"
+                  className="w-full bg-black/50 border border-amber-500/30 focus:border-amber-400 rounded-xl p-2.5 text-white font-mono font-bold text-xs"
+                />
+              </div>
+
               {/* ImgBB Image Upload */}
               <div>
                 <label className="block mb-1 text-white/70 font-bold">رابط أو رفع صورة جديدة (ImgBB):</label>
@@ -4105,6 +4154,36 @@ export default function AdminDashboardPage() {
                 />
               </div>
 
+              {/* Smart Item Code (SKU) */}
+              <div>
+                <label className="block mb-1 text-white/70 font-bold flex items-center justify-between">
+                  <span>كود الصنف (الكود الذكي / للبيع والبحث في الكاشير):</span>
+                  <span className="text-[10px] text-amber-400 font-normal">فريد لكل قسم تلقائياً أو يدوي</span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="مثال: PNT-101 أو 101 أو اضغط توليد كود ذكي"
+                    value={newProdSku}
+                    onChange={(e) => setNewProdSku(e.target.value)}
+                    className="flex-1 bg-black/50 border border-amber-500/30 focus:border-amber-400 rounded-xl p-2.5 text-white font-mono text-xs font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateSmartSku(newProdCat)}
+                    disabled={isGeneratingSku}
+                    className="bg-amber-500 hover:bg-amber-400 text-black px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1 shadow-md shadow-amber-500/20 active:scale-95 transition-all whitespace-nowrap"
+                    title="توليد كود فريد تلقائياً بناءً على القسم"
+                  >
+                    <span>⚡</span>
+                    <span>{isGeneratingSku ? "جاري..." : "توليد كود ذكي"}</span>
+                  </button>
+                </div>
+                <span className="text-[10px] text-white/40 block mt-0.5">
+                  💡 الكود ده هيستخدمه الكاشير للبحث والبيع فوراً في المحل بدون ماسح باركود
+                </span>
+              </div>
+
               {/* ImgBB Image Upload */}
               <div>
                 <label className="block mb-1 text-white/70 font-bold">رفع صورة للموديل (ImgBB):</label>
@@ -4146,7 +4225,13 @@ export default function AdminDashboardPage() {
                   <label className="block mb-1 text-white/70 font-bold">القسم:</label>
                   <select
                     value={newProdCat}
-                    onChange={(e) => setNewProdCat(e.target.value)}
+                    onChange={(e) => {
+                      const catId = e.target.value;
+                      setNewProdCat(catId);
+                      if (!newProdSku && catId) {
+                        handleGenerateSmartSku(catId);
+                      }
+                    }}
                     className="w-full bg-black/50 border border-white/15 rounded-xl p-2.5 text-white"
                   >
                     <option value="">اختر القسم...</option>

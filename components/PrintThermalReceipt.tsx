@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Printer, X, Sliders, Check, RotateCcw, Eye, FileText } from "lucide-react";
+import { Printer, X, Sliders, Check, RotateCcw, Eye, FileText, Download, Share2, MessageCircle } from "lucide-react";
+import { generateReceiptImageBlob } from "@/lib/receiptImageGenerator";
 
 interface ReceiptProps {
   invoice: any;
@@ -22,6 +23,82 @@ export default function PrintThermalReceipt({ invoice, onClose }: ReceiptProps) 
   const [customFooter, setCustomFooter] = useState<string>(
     "سياسة الاستبدال والاسترجاع: 14 يوماً بأصل الفاتورة والتيكت بحالته الأصلية"
   );
+  const [isGeneratingImage, setIsGeneratingImage] = useState<boolean>(false);
+  const [targetPhone, setTargetPhone] = useState<string>(
+    invoice.customer?.phone || invoice.customerPhone || ""
+  );
+
+  const handleDownloadImage = async () => {
+    try {
+      setIsGeneratingImage(true);
+      const { blob } = await generateReceiptImageBlob(invoice, customFooter);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bazaar_invoice_${invoice.invoiceNumber || "order"}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert("حدث خطأ أثناء إنشاء صورة الفاتورة");
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const handleSendWhatsAppImage = async () => {
+    try {
+      setIsGeneratingImage(true);
+      const { blob } = await generateReceiptImageBlob(invoice, customFooter);
+
+      // Auto download the invoice image so cashier has it immediately ready
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bazaar_invoice_${invoice.invoiceNumber || "order"}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      // Try copy to clipboard if supported
+      try {
+        if (navigator.clipboard && (window as any).ClipboardItem) {
+          await navigator.clipboard.write([
+            new (window as any).ClipboardItem({ "image/png": blob }),
+          ]);
+        }
+      } catch (clipErr) {
+        // clipboard write optional
+      }
+
+      // Check phone or ask user
+      let phone = (targetPhone || "").trim().replace(/\D/g, "");
+      if (!phone) {
+        const entered = prompt("يرجى إدخال رقم هاتف العميل لإرسال الفاتورة عبر واتساب:", "010");
+        if (!entered) return;
+        phone = entered.trim().replace(/\D/g, "");
+      }
+
+      if (phone.startsWith("0")) {
+        phone = "2" + phone;
+      }
+
+      const totalVal = invoice.netTotal || 0;
+      const text = encodeURIComponent(
+        `مرحباً بك في بزار كاجوال وير (BAZAAR)! 🛍️✨\nتم تجهيز فاتورة مشترياتك رقم (${invoice.invoiceNumber}) بإجمالي: ${totalVal} ج.م.\nتم حفظ وتنزيل صورة الفاتورة الرسمية، ويمكنك الاحتفاظ بها لسياسة الاستبدال والاسترجاع (14 يوماً).\nسعدنا بزيارتكم!`
+      );
+
+      window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
+    } catch (e) {
+      console.error(e);
+      alert("حدث خطأ أثناء معالجة صورة الفاتورة لواتساب");
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
 
   const handlePrint = () => {
     window.print();
@@ -393,19 +470,42 @@ export default function PrintThermalReceipt({ invoice, onClose }: ReceiptProps) 
               </div>
             </div>
 
-            {/* Print Button */}
-            <div className="w-full flex gap-2 pt-4 border-t border-white/10 mt-4">
+            {/* Action Buttons: WhatsApp Image, Download PNG, Thermal Print */}
+            <div className="w-full flex flex-col sm:flex-row gap-2 pt-4 border-t border-white/10 mt-4">
               <button
-                onClick={handlePrint}
-                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all text-xs"
+                type="button"
+                onClick={handleSendWhatsAppImage}
+                disabled={isGeneratingImage}
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-black py-3 px-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95 transition-all text-xs"
               >
-                <Printer size={16} />
-                طباعة الفاتورة الحرارية الآن
+                <MessageCircle size={16} />
+                {isGeneratingImage ? "جاري تجهيز الصورة..." : "إرسال الفاتورة عبر واتساب (صورة) 📲"}
               </button>
+
+              <button
+                type="button"
+                onClick={handleDownloadImage}
+                disabled={isGeneratingImage}
+                className="bg-white/10 hover:bg-white/20 text-amber-300 border border-amber-500/30 font-bold py-3 px-3 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all text-xs"
+              >
+                <Download size={15} />
+                <span>حفظ كصورة PNG</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black py-3 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 transition-all text-xs"
+              >
+                <Printer size={15} />
+                <span>طباعة حرارية</span>
+              </button>
+
               {onClose && (
                 <button
+                  type="button"
                   onClick={onClose}
-                  className="bg-white/10 hover:bg-white/15 text-white font-bold py-3 px-4 rounded-xl text-xs transition-all"
+                  className="bg-white/10 hover:bg-white/15 text-white font-bold py-3 px-3 rounded-xl text-xs transition-all"
                 >
                   إغلاق
                 </button>
