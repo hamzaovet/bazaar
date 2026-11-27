@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import QRCode from "qrcode";
 import {
   MapPin,
   Phone,
@@ -18,6 +19,12 @@ import {
   Star,
   Globe,
   Radio,
+  QrCode,
+  Smartphone,
+  Monitor,
+  Download,
+  Apple,
+  X,
 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import PrintableCard from "@/components/PrintableCard";
@@ -25,9 +32,17 @@ import PrintableCard from "@/components/PrintableCard";
 export default function SmartCardLandingPage() {
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
+  const [showMobileModal, setShowMobileModal] = useState<boolean>(false);
+  const [activePaymentQr, setActivePaymentQr] = useState<"instapay" | "vodafone" | null>(null);
+
   const [settings, setSettings] = useState<any>(null);
   const [branches, setBranches] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+
+  // QR URLs
+  const [qrStoreUrl, setQrStoreUrl] = useState<string>("");
+  const [qrInstapayUrl, setQrInstapayUrl] = useState<string>("");
+  const [qrVodafoneUrl, setQrVodafoneUrl] = useState<string>("");
 
   useEffect(() => {
     async function loadData() {
@@ -48,6 +63,36 @@ export default function SmartCardLandingPage() {
       }
     }
     loadData();
+
+    if (typeof window !== "undefined") {
+      const origin = window.location.origin;
+      // 1. Store & PWA QR
+      QRCode.toDataURL(origin, {
+        width: 320,
+        margin: 1,
+        color: { dark: "#000000", light: "#ffffff" },
+      })
+        .then((url) => setQrStoreUrl(url))
+        .catch((e) => console.error("Error generating store QR:", e));
+
+      // 2. InstaPay QR
+      QRCode.toDataURL("bazaar@instapay", {
+        width: 300,
+        margin: 1,
+        color: { dark: "#4f46e5", light: "#ffffff" },
+      })
+        .then((url) => setQrInstapayUrl(url))
+        .catch(() => {});
+
+      // 3. Vodafone Cash QR
+      QRCode.toDataURL("tel:*9*7*01008038041#", {
+        width: 300,
+        margin: 1,
+        color: { dark: "#dc2626", light: "#ffffff" },
+      })
+        .then((url) => setQrVodafoneUrl(url))
+        .catch(() => {});
+    }
   }, []);
 
   const handleCopy = (text: string, label: string) => {
@@ -59,7 +104,7 @@ export default function SmartCardLandingPage() {
   };
 
   const handleShare = async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "https://bazaar.vercel.app/card";
+    const url = typeof window !== "undefined" ? window.location.href : "https://bazaar-omega-one.vercel.app/card";
     if (typeof window !== "undefined" && navigator.share) {
       try {
         await navigator.share({
@@ -87,7 +132,7 @@ TEL;TYPE=WORK,VOICE:01008038041
 TEL;TYPE=CELL,VOICE:01210520500
 TEL;TYPE=OTHER,VOICE:01008183647
 ADR;TYPE=WORK:;;شارع عباس العقاد بجوار أبو العز السوري;مدينة نصر;القاهرة;;مصر
-URL:${typeof window !== "undefined" ? window.location.origin : "https://bazaar.vercel.app"}
+URL:${typeof window !== "undefined" ? window.location.origin : "https://bazaar-omega-one.vercel.app"}
 NOTE:البراند المصري الفاخر للملابس الرجالي والشبابي • عباس العقاد
 END:VCARD`;
 
@@ -140,13 +185,14 @@ END:VCARD`;
             className="inline-flex items-center gap-1.5 text-xs text-white/70 hover:text-white bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl transition-all"
           >
             <ChevronLeft size={16} className="rotate-180" />
-            <span>المتجر</span>
+            <span>المتجر 🏠</span>
           </a>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowPrintModal(true)}
               className="inline-flex items-center gap-1.5 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl hover:bg-amber-500/20 transition-all font-bold shadow-sm"
+              title="طباعة ستاند الكاشير الأكريليك"
             >
               <Printer size={14} />
               <span>ستاند وكارت NFC</span>
@@ -202,7 +248,56 @@ END:VCARD`;
           </div>
         </div>
 
-        {/* ── 2. INSTAPAY & CASHLESS QUICK PAY HUB (إدفع بسرعة وسهولة) ── */}
+        {/* ── 2. THE BIG 1-QR CODE RECEPTION & APP DOWNLOAD CARD (الكارت الرئيسي للمسح بالكاميرا) ── */}
+        <div className="p-5 rounded-3xl bg-gradient-to-br from-[#12121a] via-[#101018] to-[#151524] border-2 border-amber-500/40 shadow-2xl text-center space-y-3.5 relative overflow-hidden">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+            <QrCode size={14} className="text-emerald-400 animate-pulse" />
+            <span>امسح الكود بكاميرا الموبايل لفتح وتثبيت التطبيق 📱</span>
+          </div>
+
+          {/* High-Resolution Scannable QR Code */}
+          <div className="flex justify-center py-1">
+            <div className="p-3 bg-white rounded-3xl shadow-2xl border-4 border-amber-400/80 inline-block group hover:scale-105 transition-transform duration-300">
+              {qrStoreUrl ? (
+                <img
+                  src={qrStoreUrl}
+                  alt="BAZAAR 1-QR Code"
+                  className="w-48 h-48 sm:w-56 sm:h-56 object-contain rounded-xl"
+                />
+              ) : (
+                <div className="w-48 h-48 flex items-center justify-center text-black text-xs font-bold">
+                  جاري تجهيز الرمز...
+                </div>
+              )}
+            </div>
+          </div>
+
+          <p className="text-xs text-white/70 max-w-xs mx-auto leading-relaxed">
+            وجّه كاميرا هاتفك نحو الرمز أعلاه لفتح متجر <strong>بازار</strong> وتثبيت التطبيق فوراً على هاتفك بدون الحاجة لمتجر التطبيقات!
+          </p>
+
+          {/* Direct Install Buttons */}
+          <div className="grid grid-cols-2 gap-2.5 pt-1">
+            <button
+              onClick={() => setShowMobileModal(true)}
+              className="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer"
+            >
+              <Smartphone size={15} />
+              <span>📱 تثبيت تطبيق الموبايل</span>
+            </button>
+
+            <a
+              href="/api/desktop-installer"
+              download="Install-Bazaar-VIP.bat"
+              className="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 transition-all cursor-pointer text-center"
+            >
+              <Monitor size={15} />
+              <span>💻 برنامج الكمبيوتر</span>
+            </a>
+          </div>
+        </div>
+
+        {/* ── 3. INSTAPAY & CASHLESS QUICK PAY HUB (إدفع بسرعة وسهولة) ── */}
         <div className="p-4 rounded-3xl bg-gradient-to-br from-[#12121a] via-[#101018] to-[#141422] border border-amber-500/30 shadow-xl space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-white/10">
             <div className="flex items-center gap-2">
@@ -251,16 +346,23 @@ END:VCARD`;
                     </>
                   )}
                 </button>
-                <a
-                  href={`https://instapay.eg`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="py-1.5 px-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 text-[10px] font-bold flex items-center justify-center"
-                  title="فتح التطبيق"
+                <button
+                  onClick={() => setActivePaymentQr(activePaymentQr === "instapay" ? null : "instapay")}
+                  className="py-1.5 px-2 rounded-xl bg-purple-500/30 hover:bg-purple-500/40 text-purple-200 text-[10px] font-bold flex items-center justify-center gap-1"
+                  title="عرض QR كود إنستاباي"
                 >
-                  <ExternalLink size={12} />
-                </a>
+                  <QrCode size={12} />
+                  <span>رمز QR</span>
+                </button>
               </div>
+
+              {/* Expandable InstaPay QR */}
+              {activePaymentQr === "instapay" && (
+                <div className="p-3 bg-white rounded-2xl text-center flex flex-col items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                  <img src={qrInstapayUrl} alt="InstaPay QR" className="w-36 h-36 object-contain" />
+                  <span className="text-[10px] text-black font-black font-mono">{instapayHandle}</span>
+                </div>
+              )}
             </div>
 
             {/* Vodafone Cash */}
@@ -296,14 +398,23 @@ END:VCARD`;
                     </>
                   )}
                 </button>
-                <a
-                  href={`tel:*9*7*${vodafoneCash}#`}
-                  className="py-1.5 px-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 text-[10px] font-bold flex items-center justify-center"
-                  title="تحويل مباشر"
+                <button
+                  onClick={() => setActivePaymentQr(activePaymentQr === "vodafone" ? null : "vodafone")}
+                  className="py-1.5 px-2 rounded-xl bg-red-500/30 hover:bg-red-500/40 text-red-200 text-[10px] font-bold flex items-center justify-center gap-1"
+                  title="عرض QR كود فودافون كاش"
                 >
-                  <Phone size={12} />
-                </a>
+                  <QrCode size={12} />
+                  <span>رمز QR</span>
+                </button>
               </div>
+
+              {/* Expandable Vodafone Cash QR */}
+              {activePaymentQr === "vodafone" && (
+                <div className="p-3 bg-white rounded-2xl text-center flex flex-col items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                  <img src={qrVodafoneUrl} alt="Vodafone Cash QR" className="w-36 h-36 object-contain" />
+                  <span className="text-[10px] text-black font-black font-mono">{vodafoneCash}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -313,7 +424,7 @@ END:VCARD`;
           </div>
         </div>
 
-        {/* ── 3. MODERN APP-STYLE SOCIAL & LINK GRID (زي الصور 1 بالمللي) ── */}
+        {/* ── 4. MODERN APP-STYLE SOCIAL & LINK GRID ── */}
         <div className="space-y-2">
           <h3 className="text-xs font-bold text-white/70 flex items-center gap-2 px-1">
             <Sparkles size={14} className="text-[#00ff66]" />
@@ -438,7 +549,7 @@ END:VCARD`;
           </div>
         </div>
 
-        {/* ── 4. BRANCHES & GPS LOCATIONS ── */}
+        {/* ── 5. BRANCHES & GPS LOCATIONS ── */}
         <div className="space-y-2.5">
           <h3 className="text-xs font-bold text-amber-400 flex items-center gap-2 px-1">
             <MapPin size={14} />
@@ -516,7 +627,7 @@ END:VCARD`;
           </div>
         </div>
 
-        {/* ── 5. FOOTER & ORCA TECH SIGNATURE ── */}
+        {/* ── 6. FOOTER & ORCA TECH SIGNATURE ── */}
         <div className="border-t border-amber-500/20 bg-black/60 py-4 px-3 text-center space-y-1 rounded-2xl">
           <p className="text-[11px] text-amber-300/90 font-medium">
             تصميم وتطوير: <strong className="text-white font-black">م / حمزة عباس</strong> — شركة{" "}
@@ -527,6 +638,57 @@ END:VCARD`;
           </p>
         </div>
       </div>
+
+      {/* Mobile App Install Help Modal */}
+      {showMobileModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#12121a] border border-amber-500/40 rounded-3xl w-full max-w-md p-6 shadow-2xl text-white relative space-y-4 animate-in fade-in zoom-in-95 duration-200 text-right">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <Smartphone size={20} className="text-emerald-400" />
+                <h3 className="text-base font-black text-white">تثبيت تطبيق بازار على الهاتف</h3>
+              </div>
+              <button
+                onClick={() => setShowMobileModal(false)}
+                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-white/70"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-white/80">
+              <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-1.5">
+                <div className="font-bold text-emerald-400 flex items-center gap-1.5">
+                  <Smartphone size={15} />
+                  <span>لهواتف أندرويد (Chrome):</span>
+                </div>
+                <p className="text-[11px] text-white/70">
+                  اضغط على زر الخيارات (⋮) أعلى متصفح Chrome ثم اختر <strong>"تثبيت التطبيق"</strong> أو <strong>"إضافة إلى الشاشة الرئيسية"</strong>.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+                <div className="font-bold text-amber-300 flex items-center gap-1.5">
+                  <Apple size={15} />
+                  <span>لهواتف آيفون (Safari):</span>
+                </div>
+                <ol className="list-decimal list-inside space-y-1 text-[11px] text-white/70 pr-1">
+                  <li>افتح الموقع في متصفح Safari.</li>
+                  <li>اضغط على زر المشاركة (Share ⬆️).</li>
+                  <li>اختر <strong>"إضافة إلى الصفحة الرئيسية ➕"</strong>.</li>
+                </ol>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowMobileModal(false)}
+              className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold"
+            >
+              تم الفهم
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Printable Card & Acrylic Stand Modal */}
       {showPrintModal && (

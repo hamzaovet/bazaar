@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import QRCode from "qrcode";
 import { Download, Monitor, CheckCircle, Sparkles, X, Smartphone, Info, Apple, QrCode } from "lucide-react";
 
 interface PwaInstallButtonProps {
@@ -19,9 +20,22 @@ export default function PwaInstallButton({
   const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<"MOBILE" | "WINDOWS">("MOBILE");
   const [installSuccess, setInstallSuccess] = useState<boolean>(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    const origin = window.location.origin;
+    QRCode.toDataURL(origin, {
+      width: 280,
+      margin: 1,
+      color: {
+        dark: "#000000",
+        light: "#ffffff",
+      },
+    })
+      .then((url) => setQrCodeUrl(url))
+      .catch((e) => console.error("Error generating mobile QR:", e));
 
     // Check if already in standalone app mode
     const isStandalone =
@@ -88,15 +102,29 @@ export default function PwaInstallButton({
   return (
     <>
       {variant === "compact" ? (
-        <button
-          type="button"
-          onClick={() => openModal("MOBILE")}
-          className={`px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 transition-all cursor-pointer ${className}`}
-          title="تثبيت تطبيق بازار على الهاتف أو الكمبيوتر"
-        >
-          <Smartphone size={14} />
-          <span>تثبيت التطبيق (موبايل وديسكتوب) 📲</span>
-        </button>
+        <div className={`flex items-center gap-1.5 ${className}`}>
+          {/* Mobile App Download Button */}
+          <button
+            type="button"
+            onClick={() => openModal("MOBILE")}
+            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+            title="تثبيت تطبيق بازار على الهاتف (أندرويد وآيفون)"
+          >
+            <Smartphone size={14} />
+            <span>📱 تطبيق الموبايل</span>
+          </button>
+
+          {/* Windows Desktop App Button */}
+          <button
+            type="button"
+            onClick={() => openModal("WINDOWS")}
+            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+            title="تثبيت برنامج بازار للكمبيوتر (ويندوز VIP)"
+          >
+            <Monitor size={14} />
+            <span>💻 تطبيق الويندوز</span>
+          </button>
+        </div>
       ) : variant === "banner" ? (
         <div
           className={`p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-[#181510] via-[#12121a] to-[#181510] border border-amber-500/40 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4 ${className}`}
@@ -110,7 +138,7 @@ export default function PwaInstallButton({
                 <h4 className="text-sm sm:text-base font-black text-white">
                   تطبيق بازار كاجوال وير VIP (موبايل وكمبيوتر)
                 </h4>
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/40 font-bold">
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/40 font-bold">
                   أندرويد • آيفون • ويندوز
                 </span>
               </div>
@@ -144,14 +172,24 @@ export default function PwaInstallButton({
           </div>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => openModal("MOBILE")}
-          className={`px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-110 text-black font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all cursor-pointer ${className}`}
-        >
-          <Smartphone size={15} />
-          <span>تنزيل تطبيق بازار (موبايل وديسكتوب) 📲</span>
-        </button>
+        <div className={`flex items-center gap-2 ${className}`}>
+          <button
+            type="button"
+            onClick={() => openModal("MOBILE")}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:brightness-110 text-black font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer"
+          >
+            <Smartphone size={15} />
+            <span>📱 تطبيق الموبايل</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => openModal("WINDOWS")}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
+          >
+            <Monitor size={15} />
+            <span>💻 برنامج الويندوز</span>
+          </button>
+        </div>
       )}
 
       {/* Success Notification */}
@@ -170,7 +208,7 @@ export default function PwaInstallButton({
       {/* Multi-Platform Install Modal */}
       {showHelpModal && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#12121a] border border-amber-500/40 rounded-3xl w-full max-w-lg p-6 shadow-2xl text-white relative space-y-4 animate-in fade-in zoom-in-95 duration-200 text-right">
+          <div className="bg-[#12121a] border border-amber-500/40 rounded-3xl w-full max-w-lg p-6 shadow-2xl text-white relative space-y-4 animate-in fade-in zoom-in-95 duration-200 text-right max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2.5">
@@ -179,7 +217,7 @@ export default function PwaInstallButton({
                 </div>
                 <div>
                   <h3 className="text-base font-black text-white">
-                    تنزيل تطبيق بازار كاجوال وير VIP
+                    تنزيل وتثبيت تطبيق بازار كاجوال وير VIP
                   </h3>
                   <p className="text-[11px] text-white/50">اختر نوع جهازك لتثبيت التطبيق فوراً</p>
                 </div>
@@ -206,7 +244,7 @@ export default function PwaInstallButton({
                 }`}
               >
                 <Smartphone size={16} />
-                <span>تطبيق الموبايل (أندرويد وآيفون)</span>
+                <span>📱 تطبيق الموبايل</span>
               </button>
 
               <button
@@ -219,21 +257,46 @@ export default function PwaInstallButton({
                 }`}
               >
                 <Monitor size={16} />
-                <span>برنامج الويندوز (سطح المكتب)</span>
+                <span>💻 برنامج الويندوز (للكمبيوتر)</span>
               </button>
             </div>
 
-            {/* Tab 1: MOBILE INSTALLATION */}
+            {/* Tab 1: MOBILE INSTALLATION (with QR Code for phone scanning!) */}
             {activeTab === "MOBILE" && (
               <div className="space-y-3.5 text-xs text-white/80 animate-in fade-in duration-150">
+                {/* Visual QR Code Scanner Box */}
+                <div className="p-4 rounded-2xl bg-black/60 border border-emerald-500/30 text-center flex flex-col items-center justify-center space-y-2.5">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[10px] text-emerald-300 font-bold">
+                    <QrCode size={12} />
+                    <span>امسح الكود بكاميرا هاتفك لفتح وتثبيت التطبيق 📱</span>
+                  </div>
+
+                  <div className="p-2.5 bg-white rounded-2xl shadow-xl border-2 border-emerald-400 inline-block">
+                    {qrCodeUrl ? (
+                      <img
+                        src={qrCodeUrl}
+                        alt="Bazaar Mobile App QR Code"
+                        className="w-44 h-44 object-contain rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-44 h-44 flex items-center justify-center text-black font-bold">
+                        جاري تجهيز الرمز...
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-white/60 max-w-xs leading-relaxed">
+                    وجّه كاميرا هاتفك الذكي (أندرويد أو آيفون) نحو الرمز أعلاه وسيتم نقلك مباشرة لتثبيت التطبيق.
+                  </p>
+                </div>
+
                 {/* Android Direct One-click Install */}
                 <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-2">
                   <div className="font-black text-emerald-400 flex items-center gap-2">
                     <Smartphone size={16} />
-                    <span>لأجهزة أندرويد (Samsung, Xiaomi, Oppo...):</span>
+                    <span>لأجهزة أندرويد (Samsung, Xiaomi, Oppo, Realme...):</span>
                   </div>
                   <p className="text-[11px] text-white/70">
-                    اضغط الزر أدناه لتثبيت تطبيق بازار فوراً على شاشتك الرئيسية، أو اضغط قائمة المتصفح (⋮) واختر <strong>"تثبيت التطبيق"</strong>.
+                    إذا كنت تتصفح من هاتفك الآن، اضغط الزر أدناه لتثبيت تطبيق بازار فوراً على شاشتك الرئيسية، أو اضغط قائمة المتصفح (⋮) واختر <strong>"تثبيت التطبيق"</strong>.
                   </p>
                   <button
                     type="button"
@@ -270,7 +333,7 @@ export default function PwaInstallButton({
                     <span>أداة تثبيت الويندوز الفورية (Install-Bazaar-VIP.bat):</span>
                   </div>
                   <p className="text-[11px] text-white/70 leading-relaxed">
-                    حمل أداة التثبيت بنقرة واحدة، وبمجرد تشغيلها ستنشئ أيقونة <strong>بازار كاجوال وير VIP</strong> الرسمية على سطح المكتب وقائمة Start، وتفتح المتجر في نافذة مستقلة كاملة الشاشة بدون شريط متصفح!
+                    حمل أداة التثبيت بنقرة واحدة على أي جهاز كمبيوتر، وبمجرد تشغيلها ستنشئ أيقونة <strong>بازار كاجوال وير VIP</strong> الرسمية على سطح المكتب وقائمة Start، وتفتح المتجر والكاشير في نافذة مستقلة كاملة الشاشة!
                   </p>
                   <a
                     href="/api/desktop-installer"

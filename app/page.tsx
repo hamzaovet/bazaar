@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import PrintableCard from "@/components/PrintableCard";
+import CardQRModal from "@/components/CardQRModal";
 import { useToast } from "@/components/Toast";
 import PwaInstallButton from "@/components/PwaInstallButton";
 
@@ -146,6 +147,7 @@ export default function StorefrontPage() {
 
   // Modals
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
+  const [showCardModal, setShowCardModal] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [chosenColor, setChosenColor] = useState<string>("");
   const [chosenSize, setChosenSize] = useState<string>("");
@@ -476,13 +478,15 @@ export default function StorefrontPage() {
             </a>
 
             {/* The Royal 1-QR Card Button */}
-            <a
-              href="/card"
-              className="bg-white/5 hover:bg-white/10 border border-white/15 text-white/80 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+            <button
+              type="button"
+              onClick={() => setShowCardModal(true)}
+              className="bg-white/5 hover:bg-white/10 border border-white/15 text-white/80 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
+              title="كارت وستاند الـ 1-QR الذكي للعملاء"
             >
-              <QrCode size={15} />
-              <span>كارت 1-QR</span>
-            </a>
+              <QrCode size={15} className="text-amber-400" />
+              <span>كارت 1-QR 📱</span>
+            </button>
 
             {/* Customer Login / Loyalty Account */}
             {customer ? (
@@ -571,14 +575,17 @@ export default function StorefrontPage() {
                 <span>الإدارة</span>
               </a>
 
-              <a
-                href="/card"
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/80 text-[10px] font-bold flex flex-col items-center justify-center gap-1 text-center"
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setShowCardModal(true);
+                }}
+                className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/80 text-[10px] font-bold flex flex-col items-center justify-center gap-1 text-center cursor-pointer"
               >
-                <QrCode size={16} />
+                <QrCode size={16} className="text-amber-400" />
                 <span>كارت 1-QR</span>
-              </a>
+              </button>
 
               <button
                 onClick={() => {
@@ -1376,6 +1383,9 @@ export default function StorefrontPage() {
 
       {/* Printable VIP Card Modal */}
       {showPrintModal && <PrintableCard onClose={() => setShowPrintModal(false)} />}
+
+      {/* 1-QR Code Reception & Mobile Scan Modal */}
+      {showCardModal && <CardQRModal onClose={() => setShowCardModal(false)} />}
 
       {/* Footer with Orca Tech Signature */}
       <footer className="bg-[#050508] border-t border-white/10 pt-8 pb-4 px-4 text-xs text-white/50">

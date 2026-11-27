@@ -35,7 +35,7 @@ export default function CardQRModal({ onClose }: CardQRModalProps) {
   const whatsapp = "https://wa.me/201008038041?text=مرحباً%20بازار%20كاجوال%20وير";
 
   useEffect(() => {
-    const cardUrl = typeof window !== "undefined" ? `${window.location.origin}/card` : "https://bazaar.vercel.app/card";
+    const cardUrl = typeof window !== "undefined" ? `${window.location.origin}/card` : "https://bazaar-omega-one.vercel.app/card";
     QRCode.toDataURL(cardUrl, {
       width: 320,
       margin: 2,
@@ -49,14 +49,14 @@ export default function CardQRModal({ onClose }: CardQRModalProps) {
   }, []);
 
   const handleCopyLink = () => {
-    const cardUrl = typeof window !== "undefined" ? `${window.location.origin}/card` : "https://bazaar.vercel.app/card";
+    const cardUrl = typeof window !== "undefined" ? `${window.location.origin}/card` : "https://bazaar-omega-one.vercel.app/card";
     navigator.clipboard.writeText(cardUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
 
   const handleShare = async () => {
-    const cardUrl = typeof window !== "undefined" ? `${window.location.origin}/card` : "https://bazaar.vercel.app/card";
+    const cardUrl = typeof window !== "undefined" ? `${window.location.origin}/card` : "https://bazaar-omega-one.vercel.app/card";
     if (navigator.share) {
       try {
         await navigator.share({
