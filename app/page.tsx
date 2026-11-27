@@ -682,10 +682,10 @@ export default function StorefrontPage() {
 
               {/* Quick Filter Tags */}
               <div className="flex flex-wrap gap-2 pt-1">
-                {["تيشرتات أوفر سايز", "بناطيل كارجو", "جينز تركي", "هوديز", "سنيكرز"].map((tag) => (
+                {["بنطلون", "جاكيت", "هودي", "بوكليت", "فيست", "ترينينج سوت", "شوز", "تيشرتات", "قمصان"].map((tag) => (
                   <button
                     key={tag}
-                    onClick={() => setSearchQuery(tag.split(" ")[0])}
+                    onClick={() => setSearchQuery(tag)}
                     className="text-[11px] font-bold text-white/60 hover:text-[#00ff66] bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg border border-white/5 transition-all"
                   >
                     #{tag}
