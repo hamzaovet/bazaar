@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Sparkles,
   ShoppingBag,
@@ -29,6 +29,9 @@ import {
   Truck,
   Gift,
   Percent,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import PrintableCard from "@/components/PrintableCard";
@@ -162,6 +165,10 @@ export default function StorefrontPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState<boolean>(false);
 
+  // Dynamic 5-Second Category Rotating Carousel
+  const [heroIndex, setHeroIndex] = useState<number>(0);
+  const [isHeroPaused, setIsHeroPaused] = useState<boolean>(false);
+
   // Customer Auth (OTP + Registration)
   const [customer, setCustomer] = useState<any>(null);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
@@ -243,6 +250,135 @@ export default function StorefrontPage() {
 
     return matchesCategory && matchesSearch;
   });
+
+  // Dynamic 5-Second Category Rotating Showcase:
+  // Intelligently samples flagship pieces across all available store categories
+  const heroShowcaseItems = useMemo(() => {
+    if (!products || products.length === 0) {
+      return [
+        {
+          id: "default-1",
+          product: null as Product | null,
+          categoryName: "جاكيت",
+          categorySlug: "jackets",
+          image: "/products/bazaar_jacket_67.jpg",
+          nameAr: "جاكيت جوخ صوف كحلي داكن بأكمام جلد أسود",
+          material: "جوخ صوف ثقيل معالج ووتر بروف - كوليكشن النخبة",
+          price: 3541,
+          discountPrice: undefined as number | undefined,
+          badge: "جاكيت VIP 👑",
+          tagline: "كوليكشن الشتاء الملكي 2026 بفروع عباس العقاد",
+        },
+      ];
+    }
+
+    // Group products by category slug
+    const catMap = new Map<string, Product[]>();
+    for (const p of products) {
+      if (!p.featuredImage) continue;
+      const slug = p.category?.slug || "general";
+      if (!catMap.has(slug)) {
+        catMap.set(slug, []);
+      }
+      catMap.get(slug)!.push(p);
+    }
+
+    const items: Array<{
+      id: string;
+      product: Product;
+      categoryName: string;
+      categorySlug: string;
+      image: string;
+      nameAr: string;
+      material?: string;
+      price: number;
+      discountPrice?: number;
+      badge: string;
+      tagline: string;
+    }> = [];
+
+    // Prioritize categories in order of available categories
+    const slugs =
+      categories.length > 0
+        ? categories
+            .map((c) => c.slug)
+            .filter((s) => catMap.has(s) && (catMap.get(s)?.length || 0) > 0)
+        : Array.from(catMap.keys());
+
+    for (const slug of slugs) {
+      const prods = catMap.get(slug) || [];
+      if (prods.length > 0) {
+        // Pick primary flagship product
+        const p1 = prods[0];
+        const catName = p1.category?.nameAr || "تشكيلة النخبة";
+        items.push({
+          id: p1.id,
+          product: p1,
+          categoryName: catName,
+          categorySlug: slug,
+          image: p1.featuredImage || "/products/bazaar_jacket_67.jpg",
+          nameAr: p1.nameAr,
+          material: p1.material || "خامات شتوية إيطالية ثقيلة بريميوم",
+          price: p1.basePrice,
+          discountPrice: p1.discountPrice,
+          badge: `${catName} فاخر 🔥`,
+          tagline: "تصميم ملكي فريد متوفر بفرعي عباس العقاد وأول عباس",
+        });
+
+        // If category has 4 or more products, pick another distinct item for rich visual variety
+        if (prods.length >= 4) {
+          const p2 = prods[Math.min(prods.length - 1, 3)];
+          items.push({
+            id: p2.id,
+            product: p2,
+            categoryName: catName,
+            categorySlug: slug,
+            image: p2.featuredImage || "/products/bazaar_jacket_69.jpg",
+            nameAr: p2.nameAr,
+            material: p2.material || "خامات شتوية إيطالية ثقيلة بريميوم",
+            price: p2.basePrice,
+            discountPrice: p2.discountPrice,
+            badge: `${catName} - الأكثر طلباً ⚡`,
+            tagline: "كوليكشن الشارع الملكي 2026 بفروع عباس العقاد",
+          });
+        }
+      }
+    }
+
+    return items.length > 0
+      ? items
+      : [
+          {
+            id: "fallback-item",
+            product: products[0] || null,
+            categoryName: products[0]?.category?.nameAr || "كوليكشن النخبة",
+            categorySlug: "jackets",
+            image: products[0]?.featuredImage || "/products/bazaar_jacket_67.jpg",
+            nameAr: products[0]?.nameAr || "جاكيت جوخ صوف كحلي داكن بأكمام جلد أسود",
+            material: products[0]?.material || "جوخ صوف ثقيل معالج ووتر بروف",
+            price: products[0]?.basePrice || 3541,
+            discountPrice: undefined as number | undefined,
+            badge: "الأكثر مبيعاً ⚡",
+            tagline: "كوليكشن الشارع الملكي 2026 بفروع عباس العقاد",
+          },
+        ];
+  }, [products, categories]);
+
+  // 5-Second auto-rotation timer with pause-on-hover
+  useEffect(() => {
+    if (heroShowcaseItems.length <= 1 || isHeroPaused) return;
+
+    const interval = setInterval(() => {
+      setHeroIndex((prev) => (prev + 1) % heroShowcaseItems.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [heroShowcaseItems.length, isHeroPaused]);
+
+  // Active showcase item safe lookup
+  const activeHeroItem =
+    heroShowcaseItems[heroIndex % heroShowcaseItems.length] ||
+    heroShowcaseItems[0];
 
   // Open Product Variant Selection Modal
   const openProductModal = (product: Product, initialColor?: string) => {
@@ -699,36 +835,183 @@ export default function StorefrontPage() {
               </div>
             </div>
 
-            {/* Left Column ("الفدان الواسع"): Editorial Streetwear Outfit Card (100% Dynamic & Editable from Dashboard) */}
+            {/* Left Column: Dynamic 5-Second Category Rotating Carousel */}
             <div className="lg:col-span-5">
-              <div className="relative rounded-2xl overflow-hidden border border-[#00ff66]/30 shadow-2xl group bg-black/40">
-                <div className="aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] w-full overflow-hidden">
-                  <img
-                    src={
-                      settings?.heroBannerImage ||
-                      "https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&w=1000&q=80"
-                    }
-                    alt="Bazaar Casual Wear Men Streetwear"
-                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+              <div
+                className="relative rounded-3xl overflow-hidden border border-[#00ff66]/30 hover:border-[#ffb703]/60 shadow-[0_0_35px_rgba(0,255,102,0.12)] group bg-gradient-to-b from-[#141418] via-[#0d0d12] to-[#07070b] transition-all duration-500"
+                onMouseEnter={() => setIsHeroPaused(true)}
+                onMouseLeave={() => setIsHeroPaused(false)}
+                onTouchStart={() => setIsHeroPaused(true)}
+                onTouchEnd={() => setIsHeroPaused(false)}
+              >
+                {/* 5-Second Animated Progress Bar */}
+                <div className="absolute top-0 inset-x-0 h-1 bg-white/10 z-30 overflow-hidden">
+                  <div
+                    key={heroIndex}
+                    className="h-full bg-gradient-to-r from-[#00ff66] via-[#ffb703] to-[#00ff66]"
+                    style={{
+                      width: isHeroPaused ? "100%" : undefined,
+                      animation: isHeroPaused ? "none" : "heroProgress 5s linear forwards",
+                    }}
                   />
                 </div>
 
-                {/* Ambient Overlay Badges */}
-                <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col gap-1 text-right">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black bg-[#00ff66] text-black px-2.5 py-0.5 rounded-full shadow-md">
-                      الأكثر مبيعاً ⚡
-                    </span>
-                    <span className="text-xs font-mono font-bold text-[#ffb703]">
-                      COLLECTION 2026
+                {/* Top Floating Glass Badges */}
+                <div className="absolute top-3 inset-x-3 z-20 flex items-center justify-between pointer-events-none">
+                  <div className="flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-lg">
+                    <span className="w-2 h-2 rounded-full bg-[#00ff66] animate-pulse" />
+                    <span className="text-[11px] font-black text-[#ffb703]">
+                      {activeHeroItem.badge}
                     </span>
                   </div>
-                  <h4 className="text-sm font-black text-white mt-1">
-                    {settings?.heroTagline || "طقم الأوفر سايز والكارجو التكتيكال"}
+
+                  <div className="flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 text-[10px] font-mono text-white/70">
+                    <span className="text-white font-bold">
+                      {((heroIndex % heroShowcaseItems.length) + 1)
+                        .toString()
+                        .padStart(2, "0")}
+                    </span>
+                    <span>/</span>
+                    <span>
+                      {heroShowcaseItems.length.toString().padStart(2, "0")}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Carousel Image Container with Smooth Crossfade */}
+                <div
+                  onClick={() => {
+                    if (activeHeroItem.product)
+                      openProductModal(activeHeroItem.product);
+                  }}
+                  className="relative aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] w-full overflow-hidden flex items-center justify-center p-3 bg-gradient-to-b from-[#18181f] via-[#0e0e14] to-black cursor-pointer"
+                >
+                  {/* Subtle Ambient Radial Glow */}
+                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.06)_0%,_rgba(0,0,0,0)_70%)] pointer-events-none" />
+
+                  {/* Crossfading Slide Images */}
+                  {heroShowcaseItems.map((item, idx) => {
+                    const isActive =
+                      idx === (heroIndex % heroShowcaseItems.length);
+                    return (
+                      <div
+                        key={item.id + "-" + idx}
+                        className={`absolute inset-0 p-2 flex items-center justify-center transition-all duration-700 ease-in-out ${
+                          isActive
+                            ? "opacity-100 scale-100 pointer-events-auto"
+                            : "opacity-0 scale-95 pointer-events-none"
+                        }`}
+                      >
+                        <img
+                          src={item.image}
+                          alt={item.nameAr}
+                          className="w-full h-full object-contain object-center transition-transform duration-700 group-hover:scale-105 filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)]"
+                        />
+                      </div>
+                    );
+                  })}
+
+                  {/* Manual Arrow Controls (Appear on hover) */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setHeroIndex(
+                        (prev) =>
+                          (prev - 1 + heroShowcaseItems.length) %
+                          heroShowcaseItems.length
+                      );
+                    }}
+                    aria-label="السابق"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 border border-white/15 text-white/80 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm shadow-lg"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setHeroIndex(
+                        (prev) => (prev + 1) % heroShowcaseItems.length
+                      );
+                    }}
+                    aria-label="التالي"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 border border-white/15 text-white/80 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm shadow-lg"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                </div>
+
+                {/* Ambient Bottom Card Details */}
+                <div className="relative z-20 p-4 bg-gradient-to-t from-black via-black/95 to-black/60 border-t border-white/5 flex flex-col gap-1.5 text-right">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono tracking-wider font-bold text-white/60 bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                      {activeHeroItem.categoryName}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {activeHeroItem.discountPrice && (
+                        <span className="text-[11px] text-white/40 line-through">
+                          {activeHeroItem.price.toLocaleString("ar-EG")} ج.م
+                        </span>
+                      )}
+                      <span className="text-sm md:text-base font-black text-[#ffb703]">
+                        {(
+                          activeHeroItem.discountPrice || activeHeroItem.price
+                        ).toLocaleString("ar-EG")}{" "}
+                        ج.م
+                      </span>
+                    </div>
+                  </div>
+
+                  <h4 className="text-xs md:text-sm font-black text-white line-clamp-1 group-hover:text-[#00ff66] transition-colors">
+                    {activeHeroItem.nameAr}
                   </h4>
-                  <p className="text-[11px] text-white/70">
-                    {settings?.heroDescription || "قطن مصري 100% هيفي ويت معالج ضد الانكماش مع نسيج كارجو ووتر بروف"}
+
+                  <p className="text-[11px] text-white/60 line-clamp-1">
+                    {activeHeroItem.material}
                   </p>
+
+                  {/* Quick Dots & Action Button */}
+                  <div className="flex items-center justify-between pt-1">
+                    {/* Category Dots Indicator */}
+                    <div className="flex items-center gap-1.5">
+                      {heroShowcaseItems.map((item, idx) => (
+                        <button
+                          key={"dot-" + idx}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setHeroIndex(idx);
+                          }}
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            idx === (heroIndex % heroShowcaseItems.length)
+                              ? "w-6 bg-[#ffb703]"
+                              : "w-1.5 bg-white/20 hover:bg-white/40"
+                          }`}
+                          title={item.categoryName}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Preview / Book Button */}
+                    {activeHeroItem.product ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openProductModal(activeHeroItem.product!);
+                        }}
+                        className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#00ff66] to-emerald-400 hover:from-emerald-400 hover:to-[#00ff66] text-black font-black text-[11px] px-3.5 py-1.5 rounded-xl shadow-lg shadow-[#00ff66]/20 active:scale-95 transition-all cursor-pointer"
+                      >
+                        <Eye size={12} />
+                        <span>معاينة واختيار المقاس</span>
+                      </button>
+                    ) : (
+                      <a
+                        href="#collection"
+                        className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white font-black text-[11px] px-3 py-1.5 rounded-xl transition-all"
+                      >
+                        <span>تصفح التشكيلة</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -805,7 +1088,7 @@ export default function StorefrontPage() {
             <div
               className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
               style={{
-                backgroundImage: `url('${settings?.offersBannerImage || "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&w=1200&q=80"}')`,
+                backgroundImage: `url('${settings?.offersBannerImage || "/products/bazaar_jacket_68.jpg"}')`,
               }}
             />
 

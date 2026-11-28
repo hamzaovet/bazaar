@@ -84,6 +84,20 @@ body {
   scrollbar-width: none;
 }
 
+/* 5-Second Luxury Hero Carousel Progress Bar */
+@keyframes heroProgress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-hero-progress {
+  animation: heroProgress 5s linear forwards;
+}
+
 /* Print Styles for 80mm Continuous Receipts and 38x25mm / 50x25mm Die-Cut Barcode Labels */
 @media print {
   html, body {
