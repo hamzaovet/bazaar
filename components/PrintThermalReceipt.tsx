@@ -419,9 +419,22 @@ export default function PrintThermalReceipt({ invoice, onClose }: ReceiptProps) 
                       <span>المجموع الفرعي:</span>
                       <span>{invoice.subtotal} ج.م</span>
                     </div>
+                    {/* Discount Details Breakdown */}
+                    {invoice.cashierDiscount > 0 && (
+                      <div className="flex justify-between text-gray-800 font-semibold font-mono text-[10px]">
+                        <span>خصم الكاشير المعتمد:</span>
+                        <span>-{invoice.cashierDiscount} ج.م</span>
+                      </div>
+                    )}
+                    {invoice.ownerDiscount > 0 && (
+                      <div className="flex justify-between text-amber-800 font-bold font-mono text-[10px] bg-amber-50 px-1 rounded">
+                        <span>خصم خاص وتكريم م/ محمد أشرف 👑:</span>
+                        <span>-{invoice.ownerDiscount} ج.م</span>
+                      </div>
+                    )}
                     {invoice.discountAmount > 0 && (
                       <div className="flex justify-between text-red-600 font-bold font-mono">
-                        <span>الخصم المباشر:</span>
+                        <span>إجمالي وفر العميل:</span>
                         <span>-{invoice.discountAmount} ج.م</span>
                       </div>
                     )}

@@ -49,6 +49,10 @@ export async function PUT(request: Request) {
       isMasterLocked,
       masterLockMessage,
       ownerPin, // Required to toggle master lockout!
+      // Bargaining & Discount Controls
+      maxCashierDiscountPerPiece,
+      cashierBargainPin,
+      ownerDiscountPin,
     } = body;
 
     // If master lockout is being modified, verify PIN
@@ -98,6 +102,9 @@ export async function PUT(request: Request) {
         smartCardCustomLinks: smartCardCustomLinks || undefined,
         isMasterLocked: typeof isMasterLocked === "boolean" ? isMasterLocked : undefined,
         masterLockMessage: masterLockMessage || undefined,
+        maxCashierDiscountPerPiece: maxCashierDiscountPerPiece !== undefined ? parseFloat(maxCashierDiscountPerPiece) : undefined,
+        cashierBargainPin: cashierBargainPin || undefined,
+        ownerDiscountPin: ownerDiscountPin || undefined,
       },
       create: {
         id: 1,

@@ -212,6 +212,10 @@ model Invoice {
   orderType         String            @default("IN_STORE_POS") // "IN_STORE_POS" | "ONLINE_ORDER" | "WHATSAPP_ORDER"
   subTotal          Float
   discountAmount    Float             @default(0.0)
+  cashierDiscount   Float             @default(0.0)
+  ownerDiscount     Float             @default(0.0)
+  discountType      String?           // "STANDARD_CASHIER" | "BARGAIN_CODE" | "OWNER_VIP"
+  discountNotes     String?
   taxAmount         Float             @default(0.0)
   finalTotal        Float
   paidAmount        Float
@@ -402,6 +406,11 @@ model SystemSettings {
   smartCardGoogleReviews  String            @default("https://maps.app.goo.gl/MzCnj5n3mP29uurK6")
   smartCardCustomLinks    String            @default("[]") // JSON array of custom links: { id, title, icon, url, category, isActive }
 
+  // Bargaining & Discount Controls (سياسة الفصال والخصومات السرية)
+  maxCashierDiscountPerPiece Float    @default(50.0) // الحد الأقصى المسموح به للكاشير لكل قطعة
+  cashierBargainPin          String   @default("1572") // كود الفصال السري للكاشير
+  ownerDiscountPin           String   @default("112233") // كود خصم المالك الحصري (م / محمد أشرف)
+
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
 }
@@ -465,6 +474,9 @@ model PurchaseInvoice {
   paidAmount    Float                 @default(0.0)
   remainingDebt Float                 @default(0.0)
   status        String                @default("COMPLETED") // "COMPLETED" | "CANCELLED"
+  verificationStatus String           @default("VERIFIED") // "VERIFIED" | "DISCREPANCY" | "PENDING_AUDIT"
+  verificationReport String?          // JSON report of item count, unit count, price check
+  supplierInvoiceRef String?          // "INV-1259"
   notes         String?
   createdAt     DateTime              @default(now())
 
@@ -528,4 +540,17 @@ model Season {
   notes       String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+}
+
+// ----------------------------------------------------
+// 17. OWNER EXECUTIVE ALERTS & NOTIFICATIONS
+// ----------------------------------------------------
+model OwnerAlert {
+  id          String   @id @default(cuid())
+  type        String   // "DISCOUNT_ALERT" | "PURCHASE_VERIFICATION" | "DISCREPANCY" | "HIGH_SALE"
+  title       String
+  message     String
+  data        String?  // JSON details
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
 }

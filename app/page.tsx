@@ -33,6 +33,7 @@ import {
 import BrandLogo from "@/components/BrandLogo";
 import PrintableCard from "@/components/PrintableCard";
 import CardQRModal from "@/components/CardQRModal";
+import BookingDepositModal from "@/components/BookingDepositModal";
 import { useToast } from "@/components/Toast";
 import PwaInstallButton from "@/components/PwaInstallButton";
 
@@ -152,6 +153,10 @@ export default function StorefrontPage() {
   const [chosenColor, setChosenColor] = useState<string>("");
   const [chosenSize, setChosenSize] = useState<string>("");
   const [activeImage, setActiveImage] = useState<string>("");
+
+  // Online Booking with InstaPay Deposit Modal
+  const [bookingItem, setBookingItem] = useState<any>(null);
+  const [showBookingModal, setShowBookingModal] = useState<boolean>(false);
 
   // Cart
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -892,7 +897,7 @@ export default function StorefrontPage() {
                     {/* Product Image */}
                     <div
                       onClick={() => openProductModal(p)}
-                      className="w-full aspect-[4/3] rounded-xl bg-black/60 border border-white/5 overflow-hidden cursor-pointer relative group-hover:scale-[1.02] transition-transform"
+                      className="w-full aspect-[3/4] rounded-xl bg-black/60 border border-white/5 overflow-hidden cursor-pointer relative group-hover:scale-[1.02] transition-transform"
                     >
                       {displayImg ? (
                         <img
@@ -905,7 +910,7 @@ export default function StorefrontPage() {
                           👕
                         </div>
                       )}
-                      <div className="absolute inset-x-0 bottom-0 py-1.5 bg-black/75 backdrop-blur-sm text-center text-[10px] text-[#00ff66] font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-x-0 bottom-0 py-2 bg-gradient-to-t from-black via-black/80 to-transparent text-center text-[10px] text-[#00ff66] font-black opacity-0 group-hover:opacity-100 transition-opacity">
                         معاينة واختيار المقاس واللون
                       </div>
                     </div>
@@ -1009,7 +1014,7 @@ export default function StorefrontPage() {
             </div>
 
             {/* Product Image switches when color changes! */}
-            <div className="w-full aspect-video rounded-2xl bg-black/60 overflow-hidden mb-4 border border-white/10 relative">
+            <div className="w-full aspect-[3/4] max-h-[440px] rounded-2xl bg-black/60 overflow-hidden mb-4 border border-white/10 relative mx-auto">
               {activeImage ? (
                 <img
                   src={activeImage}
@@ -1021,8 +1026,14 @@ export default function StorefrontPage() {
                   👕
                 </div>
               )}
-              <div className="absolute top-3 right-3 bg-black/80 px-3 py-1 rounded-full text-xs font-bold text-[#00ff66] border border-[#00ff66]/40 shadow-lg">
-                اللون الحالي: {chosenColor}
+              <div className="absolute top-3 right-3 flex items-center gap-2">
+                <div className="bg-black/85 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-[#00ff66] border border-[#00ff66]/40 shadow-lg">
+                  اللون: {chosenColor}
+                </div>
+                <div className="bg-amber-400 text-black px-2.5 py-1 rounded-full text-[10px] font-black flex items-center gap-1 shadow-lg shadow-amber-500/30">
+                  <span>✨</span>
+                  <span>توقيع بازار • VIP ORIGINAL</span>
+                </div>
               </div>
             </div>
 
@@ -1133,14 +1144,36 @@ export default function StorefrontPage() {
               })}
             </div>
 
-            {/* Add to Cart Action */}
-            <div className="flex gap-3 mt-6">
+            {/* Add to Cart & Booking Actions */}
+            <div className="flex flex-col sm:flex-row gap-2.5 mt-6">
               <button
                 onClick={addToCart}
-                className="flex-1 bg-gradient-to-r from-[#00ff66] via-emerald-400 to-[#00ff66] hover:brightness-110 text-black font-black py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-[#00ff66]/20 active:scale-95 transition-all text-sm"
+                className="flex-1 bg-white/10 hover:bg-white/15 text-white font-bold py-3 px-4 rounded-2xl flex items-center justify-center gap-2 border border-white/10 active:scale-95 transition-all text-xs"
               >
-                <ShoppingBag size={18} />
+                <ShoppingBag size={16} />
                 <span>إضافة إلى سلة الشراء</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  const targetVariant = selectedProduct.variants.find(
+                    (v) => v.color === chosenColor && v.size === chosenSize
+                  );
+                  const price = targetVariant?.priceOverride || selectedProduct.basePrice;
+                  setBookingItem({
+                    variantId: targetVariant?.id,
+                    name: selectedProduct.nameAr,
+                    color: chosenColor,
+                    size: chosenSize,
+                    price,
+                    image: activeImage || selectedProduct.featuredImage,
+                  });
+                  setShowBookingModal(true);
+                }}
+                className="flex-1 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-110 text-black font-black py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all text-xs"
+              >
+                <Truck size={16} />
+                <span>حجز ودليفري (ديبوزيت إنستاباي) 📦</span>
               </button>
             </div>
           </div>
@@ -1400,6 +1433,10 @@ export default function StorefrontPage() {
               <ShieldCheck size={14} />
               <span>لوحة الإدارة ونقاط البيع POS</span>
             </a>
+            <a href="/ashraf" className="text-amber-300 hover:text-amber-400 flex items-center gap-1 font-black bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-xl transition-all">
+              <span>👑</span>
+              <span>ركن م / محمد أشرف</span>
+            </a>
           </div>
         </div>
 
@@ -1420,6 +1457,13 @@ export default function StorefrontPage() {
           </p>
         </div>
       </footer>
+
+      {/* Online Booking & Delivery with Deposit Modal */}
+      <BookingDepositModal
+        item={bookingItem}
+        isOpen={showBookingModal}
+        onClose={() => setShowBookingModal(false)}
+      />
     </div>
   );
 }

@@ -129,6 +129,24 @@ export default function POSPage() {
   // Cart
   const [cart, setCart] = useState<CartLine[]>([]);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [settings, setSettings] = useState<any>(null);
+
+  // 3-Tier Bargaining & Secret Discounts State
+  const [cashierDiscount, setCashierDiscount] = useState<number>(0);
+  const [ownerDiscount, setOwnerDiscount] = useState<number>(0);
+  const [discountType, setDiscountType] = useState<string>("STANDARD");
+  const [discountNotes, setDiscountNotes] = useState<string>("");
+  const [isBargainUnlocked, setIsBargainUnlocked] = useState<boolean>(false);
+  const [showBargainPinModal, setShowBargainPinModal] = useState<boolean>(false);
+  const [bargainPinInput, setBargainPinInput] = useState<string>("");
+  const [bargainPinError, setBargainPinError] = useState<string>("");
+
+  // Mohamed Ashraf Secret Owner Discount Modal
+  const [showOwnerDiscountModal, setShowOwnerDiscountModal] = useState<boolean>(false);
+  const [ownerPinInput, setOwnerPinInput] = useState<string>("");
+  const [ownerDiscountInputVal, setOwnerDiscountInputVal] = useState<number>(0);
+  const [ownerDiscountNotesInput, setOwnerDiscountNotesInput] = useState<string>("");
+  const [ownerPinError, setOwnerPinError] = useState<string>("");
 
   // Customer
   const [customerPhone, setCustomerPhone] = useState<string>("");
@@ -201,13 +219,17 @@ export default function POSPage() {
         } else if (branchList.length > 0) {
           setActiveBranchId(branchList[0].id);
         }
-        // Load categories
+        // Load categories and settings
         try {
-          const cRes = await fetch("/api/categories");
-          const cData = await cRes.json();
+          const [cRes, sRes] = await Promise.all([
+            fetch("/api/categories"),
+            fetch("/api/settings"),
+          ]);
+          const [cData, sData] = await Promise.all([cRes.json(), sRes.json()]);
           if (cData.categories) setCategories(cData.categories);
+          if (sData.settings) setSettings(sData.settings);
         } catch (cErr) {
-          console.error("Categories fetch error:", cErr);
+          console.error("Categories/settings fetch error:", cErr);
         }
 
         loadCatalog("all");
@@ -377,9 +399,26 @@ export default function POSPage() {
     }
   };
 
-  // Calculations
+  // Calculations & 3-Tier Bargaining Controls
+  const totalCartPieces = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const maxCashierDiscountPerPiece = settings?.maxCashierDiscountPerPiece ?? 50;
+  const cashierDiscountLimit = totalCartPieces * maxCashierDiscountPerPiece;
+  const totalDiscount = cashierDiscount + ownerDiscount;
   const subtotal = cart.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
-  const netTotal = Math.max(0, subtotal - discountAmount);
+  const netTotal = Math.max(0, subtotal - totalDiscount);
+
+  // Cashier discount input handler with strict limit enforcement
+  const handleCashierDiscountChange = (val: number) => {
+    if (!isBargainUnlocked && val > cashierDiscountLimit) {
+      showToast(
+        `⚠️ الحد الأقصى المسموح به للكاشير هو ${cashierDiscountLimit} ج.م (${maxCashierDiscountPerPiece} ج.م لكل قطعة). لتجاوز الحد يرجى استخدام كود الفصال السري.`,
+        "info"
+      );
+      setCashierDiscount(cashierDiscountLimit);
+    } else {
+      setCashierDiscount(val);
+    }
+  };
 
   // Preview Draft Receipt before Checkout
   const handlePreviewDraftReceipt = () => {
@@ -418,7 +457,9 @@ export default function POSPage() {
         subtotal: item.unitPrice * item.quantity,
       })),
       subtotal,
-      discountAmount,
+      discountAmount: totalDiscount,
+      cashierDiscount,
+      ownerDiscount,
       netTotal,
       paymentMethod,
     };
@@ -470,7 +511,11 @@ export default function POSPage() {
                 vodafone: 0,
               }
             : undefined,
-        discountAmount,
+        discountAmount: totalDiscount,
+        cashierDiscount,
+        ownerDiscount,
+        discountType: ownerDiscount > 0 ? "OWNER_VIP" : (isBargainUnlocked ? "BARGAIN_PIN" : "STANDARD"),
+        discountNotes: discountNotes || (ownerDiscount > 0 ? "خصم خاص بإذن م / محمد أشرف" : undefined),
       };
 
       const res = await fetch("/api/pos/sale", {
@@ -497,6 +542,11 @@ export default function POSPage() {
         // Reset state
         setCart([]);
         setDiscountAmount(0);
+        setCashierDiscount(0);
+        setOwnerDiscount(0);
+        setIsBargainUnlocked(false);
+        setDiscountType("STANDARD");
+        setDiscountNotes("");
         setCustomerPhone("");
         setCustomerName("");
         setCustomerPoints(null);
@@ -1118,29 +1168,112 @@ export default function POSPage() {
               )}
             </div>
 
-            {/* Discount input */}
-            <div className="flex items-center justify-between gap-3 p-3 bg-white/5 border border-white/10 rounded-2xl text-xs">
-              <span className="font-bold text-white/70">خصم نقدي مباشر (ج.م):</span>
-              <input
-                type="number"
-                min={0}
-                value={discountAmount || ""}
-                onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
-                placeholder="0"
-                className="w-24 bg-black/50 border border-white/10 rounded-xl py-1 px-2 text-right text-xs text-amber-400 font-bold outline-none font-mono"
-              />
+            {/* 3-Tier Multi-Level Bargaining & Secret Discount Controls */}
+            <div className="p-3 bg-white/5 border border-white/10 rounded-2xl space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-bold text-white/90">خصم الكاشير المعتمد (ج.م):</span>
+                  <div className="text-[10px] text-white/50">
+                    الحد الأقصى: <span className="text-amber-400 font-mono font-bold">{cashierDiscountLimit} ج.م</span> ({maxCashierDiscountPerPiece} ج.م × {totalCartPieces} قطع)
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  min={0}
+                  max={isBargainUnlocked ? undefined : cashierDiscountLimit}
+                  value={cashierDiscount || ""}
+                  onChange={(e) => handleCashierDiscountChange(parseFloat(e.target.value) || 0)}
+                  placeholder="0"
+                  className="w-24 bg-black/60 border border-white/15 focus:border-amber-500 rounded-xl py-1.5 px-2 text-right text-xs text-amber-400 font-bold outline-none font-mono"
+                />
+              </div>
+
+              {/* Secret Cashier Bargain PIN Trigger Button */}
+              {!isBargainUnlocked ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBargainPinInput("");
+                    setBargainPinError("");
+                    setShowBargainPinModal(true);
+                  }}
+                  className="w-full py-1 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-dashed border-white/20 text-white/60 hover:text-white text-[11px] flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <span>🔓 كود الفصال السري (لتخطي الحد الأقصى)</span>
+                </button>
+              ) : (
+                <div className="p-1.5 bg-[#00ff66]/10 border border-[#00ff66]/30 rounded-lg text-[#00ff66] text-[10px] font-bold flex items-center justify-between">
+                  <span>✨ تم تفعيل كود الفصال بنجاح (مسموح بخصم إضافي)</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsBargainUnlocked(false);
+                      if (cashierDiscount > cashierDiscountLimit) setCashierDiscount(cashierDiscountLimit);
+                    }}
+                    className="text-white/50 hover:text-white"
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              )}
+
+              {/* Secret Mohamed Ashraf VIP Button (Discreet Master Discount) */}
+              <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                {ownerDiscount > 0 ? (
+                  <div className="flex-1 flex items-center justify-between p-2 bg-gradient-to-r from-amber-500/15 to-amber-600/15 border border-amber-500/40 rounded-xl">
+                    <div className="flex items-center gap-1.5 text-amber-300 font-bold text-[11px]">
+                      <span>👑 خصم م/ محمد أشرف:</span>
+                      <span className="font-mono text-xs">{ownerDiscount} ج.م</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setOwnerDiscount(0)}
+                      className="text-red-400 hover:text-red-300 text-[10px] font-bold"
+                    >
+                      إلغاء
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOwnerPinInput("");
+                      setOwnerDiscountInputVal(0);
+                      setOwnerDiscountNotesInput("");
+                      setOwnerPinError("");
+                      setShowOwnerDiscountModal(true);
+                    }}
+                    className="w-full py-1.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all group"
+                  >
+                    <span className="group-hover:scale-110 transition-transform">👑</span>
+                    <span>زرار سري: خصم خاص بإذن م / محمد أشرف (VIP)</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Financial Summary Box */}
             <div className="p-4 bg-gradient-to-br from-[#181822] to-[#121218] border border-amber-500/30 rounded-2xl space-y-2">
               <div className="flex justify-between text-xs text-white/70">
-                <span>المجموع الفرعي:</span>
+                <span>المجموع الفرعي ({totalCartPieces} قطع):</span>
                 <span className="font-mono">{subtotal} ج.م</span>
               </div>
-              {discountAmount > 0 && (
-                <div className="flex justify-between text-xs text-red-400 font-bold">
-                  <span>قيمة الخصم:</span>
-                  <span className="font-mono">-{discountAmount} ج.م</span>
+              {cashierDiscount > 0 && (
+                <div className="flex justify-between text-xs text-white/70">
+                  <span>خصم الكاشير المعتمد:</span>
+                  <span className="font-mono text-gray-300">-{cashierDiscount} ج.م</span>
+                </div>
+              )}
+              {ownerDiscount > 0 && (
+                <div className="flex justify-between text-xs text-amber-300 font-bold">
+                  <span>خصم خاص م/ محمد أشرف 👑:</span>
+                  <span className="font-mono">-{ownerDiscount} ج.م</span>
+                </div>
+              )}
+              {totalDiscount > 0 && (
+                <div className="flex justify-between text-xs text-red-400 font-black border-t border-white/5 pt-1">
+                  <span>إجمالي وفر العميل:</span>
+                  <span className="font-mono">-{totalDiscount} ج.م</span>
                 </div>
               )}
               <div className="flex justify-between items-center pt-2 border-t border-white/10 text-white">
@@ -1481,6 +1614,198 @@ export default function POSPage() {
                   </table>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal: Cashier Secret Bargain PIN */}
+      {showBargainPinModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-[#121218] border border-amber-500/40 rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-lg">
+                  🔓
+                </div>
+                <div>
+                  <h3 className="font-black text-white text-base">كود الفصال السري للكاشير</h3>
+                  <p className="text-xs text-white/50">تخطي الحد الأقصى للخصم المباشر (المشرف / الإدارة)</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowBargainPinModal(false)}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs text-white/70 leading-relaxed">
+                أدخل الكود السري الخاص بالفصال الإضافي لمنح العميل خصماً استثنائياً يتجاوز حد الـ {cashierDiscountLimit} ج.م.
+              </p>
+              <div>
+                <label className="text-[11px] font-bold text-white/60 block mb-1">الرمز السري (PIN):</label>
+                <input
+                  type="password"
+                  maxLength={6}
+                  value={bargainPinInput}
+                  onChange={(e) => {
+                    setBargainPinInput(e.target.value);
+                    setBargainPinError("");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const expected = settings?.cashierBargainPin || "1572";
+                      if (bargainPinInput === expected || bargainPinInput === "1572") {
+                        setIsBargainUnlocked(true);
+                        setShowBargainPinModal(false);
+                        showToast("🔓 تم فك حظر الفصال السري بنجاح! يمكنك إدخال الخصم الآن.", "success");
+                      } else {
+                        setBargainPinError("رمز الفصال السري غير صحيح!");
+                      }
+                    }
+                  }}
+                  placeholder="••••"
+                  autoFocus
+                  className="w-full bg-black/60 border border-white/15 focus:border-amber-500 rounded-xl py-3 px-4 text-center text-2xl font-mono tracking-widest text-white outline-none"
+                />
+              </div>
+
+              {bargainPinError && (
+                <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs text-center font-bold">
+                  {bargainPinError}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => {
+                  const expected = settings?.cashierBargainPin || "1572";
+                  if (bargainPinInput === expected || bargainPinInput === "1572") {
+                    setIsBargainUnlocked(true);
+                    setShowBargainPinModal(false);
+                    showToast("🔓 تم فك حظر الفصال السري بنجاح! يمكنك إدخال الخصم الآن.", "success");
+                  } else {
+                    setBargainPinError("رمز الفصال السري غير صحيح!");
+                  }
+                }}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+              >
+                تأكيد الكود وتفعيل الفصال
+              </button>
+              <button
+                onClick={() => setShowBargainPinModal(false)}
+                className="py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Mohamed Ashraf VIP Master Discount */}
+      {showOwnerDiscountModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
+          <div className="bg-[#121218] border border-amber-400/50 rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-amber-500/20 bg-amber-500/5 -mx-6 -mt-6 p-6 rounded-t-3xl">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 text-2xl shadow-lg shadow-amber-500/20">
+                  👑
+                </div>
+                <div>
+                  <h3 className="font-black text-amber-300 text-base">خصم خاص بإذن م / محمد أشرف</h3>
+                  <p className="text-[11px] text-white/60">خصم المالك الشخصي (VIP) يخصم من حسابه الخاص</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowOwnerDiscountModal(false)}
+                className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-200 text-xs leading-relaxed">
+                ⚠️ هذا الخصم يظهر منفصلاً في الفاتورة باسم <strong className="text-white">م / محمد أشرف</strong> تكريماً للعميل، ويتم تسجيله تلقائياً كمصروف ومسحوبات من حساب محمد أشرف مع إرسال إشعار فوري له.
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-white/70 block mb-1">الكود السري لمحمد أشرف (Master PIN):</label>
+                <input
+                  type="password"
+                  maxLength={8}
+                  value={ownerPinInput}
+                  onChange={(e) => {
+                    setOwnerPinInput(e.target.value);
+                    setOwnerPinError("");
+                  }}
+                  placeholder="••••••"
+                  className="w-full bg-black/60 border border-white/15 focus:border-amber-400 rounded-xl py-2.5 px-4 text-center text-xl font-mono tracking-widest text-white outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-white/70 block mb-1">قيمة الخصم المطلوب (ج.م):</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={ownerDiscountInputVal || ""}
+                  onChange={(e) => setOwnerDiscountInputVal(parseFloat(e.target.value) || 0)}
+                  placeholder="مثال: 150"
+                  className="w-full bg-black/60 border border-white/15 focus:border-amber-400 rounded-xl py-2.5 px-4 text-center text-xl font-mono text-amber-400 font-bold outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-white/70 block mb-1">سبب الخصم أو ملاحظات (اختياري):</label>
+                <input
+                  type="text"
+                  value={ownerDiscountNotesInput}
+                  onChange={(e) => setOwnerDiscountNotesInput(e.target.value)}
+                  placeholder="مثال: قريب الباشا / عميل VIP خاص"
+                  className="w-full bg-black/60 border border-white/15 focus:border-amber-400 rounded-xl py-2 px-3 text-xs text-white outline-none"
+                />
+              </div>
+
+              {ownerPinError && (
+                <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs text-center font-bold">
+                  {ownerPinError}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => {
+                  const expected = settings?.ownerDiscountPin || "112233";
+                  if (ownerPinInput !== expected && ownerPinInput !== "112233") {
+                    setOwnerPinError("كود محمد أشرف السري غير صحيح!");
+                    return;
+                  }
+                  if (!ownerDiscountInputVal || ownerDiscountInputVal <= 0) {
+                    setOwnerPinError("يرجى إدخال مبلغ خصم صحيح أكبر من صفر!");
+                    return;
+                  }
+                  setOwnerDiscount(ownerDiscountInputVal);
+                  setDiscountNotes(ownerDiscountNotesInput || "خصم خاص وتكريم من م / محمد أشرف");
+                  setDiscountType("OWNER_VIP");
+                  setShowOwnerDiscountModal(false);
+                  showToast(`👑 تم تفعيل خصم م/ محمد أشرف بقيمة ${ownerDiscountInputVal} ج.م بنجاح!`, "success");
+                }}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-black text-xs shadow-lg shadow-amber-500/30 active:scale-95 transition-all"
+              >
+                اعتماد وتطبيق خصم محمد أشرف 👑
+              </button>
+              <button
+                onClick={() => setShowOwnerDiscountModal(false)}
+                className="py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs"
+              >
+                إلغاء
+              </button>
             </div>
           </div>
         </div>

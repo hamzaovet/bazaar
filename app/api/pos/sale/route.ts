@@ -15,6 +15,10 @@ export async function POST(request: Request) {
       paymentMethod = "cash",
       paymentBreakdown, // { cash: 0, visa: 0, instapay: 0, vodafone: 0 }
       discountAmount = 0,
+      cashierDiscount = 0,
+      ownerDiscount = 0,
+      discountType = null,
+      discountNotes = null,
       notes = "",
     } = body;
 
@@ -33,8 +37,12 @@ export async function POST(request: Request) {
       totalCost += q * c;
     }
 
-    const discount = parseFloat(discountAmount) || 0;
-    const finalTotal = Math.max(0, subtotal - discount);
+    const parsedCashierDisc = parseFloat(cashierDiscount) || 0;
+    const parsedOwnerDisc = parseFloat(ownerDiscount) || 0;
+    const totalDiscount = (parsedCashierDisc + parsedOwnerDisc) > 0 
+      ? (parsedCashierDisc + parsedOwnerDisc) 
+      : (parseFloat(discountAmount) || 0);
+    const finalTotal = Math.max(0, subtotal - totalDiscount);
 
     // 2. Customer CRM Loyalty Management
     let customerId: string | null = null;
@@ -77,7 +85,11 @@ export async function POST(request: Request) {
         customerPhone: customerPhone || null,
         orderType: "IN_STORE_POS",
         subTotal: subtotal,
-        discountAmount: discount,
+        discountAmount: totalDiscount,
+        cashierDiscount: parsedCashierDisc > 0 ? parsedCashierDisc : (parsedOwnerDisc === 0 ? totalDiscount : 0),
+        ownerDiscount: parsedOwnerDisc,
+        discountType: discountType || (parsedOwnerDisc > 0 ? "OWNER_VIP" : (totalDiscount > 0 ? "STANDARD" : null)),
+        discountNotes: discountNotes || null,
         finalTotal,
         paidAmount: finalTotal,
         paymentMethod: paymentMethod.toUpperCase(),
@@ -142,6 +154,56 @@ export async function POST(request: Request) {
           }
         }
       }
+    }
+
+    // 5.b Handle Secret Discounts Auditing & Mohamed Ashraf Expense Ledger
+    if (parsedOwnerDisc > 0) {
+      await prisma.expense.create({
+        data: {
+          branchId,
+          shiftId: shiftId || null,
+          title: `خصم خاص وتكريم من م / محمد أشرف - فاتورة #${invoiceNumber}`,
+          amount: parsedOwnerDisc,
+          category: "MISC", // Valid enum in current schema, notes specify owner drawing
+          paymentMethod: "CASH",
+          recordedBy: "محمد أشرف (كود VIP الحصري)",
+          notes: discountNotes || `خصم استثنائي بكود المالك للعميل ${customerName || customerPhone || "نقدي"} (صافي الفاتورة: ${finalTotal} ج.م)`,
+        },
+      }).catch((e) => console.error("Owner discount expense error:", e));
+
+      await prisma.ownerAlert.create({
+        data: {
+          type: "OWNER_DISCOUNT_APPLIED",
+          title: `👑 تم تفعيل كود خصم محمد أشرف: ${parsedOwnerDisc} ج.م`,
+          message: `قام الكاشير ${invoice.cashierUser?.name || "المناوب"} بتطبيق خصم خاص من رصيد محمد أشرف بقيمة ${parsedOwnerDisc} ج.م على الفاتورة #${invoiceNumber} (الصافي بعد الخصم: ${finalTotal} ج.م).`,
+          data: JSON.stringify({
+            invoiceNumber,
+            finalTotal,
+            ownerDiscount: parsedOwnerDisc,
+            cashierDiscount: parsedCashierDisc,
+            customerPhone: customerPhone || null,
+            customerName: customerName || null,
+            cashier: invoice.cashierUser?.name,
+            notes: discountNotes,
+          }),
+        },
+      }).catch((e) => console.error("Owner discount alert error:", e));
+    }
+
+    if (discountType === "BARGAIN_PIN") {
+      await prisma.ownerAlert.create({
+        data: {
+          type: "BARGAIN_DISCOUNT_APPLIED",
+          title: `🏷️ تم تفعيل كود الفصال السري: ${parsedCashierDisc} ج.م`,
+          message: `استخدم الكاشير كود الفصال السري لتجاوز الحد الأقصى وخصم ${parsedCashierDisc} ج.م على الفاتورة #${invoiceNumber}.`,
+          data: JSON.stringify({
+            invoiceNumber,
+            cashierDiscount: parsedCashierDisc,
+            finalTotal,
+            cashier: invoice.cashierUser?.name,
+          }),
+        },
+      }).catch((e) => console.error("Bargain discount alert error:", e));
     }
 
     // 6. Update Cashier Shift if active

@@ -50,10 +50,12 @@ import {
   Star,
   UserPlus,
   Phone,
+  Crown,
 } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import PrintBarcodeTag from "@/components/PrintBarcodeTag";
 import PrintableCard from "@/components/PrintableCard";
+import MohamedAshrafHub from "@/components/admin/MohamedAshrafHub";
 import { useToast } from "@/components/Toast";
 
 interface User {
@@ -80,6 +82,7 @@ export default function AdminDashboardPage() {
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<
+    | "mohamed_ashraf"
     | "overview"
     | "inventory"
     | "barcodes"
@@ -92,7 +95,7 @@ export default function AdminDashboardPage() {
     | "purchases"
     | "seasons"
     | "smartcard"
-  >("overview");
+  >("mohamed_ashraf");
 
   // Dashboard Data
   const [branches, setBranches] = useState<any[]>([]);
@@ -1584,6 +1587,7 @@ export default function AdminDashboardPage() {
       <nav className="bg-[#0a0a12] border-b border-white/5 px-3 sm:px-4 overflow-x-auto no-scrollbar">
         <div className="flex flex-wrap items-center gap-1.5 max-w-7xl mx-auto py-2">
           {[
+            { id: "mohamed_ashraf", label: "👑 ركن م / محمد أشرف", icon: Crown },
             { id: "overview", label: "نظرة عامة والتحليلات", icon: BarChart3 },
             { id: "inventory", label: "المخزون والمخزن المركزي", icon: Package },
             { id: "returns", label: "مردودات المبيعات والاستبدال", icon: RotateCcw },
@@ -1619,6 +1623,11 @@ export default function AdminDashboardPage() {
 
       {/* Main Content Area */}
       <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full space-y-6">
+        {/* TAB 0: MOHAMED ASHRAF EXECUTIVE HUB */}
+        {activeTab === "mohamed_ashraf" && (
+          <MohamedAshrafHub onRefreshData={fetchAllData} />
+        )}
+
         {/* TAB 1: OVERVIEW */}
         {activeTab === "overview" && (
           <div className="space-y-6">

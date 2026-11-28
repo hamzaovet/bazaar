@@ -138,6 +138,11 @@ export type ReturnInvoiceLine = $Result.DefaultSelection<Prisma.$ReturnInvoiceLi
  * 
  */
 export type Season = $Result.DefaultSelection<Prisma.$SeasonPayload>
+/**
+ * Model OwnerAlert
+ * 
+ */
+export type OwnerAlert = $Result.DefaultSelection<Prisma.$OwnerAlertPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -509,6 +514,16 @@ export class PrismaClient<
     * ```
     */
   get season(): Prisma.SeasonDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.ownerAlert`: Exposes CRUD operations for the **OwnerAlert** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more OwnerAlerts
+    * const ownerAlerts = await prisma.ownerAlert.findMany()
+    * ```
+    */
+  get ownerAlert(): Prisma.OwnerAlertDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -980,7 +995,8 @@ export namespace Prisma {
     PurchaseInvoiceLine: 'PurchaseInvoiceLine',
     ReturnInvoice: 'ReturnInvoice',
     ReturnInvoiceLine: 'ReturnInvoiceLine',
-    Season: 'Season'
+    Season: 'Season',
+    OwnerAlert: 'OwnerAlert'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -996,7 +1012,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "branch" | "user" | "category" | "product" | "productVariant" | "branchStock" | "stockTransfer" | "stockTransferLine" | "customer" | "invoice" | "invoiceLine" | "shift" | "expense" | "chatMessage" | "pushSubscription" | "offer" | "systemSettings" | "customerTransaction" | "supplier" | "supplierTransaction" | "purchaseInvoice" | "purchaseInvoiceLine" | "returnInvoice" | "returnInvoiceLine" | "season"
+      modelProps: "branch" | "user" | "category" | "product" | "productVariant" | "branchStock" | "stockTransfer" | "stockTransferLine" | "customer" | "invoice" | "invoiceLine" | "shift" | "expense" | "chatMessage" | "pushSubscription" | "offer" | "systemSettings" | "customerTransaction" | "supplier" | "supplierTransaction" | "purchaseInvoice" | "purchaseInvoiceLine" | "returnInvoice" | "returnInvoiceLine" | "season" | "ownerAlert"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2850,6 +2866,80 @@ export namespace Prisma {
           }
         }
       }
+      OwnerAlert: {
+        payload: Prisma.$OwnerAlertPayload<ExtArgs>
+        fields: Prisma.OwnerAlertFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.OwnerAlertFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnerAlertPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.OwnerAlertFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnerAlertPayload>
+          }
+          findFirst: {
+            args: Prisma.OwnerAlertFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnerAlertPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.OwnerAlertFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnerAlertPayload>
+          }
+          findMany: {
+            args: Prisma.OwnerAlertFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnerAlertPayload>[]
+          }
+          create: {
+            args: Prisma.OwnerAlertCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnerAlertPayload>
+          }
+          createMany: {
+            args: Prisma.OwnerAlertCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.OwnerAlertCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnerAlertPayload>[]
+          }
+          delete: {
+            args: Prisma.OwnerAlertDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnerAlertPayload>
+          }
+          update: {
+            args: Prisma.OwnerAlertUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnerAlertPayload>
+          }
+          deleteMany: {
+            args: Prisma.OwnerAlertDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.OwnerAlertUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.OwnerAlertUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnerAlertPayload>[]
+          }
+          upsert: {
+            args: Prisma.OwnerAlertUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$OwnerAlertPayload>
+          }
+          aggregate: {
+            args: Prisma.OwnerAlertAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateOwnerAlert>
+          }
+          groupBy: {
+            args: Prisma.OwnerAlertGroupByArgs<ExtArgs>
+            result: $Utils.Optional<OwnerAlertGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.OwnerAlertCountArgs<ExtArgs>
+            result: $Utils.Optional<OwnerAlertCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -2998,6 +3088,7 @@ export namespace Prisma {
     returnInvoice?: ReturnInvoiceOmit
     returnInvoiceLine?: ReturnInvoiceLineOmit
     season?: SeasonOmit
+    ownerAlert?: OwnerAlertOmit
   }
 
   /* Types for Logging */
@@ -14890,6 +14981,8 @@ export namespace Prisma {
   export type InvoiceAvgAggregateOutputType = {
     subTotal: number | null
     discountAmount: number | null
+    cashierDiscount: number | null
+    ownerDiscount: number | null
     taxAmount: number | null
     finalTotal: number | null
     paidAmount: number | null
@@ -14899,6 +14992,8 @@ export namespace Prisma {
   export type InvoiceSumAggregateOutputType = {
     subTotal: number | null
     discountAmount: number | null
+    cashierDiscount: number | null
+    ownerDiscount: number | null
     taxAmount: number | null
     finalTotal: number | null
     paidAmount: number | null
@@ -14916,6 +15011,10 @@ export namespace Prisma {
     orderType: string | null
     subTotal: number | null
     discountAmount: number | null
+    cashierDiscount: number | null
+    ownerDiscount: number | null
+    discountType: string | null
+    discountNotes: string | null
     taxAmount: number | null
     finalTotal: number | null
     paidAmount: number | null
@@ -14940,6 +15039,10 @@ export namespace Prisma {
     orderType: string | null
     subTotal: number | null
     discountAmount: number | null
+    cashierDiscount: number | null
+    ownerDiscount: number | null
+    discountType: string | null
+    discountNotes: string | null
     taxAmount: number | null
     finalTotal: number | null
     paidAmount: number | null
@@ -14964,6 +15067,10 @@ export namespace Prisma {
     orderType: number
     subTotal: number
     discountAmount: number
+    cashierDiscount: number
+    ownerDiscount: number
+    discountType: number
+    discountNotes: number
     taxAmount: number
     finalTotal: number
     paidAmount: number
@@ -14982,6 +15089,8 @@ export namespace Prisma {
   export type InvoiceAvgAggregateInputType = {
     subTotal?: true
     discountAmount?: true
+    cashierDiscount?: true
+    ownerDiscount?: true
     taxAmount?: true
     finalTotal?: true
     paidAmount?: true
@@ -14991,6 +15100,8 @@ export namespace Prisma {
   export type InvoiceSumAggregateInputType = {
     subTotal?: true
     discountAmount?: true
+    cashierDiscount?: true
+    ownerDiscount?: true
     taxAmount?: true
     finalTotal?: true
     paidAmount?: true
@@ -15008,6 +15119,10 @@ export namespace Prisma {
     orderType?: true
     subTotal?: true
     discountAmount?: true
+    cashierDiscount?: true
+    ownerDiscount?: true
+    discountType?: true
+    discountNotes?: true
     taxAmount?: true
     finalTotal?: true
     paidAmount?: true
@@ -15032,6 +15147,10 @@ export namespace Prisma {
     orderType?: true
     subTotal?: true
     discountAmount?: true
+    cashierDiscount?: true
+    ownerDiscount?: true
+    discountType?: true
+    discountNotes?: true
     taxAmount?: true
     finalTotal?: true
     paidAmount?: true
@@ -15056,6 +15175,10 @@ export namespace Prisma {
     orderType?: true
     subTotal?: true
     discountAmount?: true
+    cashierDiscount?: true
+    ownerDiscount?: true
+    discountType?: true
+    discountNotes?: true
     taxAmount?: true
     finalTotal?: true
     paidAmount?: true
@@ -15167,6 +15290,10 @@ export namespace Prisma {
     orderType: string
     subTotal: number
     discountAmount: number
+    cashierDiscount: number
+    ownerDiscount: number
+    discountType: string | null
+    discountNotes: string | null
     taxAmount: number
     finalTotal: number
     paidAmount: number
@@ -15210,6 +15337,10 @@ export namespace Prisma {
     orderType?: boolean
     subTotal?: boolean
     discountAmount?: boolean
+    cashierDiscount?: boolean
+    ownerDiscount?: boolean
+    discountType?: boolean
+    discountNotes?: boolean
     taxAmount?: boolean
     finalTotal?: boolean
     paidAmount?: boolean
@@ -15241,6 +15372,10 @@ export namespace Prisma {
     orderType?: boolean
     subTotal?: boolean
     discountAmount?: boolean
+    cashierDiscount?: boolean
+    ownerDiscount?: boolean
+    discountType?: boolean
+    discountNotes?: boolean
     taxAmount?: boolean
     finalTotal?: boolean
     paidAmount?: boolean
@@ -15269,6 +15404,10 @@ export namespace Prisma {
     orderType?: boolean
     subTotal?: boolean
     discountAmount?: boolean
+    cashierDiscount?: boolean
+    ownerDiscount?: boolean
+    discountType?: boolean
+    discountNotes?: boolean
     taxAmount?: boolean
     finalTotal?: boolean
     paidAmount?: boolean
@@ -15297,6 +15436,10 @@ export namespace Prisma {
     orderType?: boolean
     subTotal?: boolean
     discountAmount?: boolean
+    cashierDiscount?: boolean
+    ownerDiscount?: boolean
+    discountType?: boolean
+    discountNotes?: boolean
     taxAmount?: boolean
     finalTotal?: boolean
     paidAmount?: boolean
@@ -15310,7 +15453,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type InvoiceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "invoiceNumber" | "branchId" | "cashierId" | "customerId" | "customerName" | "customerPhone" | "orderType" | "subTotal" | "discountAmount" | "taxAmount" | "finalTotal" | "paidAmount" | "remainingAmount" | "paymentMethod" | "splitDetails" | "status" | "notes" | "shiftId" | "createdAt" | "updatedAt", ExtArgs["result"]["invoice"]>
+  export type InvoiceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "invoiceNumber" | "branchId" | "cashierId" | "customerId" | "customerName" | "customerPhone" | "orderType" | "subTotal" | "discountAmount" | "cashierDiscount" | "ownerDiscount" | "discountType" | "discountNotes" | "taxAmount" | "finalTotal" | "paidAmount" | "remainingAmount" | "paymentMethod" | "splitDetails" | "status" | "notes" | "shiftId" | "createdAt" | "updatedAt", ExtArgs["result"]["invoice"]>
   export type InvoiceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     branch?: boolean | BranchDefaultArgs<ExtArgs>
     cashierUser?: boolean | Invoice$cashierUserArgs<ExtArgs>
@@ -15354,6 +15497,10 @@ export namespace Prisma {
       orderType: string
       subTotal: number
       discountAmount: number
+      cashierDiscount: number
+      ownerDiscount: number
+      discountType: string | null
+      discountNotes: string | null
       taxAmount: number
       finalTotal: number
       paidAmount: number
@@ -15804,6 +15951,10 @@ export namespace Prisma {
     readonly orderType: FieldRef<"Invoice", 'String'>
     readonly subTotal: FieldRef<"Invoice", 'Float'>
     readonly discountAmount: FieldRef<"Invoice", 'Float'>
+    readonly cashierDiscount: FieldRef<"Invoice", 'Float'>
+    readonly ownerDiscount: FieldRef<"Invoice", 'Float'>
+    readonly discountType: FieldRef<"Invoice", 'String'>
+    readonly discountNotes: FieldRef<"Invoice", 'String'>
     readonly taxAmount: FieldRef<"Invoice", 'Float'>
     readonly finalTotal: FieldRef<"Invoice", 'Float'>
     readonly paidAmount: FieldRef<"Invoice", 'Float'>
@@ -23594,11 +23745,13 @@ export namespace Prisma {
   export type SystemSettingsAvgAggregateOutputType = {
     id: number | null
     loyaltyPointsPer100Egp: number | null
+    maxCashierDiscountPerPiece: number | null
   }
 
   export type SystemSettingsSumAggregateOutputType = {
     id: number | null
     loyaltyPointsPer100Egp: number | null
+    maxCashierDiscountPerPiece: number | null
   }
 
   export type SystemSettingsMinAggregateOutputType = {
@@ -23637,6 +23790,9 @@ export namespace Prisma {
     smartCardVodafoneCash: string | null
     smartCardGoogleReviews: string | null
     smartCardCustomLinks: string | null
+    maxCashierDiscountPerPiece: number | null
+    cashierBargainPin: string | null
+    ownerDiscountPin: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -23677,6 +23833,9 @@ export namespace Prisma {
     smartCardVodafoneCash: string | null
     smartCardGoogleReviews: string | null
     smartCardCustomLinks: string | null
+    maxCashierDiscountPerPiece: number | null
+    cashierBargainPin: string | null
+    ownerDiscountPin: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -23717,6 +23876,9 @@ export namespace Prisma {
     smartCardVodafoneCash: number
     smartCardGoogleReviews: number
     smartCardCustomLinks: number
+    maxCashierDiscountPerPiece: number
+    cashierBargainPin: number
+    ownerDiscountPin: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -23726,11 +23888,13 @@ export namespace Prisma {
   export type SystemSettingsAvgAggregateInputType = {
     id?: true
     loyaltyPointsPer100Egp?: true
+    maxCashierDiscountPerPiece?: true
   }
 
   export type SystemSettingsSumAggregateInputType = {
     id?: true
     loyaltyPointsPer100Egp?: true
+    maxCashierDiscountPerPiece?: true
   }
 
   export type SystemSettingsMinAggregateInputType = {
@@ -23769,6 +23933,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: true
     smartCardGoogleReviews?: true
     smartCardCustomLinks?: true
+    maxCashierDiscountPerPiece?: true
+    cashierBargainPin?: true
+    ownerDiscountPin?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -23809,6 +23976,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: true
     smartCardGoogleReviews?: true
     smartCardCustomLinks?: true
+    maxCashierDiscountPerPiece?: true
+    cashierBargainPin?: true
+    ownerDiscountPin?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -23849,6 +24019,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: true
     smartCardGoogleReviews?: true
     smartCardCustomLinks?: true
+    maxCashierDiscountPerPiece?: true
+    cashierBargainPin?: true
+    ownerDiscountPin?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -23976,6 +24149,9 @@ export namespace Prisma {
     smartCardVodafoneCash: string
     smartCardGoogleReviews: string
     smartCardCustomLinks: string
+    maxCashierDiscountPerPiece: number
+    cashierBargainPin: string
+    ownerDiscountPin: string
     createdAt: Date
     updatedAt: Date
     _count: SystemSettingsCountAggregateOutputType | null
@@ -24035,6 +24211,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: boolean
     smartCardGoogleReviews?: boolean
     smartCardCustomLinks?: boolean
+    maxCashierDiscountPerPiece?: boolean
+    cashierBargainPin?: boolean
+    ownerDiscountPin?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["systemSettings"]>
@@ -24075,6 +24254,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: boolean
     smartCardGoogleReviews?: boolean
     smartCardCustomLinks?: boolean
+    maxCashierDiscountPerPiece?: boolean
+    cashierBargainPin?: boolean
+    ownerDiscountPin?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["systemSettings"]>
@@ -24115,6 +24297,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: boolean
     smartCardGoogleReviews?: boolean
     smartCardCustomLinks?: boolean
+    maxCashierDiscountPerPiece?: boolean
+    cashierBargainPin?: boolean
+    ownerDiscountPin?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["systemSettings"]>
@@ -24155,11 +24340,14 @@ export namespace Prisma {
     smartCardVodafoneCash?: boolean
     smartCardGoogleReviews?: boolean
     smartCardCustomLinks?: boolean
+    maxCashierDiscountPerPiece?: boolean
+    cashierBargainPin?: boolean
+    ownerDiscountPin?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type SystemSettingsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "brandNameAr" | "brandNameEn" | "logoUrl" | "hotline" | "whatsappNumber" | "facebookUrl" | "facebookUrl2" | "tiktokUrl" | "instagramUrl" | "receiptFooterText" | "heroBannerImage" | "heroTagline" | "heroDescription" | "isMasterLocked" | "masterLockMessage" | "geminiApiKey" | "loyaltyPointsPer100Egp" | "currency" | "offersSectionEnabled" | "offersBadge" | "offersTitle" | "offersSubtitle" | "offersCards" | "offersBannerBadge" | "offersBannerTitle" | "offersBannerImage" | "offersBannerLinkText" | "offersBannerLinkHref" | "smartCardTitle" | "smartCardBio" | "smartCardInstapay" | "smartCardVodafoneCash" | "smartCardGoogleReviews" | "smartCardCustomLinks" | "createdAt" | "updatedAt", ExtArgs["result"]["systemSettings"]>
+  export type SystemSettingsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "brandNameAr" | "brandNameEn" | "logoUrl" | "hotline" | "whatsappNumber" | "facebookUrl" | "facebookUrl2" | "tiktokUrl" | "instagramUrl" | "receiptFooterText" | "heroBannerImage" | "heroTagline" | "heroDescription" | "isMasterLocked" | "masterLockMessage" | "geminiApiKey" | "loyaltyPointsPer100Egp" | "currency" | "offersSectionEnabled" | "offersBadge" | "offersTitle" | "offersSubtitle" | "offersCards" | "offersBannerBadge" | "offersBannerTitle" | "offersBannerImage" | "offersBannerLinkText" | "offersBannerLinkHref" | "smartCardTitle" | "smartCardBio" | "smartCardInstapay" | "smartCardVodafoneCash" | "smartCardGoogleReviews" | "smartCardCustomLinks" | "maxCashierDiscountPerPiece" | "cashierBargainPin" | "ownerDiscountPin" | "createdAt" | "updatedAt", ExtArgs["result"]["systemSettings"]>
 
   export type $SystemSettingsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "SystemSettings"
@@ -24200,6 +24388,9 @@ export namespace Prisma {
       smartCardVodafoneCash: string
       smartCardGoogleReviews: string
       smartCardCustomLinks: string
+      maxCashierDiscountPerPiece: number
+      cashierBargainPin: string
+      ownerDiscountPin: string
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["systemSettings"]>
@@ -24660,6 +24851,9 @@ export namespace Prisma {
     readonly smartCardVodafoneCash: FieldRef<"SystemSettings", 'String'>
     readonly smartCardGoogleReviews: FieldRef<"SystemSettings", 'String'>
     readonly smartCardCustomLinks: FieldRef<"SystemSettings", 'String'>
+    readonly maxCashierDiscountPerPiece: FieldRef<"SystemSettings", 'Float'>
+    readonly cashierBargainPin: FieldRef<"SystemSettings", 'String'>
+    readonly ownerDiscountPin: FieldRef<"SystemSettings", 'String'>
     readonly createdAt: FieldRef<"SystemSettings", 'DateTime'>
     readonly updatedAt: FieldRef<"SystemSettings", 'DateTime'>
   }
@@ -28558,6 +28752,9 @@ export namespace Prisma {
     paidAmount: number | null
     remainingDebt: number | null
     status: string | null
+    verificationStatus: string | null
+    verificationReport: string | null
+    supplierInvoiceRef: string | null
     notes: string | null
     createdAt: Date | null
   }
@@ -28572,6 +28769,9 @@ export namespace Prisma {
     paidAmount: number | null
     remainingDebt: number | null
     status: string | null
+    verificationStatus: string | null
+    verificationReport: string | null
+    supplierInvoiceRef: string | null
     notes: string | null
     createdAt: Date | null
   }
@@ -28586,6 +28786,9 @@ export namespace Prisma {
     paidAmount: number
     remainingDebt: number
     status: number
+    verificationStatus: number
+    verificationReport: number
+    supplierInvoiceRef: number
     notes: number
     createdAt: number
     _all: number
@@ -28614,6 +28817,9 @@ export namespace Prisma {
     paidAmount?: true
     remainingDebt?: true
     status?: true
+    verificationStatus?: true
+    verificationReport?: true
+    supplierInvoiceRef?: true
     notes?: true
     createdAt?: true
   }
@@ -28628,6 +28834,9 @@ export namespace Prisma {
     paidAmount?: true
     remainingDebt?: true
     status?: true
+    verificationStatus?: true
+    verificationReport?: true
+    supplierInvoiceRef?: true
     notes?: true
     createdAt?: true
   }
@@ -28642,6 +28851,9 @@ export namespace Prisma {
     paidAmount?: true
     remainingDebt?: true
     status?: true
+    verificationStatus?: true
+    verificationReport?: true
+    supplierInvoiceRef?: true
     notes?: true
     createdAt?: true
     _all?: true
@@ -28743,6 +28955,9 @@ export namespace Prisma {
     paidAmount: number
     remainingDebt: number
     status: string
+    verificationStatus: string
+    verificationReport: string | null
+    supplierInvoiceRef: string | null
     notes: string | null
     createdAt: Date
     _count: PurchaseInvoiceCountAggregateOutputType | null
@@ -28776,6 +28991,9 @@ export namespace Prisma {
     paidAmount?: boolean
     remainingDebt?: boolean
     status?: boolean
+    verificationStatus?: boolean
+    verificationReport?: boolean
+    supplierInvoiceRef?: boolean
     notes?: boolean
     createdAt?: boolean
     supplier?: boolean | SupplierDefaultArgs<ExtArgs>
@@ -28794,6 +29012,9 @@ export namespace Prisma {
     paidAmount?: boolean
     remainingDebt?: boolean
     status?: boolean
+    verificationStatus?: boolean
+    verificationReport?: boolean
+    supplierInvoiceRef?: boolean
     notes?: boolean
     createdAt?: boolean
     supplier?: boolean | SupplierDefaultArgs<ExtArgs>
@@ -28810,6 +29031,9 @@ export namespace Prisma {
     paidAmount?: boolean
     remainingDebt?: boolean
     status?: boolean
+    verificationStatus?: boolean
+    verificationReport?: boolean
+    supplierInvoiceRef?: boolean
     notes?: boolean
     createdAt?: boolean
     supplier?: boolean | SupplierDefaultArgs<ExtArgs>
@@ -28826,11 +29050,14 @@ export namespace Prisma {
     paidAmount?: boolean
     remainingDebt?: boolean
     status?: boolean
+    verificationStatus?: boolean
+    verificationReport?: boolean
+    supplierInvoiceRef?: boolean
     notes?: boolean
     createdAt?: boolean
   }
 
-  export type PurchaseInvoiceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "invoiceNumber" | "supplierId" | "branchId" | "type" | "totalAmount" | "paidAmount" | "remainingDebt" | "status" | "notes" | "createdAt", ExtArgs["result"]["purchaseInvoice"]>
+  export type PurchaseInvoiceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "invoiceNumber" | "supplierId" | "branchId" | "type" | "totalAmount" | "paidAmount" | "remainingDebt" | "status" | "verificationStatus" | "verificationReport" | "supplierInvoiceRef" | "notes" | "createdAt", ExtArgs["result"]["purchaseInvoice"]>
   export type PurchaseInvoiceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     supplier?: boolean | SupplierDefaultArgs<ExtArgs>
     branch?: boolean | PurchaseInvoice$branchArgs<ExtArgs>
@@ -28863,6 +29090,9 @@ export namespace Prisma {
       paidAmount: number
       remainingDebt: number
       status: string
+      verificationStatus: string
+      verificationReport: string | null
+      supplierInvoiceRef: string | null
       notes: string | null
       createdAt: Date
     }, ExtArgs["result"]["purchaseInvoice"]>
@@ -29300,6 +29530,9 @@ export namespace Prisma {
     readonly paidAmount: FieldRef<"PurchaseInvoice", 'Float'>
     readonly remainingDebt: FieldRef<"PurchaseInvoice", 'Float'>
     readonly status: FieldRef<"PurchaseInvoice", 'String'>
+    readonly verificationStatus: FieldRef<"PurchaseInvoice", 'String'>
+    readonly verificationReport: FieldRef<"PurchaseInvoice", 'String'>
+    readonly supplierInvoiceRef: FieldRef<"PurchaseInvoice", 'String'>
     readonly notes: FieldRef<"PurchaseInvoice", 'String'>
     readonly createdAt: FieldRef<"PurchaseInvoice", 'DateTime'>
   }
@@ -34328,6 +34561,1032 @@ export namespace Prisma {
 
 
   /**
+   * Model OwnerAlert
+   */
+
+  export type AggregateOwnerAlert = {
+    _count: OwnerAlertCountAggregateOutputType | null
+    _min: OwnerAlertMinAggregateOutputType | null
+    _max: OwnerAlertMaxAggregateOutputType | null
+  }
+
+  export type OwnerAlertMinAggregateOutputType = {
+    id: string | null
+    type: string | null
+    title: string | null
+    message: string | null
+    data: string | null
+    isRead: boolean | null
+    createdAt: Date | null
+  }
+
+  export type OwnerAlertMaxAggregateOutputType = {
+    id: string | null
+    type: string | null
+    title: string | null
+    message: string | null
+    data: string | null
+    isRead: boolean | null
+    createdAt: Date | null
+  }
+
+  export type OwnerAlertCountAggregateOutputType = {
+    id: number
+    type: number
+    title: number
+    message: number
+    data: number
+    isRead: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type OwnerAlertMinAggregateInputType = {
+    id?: true
+    type?: true
+    title?: true
+    message?: true
+    data?: true
+    isRead?: true
+    createdAt?: true
+  }
+
+  export type OwnerAlertMaxAggregateInputType = {
+    id?: true
+    type?: true
+    title?: true
+    message?: true
+    data?: true
+    isRead?: true
+    createdAt?: true
+  }
+
+  export type OwnerAlertCountAggregateInputType = {
+    id?: true
+    type?: true
+    title?: true
+    message?: true
+    data?: true
+    isRead?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type OwnerAlertAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OwnerAlert to aggregate.
+     */
+    where?: OwnerAlertWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OwnerAlerts to fetch.
+     */
+    orderBy?: OwnerAlertOrderByWithRelationInput | OwnerAlertOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: OwnerAlertWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OwnerAlerts from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OwnerAlerts.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned OwnerAlerts
+    **/
+    _count?: true | OwnerAlertCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: OwnerAlertMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: OwnerAlertMaxAggregateInputType
+  }
+
+  export type GetOwnerAlertAggregateType<T extends OwnerAlertAggregateArgs> = {
+        [P in keyof T & keyof AggregateOwnerAlert]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateOwnerAlert[P]>
+      : GetScalarType<T[P], AggregateOwnerAlert[P]>
+  }
+
+
+
+
+  export type OwnerAlertGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OwnerAlertWhereInput
+    orderBy?: OwnerAlertOrderByWithAggregationInput | OwnerAlertOrderByWithAggregationInput[]
+    by: OwnerAlertScalarFieldEnum[] | OwnerAlertScalarFieldEnum
+    having?: OwnerAlertScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: OwnerAlertCountAggregateInputType | true
+    _min?: OwnerAlertMinAggregateInputType
+    _max?: OwnerAlertMaxAggregateInputType
+  }
+
+  export type OwnerAlertGroupByOutputType = {
+    id: string
+    type: string
+    title: string
+    message: string
+    data: string | null
+    isRead: boolean
+    createdAt: Date
+    _count: OwnerAlertCountAggregateOutputType | null
+    _min: OwnerAlertMinAggregateOutputType | null
+    _max: OwnerAlertMaxAggregateOutputType | null
+  }
+
+  type GetOwnerAlertGroupByPayload<T extends OwnerAlertGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<OwnerAlertGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof OwnerAlertGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], OwnerAlertGroupByOutputType[P]>
+            : GetScalarType<T[P], OwnerAlertGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type OwnerAlertSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    type?: boolean
+    title?: boolean
+    message?: boolean
+    data?: boolean
+    isRead?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["ownerAlert"]>
+
+  export type OwnerAlertSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    type?: boolean
+    title?: boolean
+    message?: boolean
+    data?: boolean
+    isRead?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["ownerAlert"]>
+
+  export type OwnerAlertSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    type?: boolean
+    title?: boolean
+    message?: boolean
+    data?: boolean
+    isRead?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["ownerAlert"]>
+
+  export type OwnerAlertSelectScalar = {
+    id?: boolean
+    type?: boolean
+    title?: boolean
+    message?: boolean
+    data?: boolean
+    isRead?: boolean
+    createdAt?: boolean
+  }
+
+  export type OwnerAlertOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "type" | "title" | "message" | "data" | "isRead" | "createdAt", ExtArgs["result"]["ownerAlert"]>
+
+  export type $OwnerAlertPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "OwnerAlert"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      type: string
+      title: string
+      message: string
+      data: string | null
+      isRead: boolean
+      createdAt: Date
+    }, ExtArgs["result"]["ownerAlert"]>
+    composites: {}
+  }
+
+  type OwnerAlertGetPayload<S extends boolean | null | undefined | OwnerAlertDefaultArgs> = $Result.GetResult<Prisma.$OwnerAlertPayload, S>
+
+  type OwnerAlertCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<OwnerAlertFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: OwnerAlertCountAggregateInputType | true
+    }
+
+  export interface OwnerAlertDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['OwnerAlert'], meta: { name: 'OwnerAlert' } }
+    /**
+     * Find zero or one OwnerAlert that matches the filter.
+     * @param {OwnerAlertFindUniqueArgs} args - Arguments to find a OwnerAlert
+     * @example
+     * // Get one OwnerAlert
+     * const ownerAlert = await prisma.ownerAlert.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends OwnerAlertFindUniqueArgs>(args: SelectSubset<T, OwnerAlertFindUniqueArgs<ExtArgs>>): Prisma__OwnerAlertClient<$Result.GetResult<Prisma.$OwnerAlertPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one OwnerAlert that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {OwnerAlertFindUniqueOrThrowArgs} args - Arguments to find a OwnerAlert
+     * @example
+     * // Get one OwnerAlert
+     * const ownerAlert = await prisma.ownerAlert.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends OwnerAlertFindUniqueOrThrowArgs>(args: SelectSubset<T, OwnerAlertFindUniqueOrThrowArgs<ExtArgs>>): Prisma__OwnerAlertClient<$Result.GetResult<Prisma.$OwnerAlertPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OwnerAlert that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OwnerAlertFindFirstArgs} args - Arguments to find a OwnerAlert
+     * @example
+     * // Get one OwnerAlert
+     * const ownerAlert = await prisma.ownerAlert.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends OwnerAlertFindFirstArgs>(args?: SelectSubset<T, OwnerAlertFindFirstArgs<ExtArgs>>): Prisma__OwnerAlertClient<$Result.GetResult<Prisma.$OwnerAlertPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first OwnerAlert that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OwnerAlertFindFirstOrThrowArgs} args - Arguments to find a OwnerAlert
+     * @example
+     * // Get one OwnerAlert
+     * const ownerAlert = await prisma.ownerAlert.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends OwnerAlertFindFirstOrThrowArgs>(args?: SelectSubset<T, OwnerAlertFindFirstOrThrowArgs<ExtArgs>>): Prisma__OwnerAlertClient<$Result.GetResult<Prisma.$OwnerAlertPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more OwnerAlerts that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OwnerAlertFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all OwnerAlerts
+     * const ownerAlerts = await prisma.ownerAlert.findMany()
+     * 
+     * // Get first 10 OwnerAlerts
+     * const ownerAlerts = await prisma.ownerAlert.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const ownerAlertWithIdOnly = await prisma.ownerAlert.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends OwnerAlertFindManyArgs>(args?: SelectSubset<T, OwnerAlertFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OwnerAlertPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a OwnerAlert.
+     * @param {OwnerAlertCreateArgs} args - Arguments to create a OwnerAlert.
+     * @example
+     * // Create one OwnerAlert
+     * const OwnerAlert = await prisma.ownerAlert.create({
+     *   data: {
+     *     // ... data to create a OwnerAlert
+     *   }
+     * })
+     * 
+     */
+    create<T extends OwnerAlertCreateArgs>(args: SelectSubset<T, OwnerAlertCreateArgs<ExtArgs>>): Prisma__OwnerAlertClient<$Result.GetResult<Prisma.$OwnerAlertPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many OwnerAlerts.
+     * @param {OwnerAlertCreateManyArgs} args - Arguments to create many OwnerAlerts.
+     * @example
+     * // Create many OwnerAlerts
+     * const ownerAlert = await prisma.ownerAlert.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends OwnerAlertCreateManyArgs>(args?: SelectSubset<T, OwnerAlertCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many OwnerAlerts and returns the data saved in the database.
+     * @param {OwnerAlertCreateManyAndReturnArgs} args - Arguments to create many OwnerAlerts.
+     * @example
+     * // Create many OwnerAlerts
+     * const ownerAlert = await prisma.ownerAlert.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many OwnerAlerts and only return the `id`
+     * const ownerAlertWithIdOnly = await prisma.ownerAlert.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends OwnerAlertCreateManyAndReturnArgs>(args?: SelectSubset<T, OwnerAlertCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OwnerAlertPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a OwnerAlert.
+     * @param {OwnerAlertDeleteArgs} args - Arguments to delete one OwnerAlert.
+     * @example
+     * // Delete one OwnerAlert
+     * const OwnerAlert = await prisma.ownerAlert.delete({
+     *   where: {
+     *     // ... filter to delete one OwnerAlert
+     *   }
+     * })
+     * 
+     */
+    delete<T extends OwnerAlertDeleteArgs>(args: SelectSubset<T, OwnerAlertDeleteArgs<ExtArgs>>): Prisma__OwnerAlertClient<$Result.GetResult<Prisma.$OwnerAlertPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one OwnerAlert.
+     * @param {OwnerAlertUpdateArgs} args - Arguments to update one OwnerAlert.
+     * @example
+     * // Update one OwnerAlert
+     * const ownerAlert = await prisma.ownerAlert.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends OwnerAlertUpdateArgs>(args: SelectSubset<T, OwnerAlertUpdateArgs<ExtArgs>>): Prisma__OwnerAlertClient<$Result.GetResult<Prisma.$OwnerAlertPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more OwnerAlerts.
+     * @param {OwnerAlertDeleteManyArgs} args - Arguments to filter OwnerAlerts to delete.
+     * @example
+     * // Delete a few OwnerAlerts
+     * const { count } = await prisma.ownerAlert.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends OwnerAlertDeleteManyArgs>(args?: SelectSubset<T, OwnerAlertDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OwnerAlerts.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OwnerAlertUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many OwnerAlerts
+     * const ownerAlert = await prisma.ownerAlert.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends OwnerAlertUpdateManyArgs>(args: SelectSubset<T, OwnerAlertUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more OwnerAlerts and returns the data updated in the database.
+     * @param {OwnerAlertUpdateManyAndReturnArgs} args - Arguments to update many OwnerAlerts.
+     * @example
+     * // Update many OwnerAlerts
+     * const ownerAlert = await prisma.ownerAlert.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more OwnerAlerts and only return the `id`
+     * const ownerAlertWithIdOnly = await prisma.ownerAlert.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends OwnerAlertUpdateManyAndReturnArgs>(args: SelectSubset<T, OwnerAlertUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OwnerAlertPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one OwnerAlert.
+     * @param {OwnerAlertUpsertArgs} args - Arguments to update or create a OwnerAlert.
+     * @example
+     * // Update or create a OwnerAlert
+     * const ownerAlert = await prisma.ownerAlert.upsert({
+     *   create: {
+     *     // ... data to create a OwnerAlert
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the OwnerAlert we want to update
+     *   }
+     * })
+     */
+    upsert<T extends OwnerAlertUpsertArgs>(args: SelectSubset<T, OwnerAlertUpsertArgs<ExtArgs>>): Prisma__OwnerAlertClient<$Result.GetResult<Prisma.$OwnerAlertPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of OwnerAlerts.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OwnerAlertCountArgs} args - Arguments to filter OwnerAlerts to count.
+     * @example
+     * // Count the number of OwnerAlerts
+     * const count = await prisma.ownerAlert.count({
+     *   where: {
+     *     // ... the filter for the OwnerAlerts we want to count
+     *   }
+     * })
+    **/
+    count<T extends OwnerAlertCountArgs>(
+      args?: Subset<T, OwnerAlertCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], OwnerAlertCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a OwnerAlert.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OwnerAlertAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends OwnerAlertAggregateArgs>(args: Subset<T, OwnerAlertAggregateArgs>): Prisma.PrismaPromise<GetOwnerAlertAggregateType<T>>
+
+    /**
+     * Group by OwnerAlert.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {OwnerAlertGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends OwnerAlertGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: OwnerAlertGroupByArgs['orderBy'] }
+        : { orderBy?: OwnerAlertGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, OwnerAlertGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOwnerAlertGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the OwnerAlert model
+   */
+  readonly fields: OwnerAlertFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for OwnerAlert.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__OwnerAlertClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the OwnerAlert model
+   */
+  interface OwnerAlertFieldRefs {
+    readonly id: FieldRef<"OwnerAlert", 'String'>
+    readonly type: FieldRef<"OwnerAlert", 'String'>
+    readonly title: FieldRef<"OwnerAlert", 'String'>
+    readonly message: FieldRef<"OwnerAlert", 'String'>
+    readonly data: FieldRef<"OwnerAlert", 'String'>
+    readonly isRead: FieldRef<"OwnerAlert", 'Boolean'>
+    readonly createdAt: FieldRef<"OwnerAlert", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * OwnerAlert findUnique
+   */
+  export type OwnerAlertFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnerAlert
+     */
+    select?: OwnerAlertSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnerAlert
+     */
+    omit?: OwnerAlertOmit<ExtArgs> | null
+    /**
+     * Filter, which OwnerAlert to fetch.
+     */
+    where: OwnerAlertWhereUniqueInput
+  }
+
+  /**
+   * OwnerAlert findUniqueOrThrow
+   */
+  export type OwnerAlertFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnerAlert
+     */
+    select?: OwnerAlertSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnerAlert
+     */
+    omit?: OwnerAlertOmit<ExtArgs> | null
+    /**
+     * Filter, which OwnerAlert to fetch.
+     */
+    where: OwnerAlertWhereUniqueInput
+  }
+
+  /**
+   * OwnerAlert findFirst
+   */
+  export type OwnerAlertFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnerAlert
+     */
+    select?: OwnerAlertSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnerAlert
+     */
+    omit?: OwnerAlertOmit<ExtArgs> | null
+    /**
+     * Filter, which OwnerAlert to fetch.
+     */
+    where?: OwnerAlertWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OwnerAlerts to fetch.
+     */
+    orderBy?: OwnerAlertOrderByWithRelationInput | OwnerAlertOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OwnerAlerts.
+     */
+    cursor?: OwnerAlertWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OwnerAlerts from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OwnerAlerts.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OwnerAlerts.
+     */
+    distinct?: OwnerAlertScalarFieldEnum | OwnerAlertScalarFieldEnum[]
+  }
+
+  /**
+   * OwnerAlert findFirstOrThrow
+   */
+  export type OwnerAlertFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnerAlert
+     */
+    select?: OwnerAlertSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnerAlert
+     */
+    omit?: OwnerAlertOmit<ExtArgs> | null
+    /**
+     * Filter, which OwnerAlert to fetch.
+     */
+    where?: OwnerAlertWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OwnerAlerts to fetch.
+     */
+    orderBy?: OwnerAlertOrderByWithRelationInput | OwnerAlertOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for OwnerAlerts.
+     */
+    cursor?: OwnerAlertWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OwnerAlerts from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OwnerAlerts.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OwnerAlerts.
+     */
+    distinct?: OwnerAlertScalarFieldEnum | OwnerAlertScalarFieldEnum[]
+  }
+
+  /**
+   * OwnerAlert findMany
+   */
+  export type OwnerAlertFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnerAlert
+     */
+    select?: OwnerAlertSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnerAlert
+     */
+    omit?: OwnerAlertOmit<ExtArgs> | null
+    /**
+     * Filter, which OwnerAlerts to fetch.
+     */
+    where?: OwnerAlertWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of OwnerAlerts to fetch.
+     */
+    orderBy?: OwnerAlertOrderByWithRelationInput | OwnerAlertOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing OwnerAlerts.
+     */
+    cursor?: OwnerAlertWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` OwnerAlerts from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` OwnerAlerts.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of OwnerAlerts.
+     */
+    distinct?: OwnerAlertScalarFieldEnum | OwnerAlertScalarFieldEnum[]
+  }
+
+  /**
+   * OwnerAlert create
+   */
+  export type OwnerAlertCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnerAlert
+     */
+    select?: OwnerAlertSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnerAlert
+     */
+    omit?: OwnerAlertOmit<ExtArgs> | null
+    /**
+     * The data needed to create a OwnerAlert.
+     */
+    data: XOR<OwnerAlertCreateInput, OwnerAlertUncheckedCreateInput>
+  }
+
+  /**
+   * OwnerAlert createMany
+   */
+  export type OwnerAlertCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many OwnerAlerts.
+     */
+    data: OwnerAlertCreateManyInput | OwnerAlertCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OwnerAlert createManyAndReturn
+   */
+  export type OwnerAlertCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnerAlert
+     */
+    select?: OwnerAlertSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnerAlert
+     */
+    omit?: OwnerAlertOmit<ExtArgs> | null
+    /**
+     * The data used to create many OwnerAlerts.
+     */
+    data: OwnerAlertCreateManyInput | OwnerAlertCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * OwnerAlert update
+   */
+  export type OwnerAlertUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnerAlert
+     */
+    select?: OwnerAlertSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnerAlert
+     */
+    omit?: OwnerAlertOmit<ExtArgs> | null
+    /**
+     * The data needed to update a OwnerAlert.
+     */
+    data: XOR<OwnerAlertUpdateInput, OwnerAlertUncheckedUpdateInput>
+    /**
+     * Choose, which OwnerAlert to update.
+     */
+    where: OwnerAlertWhereUniqueInput
+  }
+
+  /**
+   * OwnerAlert updateMany
+   */
+  export type OwnerAlertUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update OwnerAlerts.
+     */
+    data: XOR<OwnerAlertUpdateManyMutationInput, OwnerAlertUncheckedUpdateManyInput>
+    /**
+     * Filter which OwnerAlerts to update
+     */
+    where?: OwnerAlertWhereInput
+    /**
+     * Limit how many OwnerAlerts to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * OwnerAlert updateManyAndReturn
+   */
+  export type OwnerAlertUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnerAlert
+     */
+    select?: OwnerAlertSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnerAlert
+     */
+    omit?: OwnerAlertOmit<ExtArgs> | null
+    /**
+     * The data used to update OwnerAlerts.
+     */
+    data: XOR<OwnerAlertUpdateManyMutationInput, OwnerAlertUncheckedUpdateManyInput>
+    /**
+     * Filter which OwnerAlerts to update
+     */
+    where?: OwnerAlertWhereInput
+    /**
+     * Limit how many OwnerAlerts to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * OwnerAlert upsert
+   */
+  export type OwnerAlertUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnerAlert
+     */
+    select?: OwnerAlertSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnerAlert
+     */
+    omit?: OwnerAlertOmit<ExtArgs> | null
+    /**
+     * The filter to search for the OwnerAlert to update in case it exists.
+     */
+    where: OwnerAlertWhereUniqueInput
+    /**
+     * In case the OwnerAlert found by the `where` argument doesn't exist, create a new OwnerAlert with this data.
+     */
+    create: XOR<OwnerAlertCreateInput, OwnerAlertUncheckedCreateInput>
+    /**
+     * In case the OwnerAlert was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<OwnerAlertUpdateInput, OwnerAlertUncheckedUpdateInput>
+  }
+
+  /**
+   * OwnerAlert delete
+   */
+  export type OwnerAlertDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnerAlert
+     */
+    select?: OwnerAlertSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnerAlert
+     */
+    omit?: OwnerAlertOmit<ExtArgs> | null
+    /**
+     * Filter which OwnerAlert to delete.
+     */
+    where: OwnerAlertWhereUniqueInput
+  }
+
+  /**
+   * OwnerAlert deleteMany
+   */
+  export type OwnerAlertDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which OwnerAlerts to delete
+     */
+    where?: OwnerAlertWhereInput
+    /**
+     * Limit how many OwnerAlerts to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * OwnerAlert without action
+   */
+  export type OwnerAlertDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OwnerAlert
+     */
+    select?: OwnerAlertSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the OwnerAlert
+     */
+    omit?: OwnerAlertOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -34510,6 +35769,10 @@ export namespace Prisma {
     orderType: 'orderType',
     subTotal: 'subTotal',
     discountAmount: 'discountAmount',
+    cashierDiscount: 'cashierDiscount',
+    ownerDiscount: 'ownerDiscount',
+    discountType: 'discountType',
+    discountNotes: 'discountNotes',
     taxAmount: 'taxAmount',
     finalTotal: 'finalTotal',
     paidAmount: 'paidAmount',
@@ -34677,6 +35940,9 @@ export namespace Prisma {
     smartCardVodafoneCash: 'smartCardVodafoneCash',
     smartCardGoogleReviews: 'smartCardGoogleReviews',
     smartCardCustomLinks: 'smartCardCustomLinks',
+    maxCashierDiscountPerPiece: 'maxCashierDiscountPerPiece',
+    cashierBargainPin: 'cashierBargainPin',
+    ownerDiscountPin: 'ownerDiscountPin',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -34739,6 +36005,9 @@ export namespace Prisma {
     paidAmount: 'paidAmount',
     remainingDebt: 'remainingDebt',
     status: 'status',
+    verificationStatus: 'verificationStatus',
+    verificationReport: 'verificationReport',
+    supplierInvoiceRef: 'supplierInvoiceRef',
     notes: 'notes',
     createdAt: 'createdAt'
   };
@@ -34800,6 +36069,19 @@ export namespace Prisma {
   };
 
   export type SeasonScalarFieldEnum = (typeof SeasonScalarFieldEnum)[keyof typeof SeasonScalarFieldEnum]
+
+
+  export const OwnerAlertScalarFieldEnum: {
+    id: 'id',
+    type: 'type',
+    title: 'title',
+    message: 'message',
+    data: 'data',
+    isRead: 'isRead',
+    createdAt: 'createdAt'
+  };
+
+  export type OwnerAlertScalarFieldEnum = (typeof OwnerAlertScalarFieldEnum)[keyof typeof OwnerAlertScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -35781,6 +37063,10 @@ export namespace Prisma {
     orderType?: StringFilter<"Invoice"> | string
     subTotal?: FloatFilter<"Invoice"> | number
     discountAmount?: FloatFilter<"Invoice"> | number
+    cashierDiscount?: FloatFilter<"Invoice"> | number
+    ownerDiscount?: FloatFilter<"Invoice"> | number
+    discountType?: StringNullableFilter<"Invoice"> | string | null
+    discountNotes?: StringNullableFilter<"Invoice"> | string | null
     taxAmount?: FloatFilter<"Invoice"> | number
     finalTotal?: FloatFilter<"Invoice"> | number
     paidAmount?: FloatFilter<"Invoice"> | number
@@ -35811,6 +37097,10 @@ export namespace Prisma {
     orderType?: SortOrder
     subTotal?: SortOrder
     discountAmount?: SortOrder
+    cashierDiscount?: SortOrder
+    ownerDiscount?: SortOrder
+    discountType?: SortOrderInput | SortOrder
+    discountNotes?: SortOrderInput | SortOrder
     taxAmount?: SortOrder
     finalTotal?: SortOrder
     paidAmount?: SortOrder
@@ -35844,6 +37134,10 @@ export namespace Prisma {
     orderType?: StringFilter<"Invoice"> | string
     subTotal?: FloatFilter<"Invoice"> | number
     discountAmount?: FloatFilter<"Invoice"> | number
+    cashierDiscount?: FloatFilter<"Invoice"> | number
+    ownerDiscount?: FloatFilter<"Invoice"> | number
+    discountType?: StringNullableFilter<"Invoice"> | string | null
+    discountNotes?: StringNullableFilter<"Invoice"> | string | null
     taxAmount?: FloatFilter<"Invoice"> | number
     finalTotal?: FloatFilter<"Invoice"> | number
     paidAmount?: FloatFilter<"Invoice"> | number
@@ -35874,6 +37168,10 @@ export namespace Prisma {
     orderType?: SortOrder
     subTotal?: SortOrder
     discountAmount?: SortOrder
+    cashierDiscount?: SortOrder
+    ownerDiscount?: SortOrder
+    discountType?: SortOrderInput | SortOrder
+    discountNotes?: SortOrderInput | SortOrder
     taxAmount?: SortOrder
     finalTotal?: SortOrder
     paidAmount?: SortOrder
@@ -35906,6 +37204,10 @@ export namespace Prisma {
     orderType?: StringWithAggregatesFilter<"Invoice"> | string
     subTotal?: FloatWithAggregatesFilter<"Invoice"> | number
     discountAmount?: FloatWithAggregatesFilter<"Invoice"> | number
+    cashierDiscount?: FloatWithAggregatesFilter<"Invoice"> | number
+    ownerDiscount?: FloatWithAggregatesFilter<"Invoice"> | number
+    discountType?: StringNullableWithAggregatesFilter<"Invoice"> | string | null
+    discountNotes?: StringNullableWithAggregatesFilter<"Invoice"> | string | null
     taxAmount?: FloatWithAggregatesFilter<"Invoice"> | number
     finalTotal?: FloatWithAggregatesFilter<"Invoice"> | number
     paidAmount?: FloatWithAggregatesFilter<"Invoice"> | number
@@ -36553,6 +37855,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: StringFilter<"SystemSettings"> | string
     smartCardGoogleReviews?: StringFilter<"SystemSettings"> | string
     smartCardCustomLinks?: StringFilter<"SystemSettings"> | string
+    maxCashierDiscountPerPiece?: FloatFilter<"SystemSettings"> | number
+    cashierBargainPin?: StringFilter<"SystemSettings"> | string
+    ownerDiscountPin?: StringFilter<"SystemSettings"> | string
     createdAt?: DateTimeFilter<"SystemSettings"> | Date | string
     updatedAt?: DateTimeFilter<"SystemSettings"> | Date | string
   }
@@ -36593,6 +37898,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: SortOrder
     smartCardGoogleReviews?: SortOrder
     smartCardCustomLinks?: SortOrder
+    maxCashierDiscountPerPiece?: SortOrder
+    cashierBargainPin?: SortOrder
+    ownerDiscountPin?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -36636,6 +37944,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: StringFilter<"SystemSettings"> | string
     smartCardGoogleReviews?: StringFilter<"SystemSettings"> | string
     smartCardCustomLinks?: StringFilter<"SystemSettings"> | string
+    maxCashierDiscountPerPiece?: FloatFilter<"SystemSettings"> | number
+    cashierBargainPin?: StringFilter<"SystemSettings"> | string
+    ownerDiscountPin?: StringFilter<"SystemSettings"> | string
     createdAt?: DateTimeFilter<"SystemSettings"> | Date | string
     updatedAt?: DateTimeFilter<"SystemSettings"> | Date | string
   }, "id">
@@ -36676,6 +37987,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: SortOrder
     smartCardGoogleReviews?: SortOrder
     smartCardCustomLinks?: SortOrder
+    maxCashierDiscountPerPiece?: SortOrder
+    cashierBargainPin?: SortOrder
+    ownerDiscountPin?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: SystemSettingsCountOrderByAggregateInput
@@ -36724,6 +38038,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: StringWithAggregatesFilter<"SystemSettings"> | string
     smartCardGoogleReviews?: StringWithAggregatesFilter<"SystemSettings"> | string
     smartCardCustomLinks?: StringWithAggregatesFilter<"SystemSettings"> | string
+    maxCashierDiscountPerPiece?: FloatWithAggregatesFilter<"SystemSettings"> | number
+    cashierBargainPin?: StringWithAggregatesFilter<"SystemSettings"> | string
+    ownerDiscountPin?: StringWithAggregatesFilter<"SystemSettings"> | string
     createdAt?: DateTimeWithAggregatesFilter<"SystemSettings"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"SystemSettings"> | Date | string
   }
@@ -36975,6 +38292,9 @@ export namespace Prisma {
     paidAmount?: FloatFilter<"PurchaseInvoice"> | number
     remainingDebt?: FloatFilter<"PurchaseInvoice"> | number
     status?: StringFilter<"PurchaseInvoice"> | string
+    verificationStatus?: StringFilter<"PurchaseInvoice"> | string
+    verificationReport?: StringNullableFilter<"PurchaseInvoice"> | string | null
+    supplierInvoiceRef?: StringNullableFilter<"PurchaseInvoice"> | string | null
     notes?: StringNullableFilter<"PurchaseInvoice"> | string | null
     createdAt?: DateTimeFilter<"PurchaseInvoice"> | Date | string
     supplier?: XOR<SupplierScalarRelationFilter, SupplierWhereInput>
@@ -36992,6 +38312,9 @@ export namespace Prisma {
     paidAmount?: SortOrder
     remainingDebt?: SortOrder
     status?: SortOrder
+    verificationStatus?: SortOrder
+    verificationReport?: SortOrderInput | SortOrder
+    supplierInvoiceRef?: SortOrderInput | SortOrder
     notes?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     supplier?: SupplierOrderByWithRelationInput
@@ -37012,6 +38335,9 @@ export namespace Prisma {
     paidAmount?: FloatFilter<"PurchaseInvoice"> | number
     remainingDebt?: FloatFilter<"PurchaseInvoice"> | number
     status?: StringFilter<"PurchaseInvoice"> | string
+    verificationStatus?: StringFilter<"PurchaseInvoice"> | string
+    verificationReport?: StringNullableFilter<"PurchaseInvoice"> | string | null
+    supplierInvoiceRef?: StringNullableFilter<"PurchaseInvoice"> | string | null
     notes?: StringNullableFilter<"PurchaseInvoice"> | string | null
     createdAt?: DateTimeFilter<"PurchaseInvoice"> | Date | string
     supplier?: XOR<SupplierScalarRelationFilter, SupplierWhereInput>
@@ -37029,6 +38355,9 @@ export namespace Prisma {
     paidAmount?: SortOrder
     remainingDebt?: SortOrder
     status?: SortOrder
+    verificationStatus?: SortOrder
+    verificationReport?: SortOrderInput | SortOrder
+    supplierInvoiceRef?: SortOrderInput | SortOrder
     notes?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     _count?: PurchaseInvoiceCountOrderByAggregateInput
@@ -37051,6 +38380,9 @@ export namespace Prisma {
     paidAmount?: FloatWithAggregatesFilter<"PurchaseInvoice"> | number
     remainingDebt?: FloatWithAggregatesFilter<"PurchaseInvoice"> | number
     status?: StringWithAggregatesFilter<"PurchaseInvoice"> | string
+    verificationStatus?: StringWithAggregatesFilter<"PurchaseInvoice"> | string
+    verificationReport?: StringNullableWithAggregatesFilter<"PurchaseInvoice"> | string | null
+    supplierInvoiceRef?: StringNullableWithAggregatesFilter<"PurchaseInvoice"> | string | null
     notes?: StringNullableWithAggregatesFilter<"PurchaseInvoice"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"PurchaseInvoice"> | Date | string
   }
@@ -37351,6 +38683,68 @@ export namespace Prisma {
     notes?: StringNullableWithAggregatesFilter<"Season"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Season"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Season"> | Date | string
+  }
+
+  export type OwnerAlertWhereInput = {
+    AND?: OwnerAlertWhereInput | OwnerAlertWhereInput[]
+    OR?: OwnerAlertWhereInput[]
+    NOT?: OwnerAlertWhereInput | OwnerAlertWhereInput[]
+    id?: StringFilter<"OwnerAlert"> | string
+    type?: StringFilter<"OwnerAlert"> | string
+    title?: StringFilter<"OwnerAlert"> | string
+    message?: StringFilter<"OwnerAlert"> | string
+    data?: StringNullableFilter<"OwnerAlert"> | string | null
+    isRead?: BoolFilter<"OwnerAlert"> | boolean
+    createdAt?: DateTimeFilter<"OwnerAlert"> | Date | string
+  }
+
+  export type OwnerAlertOrderByWithRelationInput = {
+    id?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    message?: SortOrder
+    data?: SortOrderInput | SortOrder
+    isRead?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type OwnerAlertWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: OwnerAlertWhereInput | OwnerAlertWhereInput[]
+    OR?: OwnerAlertWhereInput[]
+    NOT?: OwnerAlertWhereInput | OwnerAlertWhereInput[]
+    type?: StringFilter<"OwnerAlert"> | string
+    title?: StringFilter<"OwnerAlert"> | string
+    message?: StringFilter<"OwnerAlert"> | string
+    data?: StringNullableFilter<"OwnerAlert"> | string | null
+    isRead?: BoolFilter<"OwnerAlert"> | boolean
+    createdAt?: DateTimeFilter<"OwnerAlert"> | Date | string
+  }, "id">
+
+  export type OwnerAlertOrderByWithAggregationInput = {
+    id?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    message?: SortOrder
+    data?: SortOrderInput | SortOrder
+    isRead?: SortOrder
+    createdAt?: SortOrder
+    _count?: OwnerAlertCountOrderByAggregateInput
+    _max?: OwnerAlertMaxOrderByAggregateInput
+    _min?: OwnerAlertMinOrderByAggregateInput
+  }
+
+  export type OwnerAlertScalarWhereWithAggregatesInput = {
+    AND?: OwnerAlertScalarWhereWithAggregatesInput | OwnerAlertScalarWhereWithAggregatesInput[]
+    OR?: OwnerAlertScalarWhereWithAggregatesInput[]
+    NOT?: OwnerAlertScalarWhereWithAggregatesInput | OwnerAlertScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"OwnerAlert"> | string
+    type?: StringWithAggregatesFilter<"OwnerAlert"> | string
+    title?: StringWithAggregatesFilter<"OwnerAlert"> | string
+    message?: StringWithAggregatesFilter<"OwnerAlert"> | string
+    data?: StringNullableWithAggregatesFilter<"OwnerAlert"> | string | null
+    isRead?: BoolWithAggregatesFilter<"OwnerAlert"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"OwnerAlert"> | Date | string
   }
 
   export type BranchCreateInput = {
@@ -38362,6 +39756,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -38391,6 +39789,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -38414,6 +39816,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -38443,6 +39849,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -38469,6 +39879,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -38490,6 +39904,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -38513,6 +39931,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -39241,6 +40663,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: string
     smartCardGoogleReviews?: string
     smartCardCustomLinks?: string
+    maxCashierDiscountPerPiece?: number
+    cashierBargainPin?: string
+    ownerDiscountPin?: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -39281,6 +40706,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: string
     smartCardGoogleReviews?: string
     smartCardCustomLinks?: string
+    maxCashierDiscountPerPiece?: number
+    cashierBargainPin?: string
+    ownerDiscountPin?: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -39321,6 +40749,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: StringFieldUpdateOperationsInput | string
     smartCardGoogleReviews?: StringFieldUpdateOperationsInput | string
     smartCardCustomLinks?: StringFieldUpdateOperationsInput | string
+    maxCashierDiscountPerPiece?: FloatFieldUpdateOperationsInput | number
+    cashierBargainPin?: StringFieldUpdateOperationsInput | string
+    ownerDiscountPin?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -39361,6 +40792,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: StringFieldUpdateOperationsInput | string
     smartCardGoogleReviews?: StringFieldUpdateOperationsInput | string
     smartCardCustomLinks?: StringFieldUpdateOperationsInput | string
+    maxCashierDiscountPerPiece?: FloatFieldUpdateOperationsInput | number
+    cashierBargainPin?: StringFieldUpdateOperationsInput | string
+    ownerDiscountPin?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -39401,6 +40835,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: string
     smartCardGoogleReviews?: string
     smartCardCustomLinks?: string
+    maxCashierDiscountPerPiece?: number
+    cashierBargainPin?: string
+    ownerDiscountPin?: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -39441,6 +40878,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: StringFieldUpdateOperationsInput | string
     smartCardGoogleReviews?: StringFieldUpdateOperationsInput | string
     smartCardCustomLinks?: StringFieldUpdateOperationsInput | string
+    maxCashierDiscountPerPiece?: FloatFieldUpdateOperationsInput | number
+    cashierBargainPin?: StringFieldUpdateOperationsInput | string
+    ownerDiscountPin?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -39481,6 +40921,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: StringFieldUpdateOperationsInput | string
     smartCardGoogleReviews?: StringFieldUpdateOperationsInput | string
     smartCardCustomLinks?: StringFieldUpdateOperationsInput | string
+    maxCashierDiscountPerPiece?: FloatFieldUpdateOperationsInput | number
+    cashierBargainPin?: StringFieldUpdateOperationsInput | string
+    ownerDiscountPin?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -39751,6 +41194,9 @@ export namespace Prisma {
     paidAmount?: number
     remainingDebt?: number
     status?: string
+    verificationStatus?: string
+    verificationReport?: string | null
+    supplierInvoiceRef?: string | null
     notes?: string | null
     createdAt?: Date | string
     supplier: SupplierCreateNestedOneWithoutPurchaseInvoicesInput
@@ -39768,6 +41214,9 @@ export namespace Prisma {
     paidAmount?: number
     remainingDebt?: number
     status?: string
+    verificationStatus?: string
+    verificationReport?: string | null
+    supplierInvoiceRef?: string | null
     notes?: string | null
     createdAt?: Date | string
     lines?: PurchaseInvoiceLineUncheckedCreateNestedManyWithoutPurchaseInvoiceInput
@@ -39781,6 +41230,9 @@ export namespace Prisma {
     paidAmount?: FloatFieldUpdateOperationsInput | number
     remainingDebt?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    verificationStatus?: StringFieldUpdateOperationsInput | string
+    verificationReport?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierInvoiceRef?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     supplier?: SupplierUpdateOneRequiredWithoutPurchaseInvoicesNestedInput
@@ -39798,6 +41250,9 @@ export namespace Prisma {
     paidAmount?: FloatFieldUpdateOperationsInput | number
     remainingDebt?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    verificationStatus?: StringFieldUpdateOperationsInput | string
+    verificationReport?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierInvoiceRef?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lines?: PurchaseInvoiceLineUncheckedUpdateManyWithoutPurchaseInvoiceNestedInput
@@ -39813,6 +41268,9 @@ export namespace Prisma {
     paidAmount?: number
     remainingDebt?: number
     status?: string
+    verificationStatus?: string
+    verificationReport?: string | null
+    supplierInvoiceRef?: string | null
     notes?: string | null
     createdAt?: Date | string
   }
@@ -39825,6 +41283,9 @@ export namespace Prisma {
     paidAmount?: FloatFieldUpdateOperationsInput | number
     remainingDebt?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    verificationStatus?: StringFieldUpdateOperationsInput | string
+    verificationReport?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierInvoiceRef?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -39839,6 +41300,9 @@ export namespace Prisma {
     paidAmount?: FloatFieldUpdateOperationsInput | number
     remainingDebt?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    verificationStatus?: StringFieldUpdateOperationsInput | string
+    verificationReport?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierInvoiceRef?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -40146,6 +41610,76 @@ export namespace Prisma {
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OwnerAlertCreateInput = {
+    id?: string
+    type: string
+    title: string
+    message: string
+    data?: string | null
+    isRead?: boolean
+    createdAt?: Date | string
+  }
+
+  export type OwnerAlertUncheckedCreateInput = {
+    id?: string
+    type: string
+    title: string
+    message: string
+    data?: string | null
+    isRead?: boolean
+    createdAt?: Date | string
+  }
+
+  export type OwnerAlertUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    message?: StringFieldUpdateOperationsInput | string
+    data?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OwnerAlertUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    message?: StringFieldUpdateOperationsInput | string
+    data?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OwnerAlertCreateManyInput = {
+    id?: string
+    type: string
+    title: string
+    message: string
+    data?: string | null
+    isRead?: boolean
+    createdAt?: Date | string
+  }
+
+  export type OwnerAlertUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    message?: StringFieldUpdateOperationsInput | string
+    data?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OwnerAlertUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    message?: StringFieldUpdateOperationsInput | string
+    data?: NullableStringFieldUpdateOperationsInput | string | null
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -41051,6 +42585,10 @@ export namespace Prisma {
     orderType?: SortOrder
     subTotal?: SortOrder
     discountAmount?: SortOrder
+    cashierDiscount?: SortOrder
+    ownerDiscount?: SortOrder
+    discountType?: SortOrder
+    discountNotes?: SortOrder
     taxAmount?: SortOrder
     finalTotal?: SortOrder
     paidAmount?: SortOrder
@@ -41067,6 +42605,8 @@ export namespace Prisma {
   export type InvoiceAvgOrderByAggregateInput = {
     subTotal?: SortOrder
     discountAmount?: SortOrder
+    cashierDiscount?: SortOrder
+    ownerDiscount?: SortOrder
     taxAmount?: SortOrder
     finalTotal?: SortOrder
     paidAmount?: SortOrder
@@ -41084,6 +42624,10 @@ export namespace Prisma {
     orderType?: SortOrder
     subTotal?: SortOrder
     discountAmount?: SortOrder
+    cashierDiscount?: SortOrder
+    ownerDiscount?: SortOrder
+    discountType?: SortOrder
+    discountNotes?: SortOrder
     taxAmount?: SortOrder
     finalTotal?: SortOrder
     paidAmount?: SortOrder
@@ -41108,6 +42652,10 @@ export namespace Prisma {
     orderType?: SortOrder
     subTotal?: SortOrder
     discountAmount?: SortOrder
+    cashierDiscount?: SortOrder
+    ownerDiscount?: SortOrder
+    discountType?: SortOrder
+    discountNotes?: SortOrder
     taxAmount?: SortOrder
     finalTotal?: SortOrder
     paidAmount?: SortOrder
@@ -41124,6 +42672,8 @@ export namespace Prisma {
   export type InvoiceSumOrderByAggregateInput = {
     subTotal?: SortOrder
     discountAmount?: SortOrder
+    cashierDiscount?: SortOrder
+    ownerDiscount?: SortOrder
     taxAmount?: SortOrder
     finalTotal?: SortOrder
     paidAmount?: SortOrder
@@ -41560,6 +43110,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: SortOrder
     smartCardGoogleReviews?: SortOrder
     smartCardCustomLinks?: SortOrder
+    maxCashierDiscountPerPiece?: SortOrder
+    cashierBargainPin?: SortOrder
+    ownerDiscountPin?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -41567,6 +43120,7 @@ export namespace Prisma {
   export type SystemSettingsAvgOrderByAggregateInput = {
     id?: SortOrder
     loyaltyPointsPer100Egp?: SortOrder
+    maxCashierDiscountPerPiece?: SortOrder
   }
 
   export type SystemSettingsMaxOrderByAggregateInput = {
@@ -41605,6 +43159,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: SortOrder
     smartCardGoogleReviews?: SortOrder
     smartCardCustomLinks?: SortOrder
+    maxCashierDiscountPerPiece?: SortOrder
+    cashierBargainPin?: SortOrder
+    ownerDiscountPin?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -41645,6 +43202,9 @@ export namespace Prisma {
     smartCardVodafoneCash?: SortOrder
     smartCardGoogleReviews?: SortOrder
     smartCardCustomLinks?: SortOrder
+    maxCashierDiscountPerPiece?: SortOrder
+    cashierBargainPin?: SortOrder
+    ownerDiscountPin?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -41652,6 +43212,7 @@ export namespace Prisma {
   export type SystemSettingsSumOrderByAggregateInput = {
     id?: SortOrder
     loyaltyPointsPer100Egp?: SortOrder
+    maxCashierDiscountPerPiece?: SortOrder
   }
 
   export type CustomerScalarRelationFilter = {
@@ -41818,6 +43379,9 @@ export namespace Prisma {
     paidAmount?: SortOrder
     remainingDebt?: SortOrder
     status?: SortOrder
+    verificationStatus?: SortOrder
+    verificationReport?: SortOrder
+    supplierInvoiceRef?: SortOrder
     notes?: SortOrder
     createdAt?: SortOrder
   }
@@ -41838,6 +43402,9 @@ export namespace Prisma {
     paidAmount?: SortOrder
     remainingDebt?: SortOrder
     status?: SortOrder
+    verificationStatus?: SortOrder
+    verificationReport?: SortOrder
+    supplierInvoiceRef?: SortOrder
     notes?: SortOrder
     createdAt?: SortOrder
   }
@@ -41852,6 +43419,9 @@ export namespace Prisma {
     paidAmount?: SortOrder
     remainingDebt?: SortOrder
     status?: SortOrder
+    verificationStatus?: SortOrder
+    verificationReport?: SortOrder
+    supplierInvoiceRef?: SortOrder
     notes?: SortOrder
     createdAt?: SortOrder
   }
@@ -42039,6 +43609,36 @@ export namespace Prisma {
     notes?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type OwnerAlertCountOrderByAggregateInput = {
+    id?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    message?: SortOrder
+    data?: SortOrder
+    isRead?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type OwnerAlertMaxOrderByAggregateInput = {
+    id?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    message?: SortOrder
+    data?: SortOrder
+    isRead?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type OwnerAlertMinOrderByAggregateInput = {
+    id?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    message?: SortOrder
+    data?: SortOrder
+    isRead?: SortOrder
+    createdAt?: SortOrder
   }
 
   export type UserCreateNestedManyWithoutBranchInput = {
@@ -44164,6 +45764,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -44191,6 +45795,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -44422,6 +46030,9 @@ export namespace Prisma {
     paidAmount?: number
     remainingDebt?: number
     status?: string
+    verificationStatus?: string
+    verificationReport?: string | null
+    supplierInvoiceRef?: string | null
     notes?: string | null
     createdAt?: Date | string
     supplier: SupplierCreateNestedOneWithoutPurchaseInvoicesInput
@@ -44437,6 +46048,9 @@ export namespace Prisma {
     paidAmount?: number
     remainingDebt?: number
     status?: string
+    verificationStatus?: string
+    verificationReport?: string | null
+    supplierInvoiceRef?: string | null
     notes?: string | null
     createdAt?: Date | string
     lines?: PurchaseInvoiceLineUncheckedCreateNestedManyWithoutPurchaseInvoiceInput
@@ -44582,6 +46196,10 @@ export namespace Prisma {
     orderType?: StringFilter<"Invoice"> | string
     subTotal?: FloatFilter<"Invoice"> | number
     discountAmount?: FloatFilter<"Invoice"> | number
+    cashierDiscount?: FloatFilter<"Invoice"> | number
+    ownerDiscount?: FloatFilter<"Invoice"> | number
+    discountType?: StringNullableFilter<"Invoice"> | string | null
+    discountNotes?: StringNullableFilter<"Invoice"> | string | null
     taxAmount?: FloatFilter<"Invoice"> | number
     finalTotal?: FloatFilter<"Invoice"> | number
     paidAmount?: FloatFilter<"Invoice"> | number
@@ -44778,6 +46396,9 @@ export namespace Prisma {
     paidAmount?: FloatFilter<"PurchaseInvoice"> | number
     remainingDebt?: FloatFilter<"PurchaseInvoice"> | number
     status?: StringFilter<"PurchaseInvoice"> | string
+    verificationStatus?: StringFilter<"PurchaseInvoice"> | string
+    verificationReport?: StringNullableFilter<"PurchaseInvoice"> | string | null
+    supplierInvoiceRef?: StringNullableFilter<"PurchaseInvoice"> | string | null
     notes?: StringNullableFilter<"PurchaseInvoice"> | string | null
     createdAt?: DateTimeFilter<"PurchaseInvoice"> | Date | string
   }
@@ -44876,6 +46497,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -44903,6 +46528,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -46245,6 +47874,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -46272,6 +47905,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -47022,6 +48659,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -47050,6 +48691,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -47133,6 +48778,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -47161,6 +48810,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -47361,6 +49014,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -47389,6 +49046,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -48114,6 +49775,9 @@ export namespace Prisma {
     paidAmount?: number
     remainingDebt?: number
     status?: string
+    verificationStatus?: string
+    verificationReport?: string | null
+    supplierInvoiceRef?: string | null
     notes?: string | null
     createdAt?: Date | string
     branch?: BranchCreateNestedOneWithoutPurchasesInput
@@ -48129,6 +49793,9 @@ export namespace Prisma {
     paidAmount?: number
     remainingDebt?: number
     status?: string
+    verificationStatus?: string
+    verificationReport?: string | null
+    supplierInvoiceRef?: string | null
     notes?: string | null
     createdAt?: Date | string
     lines?: PurchaseInvoiceLineUncheckedCreateNestedManyWithoutPurchaseInvoiceInput
@@ -48504,6 +50171,9 @@ export namespace Prisma {
     paidAmount?: number
     remainingDebt?: number
     status?: string
+    verificationStatus?: string
+    verificationReport?: string | null
+    supplierInvoiceRef?: string | null
     notes?: string | null
     createdAt?: Date | string
     supplier: SupplierCreateNestedOneWithoutPurchaseInvoicesInput
@@ -48520,6 +50190,9 @@ export namespace Prisma {
     paidAmount?: number
     remainingDebt?: number
     status?: string
+    verificationStatus?: string
+    verificationReport?: string | null
+    supplierInvoiceRef?: string | null
     notes?: string | null
     createdAt?: Date | string
   }
@@ -48593,6 +50266,9 @@ export namespace Prisma {
     paidAmount?: FloatFieldUpdateOperationsInput | number
     remainingDebt?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    verificationStatus?: StringFieldUpdateOperationsInput | string
+    verificationReport?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierInvoiceRef?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     supplier?: SupplierUpdateOneRequiredWithoutPurchaseInvoicesNestedInput
@@ -48609,6 +50285,9 @@ export namespace Prisma {
     paidAmount?: FloatFieldUpdateOperationsInput | number
     remainingDebt?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    verificationStatus?: StringFieldUpdateOperationsInput | string
+    verificationReport?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierInvoiceRef?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -48672,6 +50351,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -48700,6 +50383,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -48868,6 +50555,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -48896,6 +50587,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -49242,6 +50937,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -49338,6 +51037,9 @@ export namespace Prisma {
     paidAmount?: number
     remainingDebt?: number
     status?: string
+    verificationStatus?: string
+    verificationReport?: string | null
+    supplierInvoiceRef?: string | null
     notes?: string | null
     createdAt?: Date | string
   }
@@ -49435,6 +51137,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -49462,6 +51168,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -49487,6 +51197,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -49740,6 +51454,9 @@ export namespace Prisma {
     paidAmount?: FloatFieldUpdateOperationsInput | number
     remainingDebt?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    verificationStatus?: StringFieldUpdateOperationsInput | string
+    verificationReport?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierInvoiceRef?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     supplier?: SupplierUpdateOneRequiredWithoutPurchaseInvoicesNestedInput
@@ -49755,6 +51472,9 @@ export namespace Prisma {
     paidAmount?: FloatFieldUpdateOperationsInput | number
     remainingDebt?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    verificationStatus?: StringFieldUpdateOperationsInput | string
+    verificationReport?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierInvoiceRef?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lines?: PurchaseInvoiceLineUncheckedUpdateManyWithoutPurchaseInvoiceNestedInput
@@ -49769,6 +51489,9 @@ export namespace Prisma {
     paidAmount?: FloatFieldUpdateOperationsInput | number
     remainingDebt?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    verificationStatus?: StringFieldUpdateOperationsInput | string
+    verificationReport?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierInvoiceRef?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -49824,6 +51547,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -49893,6 +51620,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -49920,6 +51651,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -49945,6 +51680,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -50480,6 +52219,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -50524,6 +52267,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -50551,6 +52298,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -50576,6 +52327,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -50781,6 +52536,10 @@ export namespace Prisma {
     orderType?: string
     subTotal: number
     discountAmount?: number
+    cashierDiscount?: number
+    ownerDiscount?: number
+    discountType?: string | null
+    discountNotes?: string | null
     taxAmount?: number
     finalTotal: number
     paidAmount: number
@@ -50813,6 +52572,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -50841,6 +52604,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -50866,6 +52633,10 @@ export namespace Prisma {
     orderType?: StringFieldUpdateOperationsInput | string
     subTotal?: FloatFieldUpdateOperationsInput | number
     discountAmount?: FloatFieldUpdateOperationsInput | number
+    cashierDiscount?: FloatFieldUpdateOperationsInput | number
+    ownerDiscount?: FloatFieldUpdateOperationsInput | number
+    discountType?: NullableStringFieldUpdateOperationsInput | string | null
+    discountNotes?: NullableStringFieldUpdateOperationsInput | string | null
     taxAmount?: FloatFieldUpdateOperationsInput | number
     finalTotal?: FloatFieldUpdateOperationsInput | number
     paidAmount?: FloatFieldUpdateOperationsInput | number
@@ -50933,6 +52704,9 @@ export namespace Prisma {
     paidAmount?: number
     remainingDebt?: number
     status?: string
+    verificationStatus?: string
+    verificationReport?: string | null
+    supplierInvoiceRef?: string | null
     notes?: string | null
     createdAt?: Date | string
   }
@@ -50975,6 +52749,9 @@ export namespace Prisma {
     paidAmount?: FloatFieldUpdateOperationsInput | number
     remainingDebt?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    verificationStatus?: StringFieldUpdateOperationsInput | string
+    verificationReport?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierInvoiceRef?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     branch?: BranchUpdateOneWithoutPurchasesNestedInput
@@ -50990,6 +52767,9 @@ export namespace Prisma {
     paidAmount?: FloatFieldUpdateOperationsInput | number
     remainingDebt?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    verificationStatus?: StringFieldUpdateOperationsInput | string
+    verificationReport?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierInvoiceRef?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     lines?: PurchaseInvoiceLineUncheckedUpdateManyWithoutPurchaseInvoiceNestedInput
@@ -51004,6 +52784,9 @@ export namespace Prisma {
     paidAmount?: FloatFieldUpdateOperationsInput | number
     remainingDebt?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    verificationStatus?: StringFieldUpdateOperationsInput | string
+    verificationReport?: NullableStringFieldUpdateOperationsInput | string | null
+    supplierInvoiceRef?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

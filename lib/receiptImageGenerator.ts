@@ -37,6 +37,8 @@ export interface ReceiptData {
   }>;
   subtotal: number;
   discountAmount?: number;
+  cashierDiscount?: number;
+  ownerDiscount?: number;
   netTotal: number;
   paymentMethod?: string;
 }
@@ -227,7 +229,8 @@ export async function generateReceiptImageBlob(invoice: ReceiptData, customPolic
   curY += 15;
 
   // 7. Totals Summary Box
-  const summaryBoxH = invoice.discountAmount ? 120 : 95;
+  const hasExtraDiscounts = (invoice.cashierDiscount && invoice.cashierDiscount > 0) || (invoice.ownerDiscount && invoice.ownerDiscount > 0);
+  const summaryBoxH = hasExtraDiscounts ? 155 : (invoice.discountAmount ? 120 : 95);
   ctx.fillStyle = "#f8f9fa";
   ctx.fillRect(pad, curY, width - pad * 2, summaryBoxH);
   ctx.strokeStyle = "#dee2e6";
@@ -243,12 +246,35 @@ export async function generateReceiptImageBlob(invoice: ReceiptData, customPolic
   ctx.textAlign = "left";
   ctx.fillText(`${invoice.subtotal} ج.م`, pad + 20, sumY);
 
-  // Discount (if any)
+  // Cashier Discount
+  if (invoice.cashierDiscount && invoice.cashierDiscount > 0) {
+    sumY += 24;
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#495057";
+    ctx.font = "12px 'Cairo', 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("خصم الكاشير المعتمد:", width - pad - 20, sumY);
+    ctx.textAlign = "left";
+    ctx.fillText(`-${invoice.cashierDiscount} ج.م`, pad + 20, sumY);
+  }
+
+  // Mohamed Ashraf VIP Discount
+  if (invoice.ownerDiscount && invoice.ownerDiscount > 0) {
+    sumY += 24;
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#b08968";
+    ctx.font = "bold 12px 'Cairo', 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("خصم خاص م/ محمد أشرف 👑:", width - pad - 20, sumY);
+    ctx.textAlign = "left";
+    ctx.fillText(`-${invoice.ownerDiscount} ج.م`, pad + 20, sumY);
+  }
+
+  // Total Savings / Direct Discount
   if (invoice.discountAmount && invoice.discountAmount > 0) {
-    sumY += 26;
+    sumY += 24;
     ctx.textAlign = "right";
     ctx.fillStyle = "#d90429";
-    ctx.fillText("الخصم المباشر:", width - pad - 20, sumY);
+    ctx.font = "bold 13px 'Cairo', 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("إجمالي وفر العميل:", width - pad - 20, sumY);
     ctx.textAlign = "left";
     ctx.fillText(`-${invoice.discountAmount} ج.م`, pad + 20, sumY);
   }
